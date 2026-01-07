@@ -9,6 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Water_Built-In_Unity6
   m_Shader: {fileID: 4800000, guid: 9560d353b85e16d4b8d99f19e5ef8961, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords:
   - _ISFOAM_ON
@@ -19,6 +21,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -35,7 +38,7 @@ Material:
         m_Scale: {x: 0.03, y: 0.025}
         m_Offset: {x: -0.02, y: -0.02}
     - _MaskSurface:
-        m_Texture: {fileID: 2800000, guid: 5e7ade402496dfa49a6a4df389fd3158, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 0.1, y: 0.1}
         m_Offset: {x: 0.01, y: 0.02}
     - _NormalMap:
@@ -104,3 +107,4 @@ Material:
     - _WaveSpeed: {r: 0, g: 0, b: 0, a: 0}
     - _WaveSpeed2: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1
