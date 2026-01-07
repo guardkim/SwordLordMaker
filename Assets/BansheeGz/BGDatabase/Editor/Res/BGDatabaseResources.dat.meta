@@ -6,3 +6,10 @@ TextScriptImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 112262
+  packageName: BG Database | Data editor with Google Sheets and Excel syncing
+  packageVersion: 1.9.4
+  assetPath: Assets/BansheeGz/BGDatabase/Editor/Res/BGDatabaseResources.dat
+  uploadId: 842638
