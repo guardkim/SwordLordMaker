@@ -3,7 +3,8 @@
     "allow": [
       "Bash(cat:*)",
       "Bash(tree:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(dir:*)"
     ]
   }
 }

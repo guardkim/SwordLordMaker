@@ -44,6 +44,9 @@ public class DummyEnemy : MonoBehaviour, IDamageable
     
     private void Die()
     {
+        // 골드 지급
+        CurrencyManager.Instance.AddGold(100);
+
         // 파티클 등 사망 이펙트
         Destroy(gameObject);
     }

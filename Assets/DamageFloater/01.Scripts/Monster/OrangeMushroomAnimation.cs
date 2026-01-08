@@ -206,6 +206,9 @@ public class OrangeMushroomAnimation : MonoBehaviour, IDamageable
         _anim.SetTrigger(Die);
         _anim.SetBool(IsMoving, false);
 
+        // 골드 지급
+        CurrencyManager.Instance.AddGold(100);
+
         // 사망 처리 대기 (2초 후 부활 로직으로 연결)
         yield return new WaitForSeconds(2.0f); 
 
