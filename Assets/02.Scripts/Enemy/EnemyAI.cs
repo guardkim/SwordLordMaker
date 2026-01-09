@@ -78,6 +78,12 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         FindTarget();
         FindComponents();
+
+        // 애니메이션 리셋
+        if (_enemyAnimation != null)
+        {
+            _enemyAnimation.ResetAnimation();
+        }
     }
 
     // 풀로 반환될 때 호출 (상태 리셋)

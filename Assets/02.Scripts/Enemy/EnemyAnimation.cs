@@ -62,4 +62,18 @@ public class EnemyAnimation : MonoBehaviour
         _isDead = true;
         _animator.SetBool(_isDeadParam, true);
     }
+
+    public void ResetAnimation()
+    {
+        _isDead = false;
+
+        if (_animator != null)
+        {
+            _animator.SetBool(_isMovingParam, false);
+            _animator.SetBool(_isAttackingParam, false);
+            _animator.SetBool(_isDeadParam, false);
+            _animator.Rebind();
+            _animator.Update(0f);
+        }
+    }
 }
