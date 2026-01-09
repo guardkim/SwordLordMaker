@@ -23,6 +23,7 @@ public abstract class BaseFlyingSword : MonoBehaviour
     protected bool TryDealDamage(Collider other)
     {
         IDamageable target = other.GetComponent<IDamageable>();
+        if (other.CompareTag("Player")) return false;
         if (target != null)
         {
             bool isCritical = (Random.Range(0, 100) % 2 != 0);

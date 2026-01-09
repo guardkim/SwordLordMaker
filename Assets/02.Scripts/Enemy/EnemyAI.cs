@@ -159,7 +159,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         _currentHealth -= damage;
 
         // HPBar 업데이트
-        if (_hpBar != null)
+        if (_hpBar)
         {
             _hpBar.UpdateHP(_currentHealth);
         }
@@ -294,10 +294,15 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void Attack()
     {
-        // 스탯에서 공격력 사용
-        if (_stat != null)
+        if (_stat == null || _target == null)
         {
-            // TODO: 플레이어에게 _stat.AttackDamage 데미지 전달
+            return;
+        }
+
+        IDamageable damageable = _target.GetComponent<IDamageable>();
+        if (damageable != null)
+        {
+            damageable.TakeDamage(_stat.AttackDamage, false);
         }
     }
 
