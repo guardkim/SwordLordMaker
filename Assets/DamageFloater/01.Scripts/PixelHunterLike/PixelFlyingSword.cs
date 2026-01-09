@@ -61,8 +61,8 @@ public class PixelFlyingSword : BaseFlyingSword
 
         if (_isDeparting)
         {
-            transform.position += _departDirection * (FlyAwaySpeed * Time.deltaTime);
-            return; 
+            transform.position = ClampHeight(transform.position + _departDirection * (FlyAwaySpeed * Time.deltaTime));
+            return;
         }
 
         // ------------------------------------------------------------------
@@ -107,7 +107,8 @@ public class PixelFlyingSword : BaseFlyingSword
         // ------------------------------------------------------------------
         if (_isDeploying)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, DeploySpeed * Time.deltaTime);
+            Vector3 newPos = Vector3.MoveTowards(transform.position, targetPos, DeploySpeed * Time.deltaTime);
+            transform.position = ClampHeight(newPos);
             RotateSelf(targetPos);
             
             if (Vector3.Distance(transform.position, targetPos) < 0.5f) 
@@ -124,45 +125,70 @@ public class PixelFlyingSword : BaseFlyingSword
             float dynamicSpeed = Mathf.Lerp(SmoothingSpeed, SmoothingSpeed + CenterSnapStrength, snapFactor * snapFactor);
 
             // 이동 (Lerp 사용)
-            transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * dynamicSpeed);
+            Vector3 newPos = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * dynamicSpeed);
+            transform.position = ClampHeight(newPos);
             
-            // 회전: 진행 방향(접선) 계산 (첫 번째 코드 방식)
-            float lookAngle = swordAngle + (90f * Mathf.Sign(_rotateDir)); 
+            // 회전: 진행 방향(접선) 계산 (XZ 평면 - 3D 환경 대응)
+            float lookAngle = swordAngle + (90f * Mathf.Sign(_rotateDir));
             Vector3 lookDir = GetDirVector(lookAngle);
-            
-            float zAngle = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg - 90f;
-            transform.rotation = Quaternion.Euler(0, 0, zAngle);
 
-            _departDirection = lookDir; // 이탈 시 사용할 방향 저장
+            if (lookDir.sqrMagnitude > 0.001f)
+            {
+                // 검 모델의 Y축이 칼날 방향이므로 X축 -90도 추가 회전
+                Quaternion lookRot = Quaternion.LookRotation(lookDir, Vector3.up);
+                Quaternion tipCorrection = Quaternion.Euler(-90f, 0f, 0f);
+                transform.rotation = lookRot * tipCorrection;
+            }
+
+            _departDirection = lookDir;
         }
     }
 
-    // 각도를 벡터로 변환하는 헬퍼 함수
+    // 각도를 벡터로 변환하는 헬퍼 함수 (XZ 평면 - 3D 환경 대응)
     private Vector3 GetDirVector(float angleDeg)
     {
         float rad = angleDeg * Mathf.Deg2Rad;
-        return new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0);
+        return new Vector3(Mathf.Cos(rad), 0, Mathf.Sin(rad));
     }
 
     private void RotateSelf(Vector3 target)
     {
         Vector3 dir = (target - transform.position).normalized;
-        if (dir != Vector3.zero)
-        {
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
-            transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        }
+        if (dir.sqrMagnitude < 0.001f) return;
+
+        // 검 모델의 Y축이 칼날 방향이므로 X축 -90도 추가 회전
+        Quaternion lookRot = Quaternion.LookRotation(dir, Vector3.up);
+        Quaternion tipCorrection = Quaternion.Euler(-90f, 0f, 0f);
+        transform.rotation = lookRot * tipCorrection;
     }
 
+    // 3D 충돌 처리
+    private void OnTriggerEnter(Collider other)
+    {
+        HandleTrigger(other.CompareTag("Enemy"), other.GetComponent<IDamageable>());
+    }
+
+    // 2D 충돌 처리 (하위 호환)
     private void OnTriggerEnter2D(Collider2D other)
+    {
+        HandleTrigger(other.CompareTag("Enemy"), other.GetComponent<IDamageable>());
+    }
+
+    private void HandleTrigger(bool isEnemy, IDamageable target)
     {
         if (_isDeploying || _isDeparting) return;
         if (Time.time - _lastHitTime < 0.1f) return;
 
-        // 부모 클래스(BaseFlyingSword)의 데미지 처리 사용
-        bool hasHit = TryDealDamage(other);
+        bool hasHit = false;
+        if (target != null)
+        {
+            bool isCritical = (Random.Range(0, 100) % 2 != 0);
+            int finalDamage = isCritical ? Damage * 2 : Damage;
+            target.TakeDamage(finalDamage, isCritical);
+            hasHit = true;
+        }
 
-        if (other.CompareTag("Enemy"))
+        if (isEnemy)
         {
             _hitCount++;
             if (_hitCount >= MaxAttackCount) StartDeparture();

@@ -45,8 +45,6 @@ public class ControllerManager : MonoBehaviour
     /// </summary>
     private void Update()
     {
-        //TODO : Demo용 코드입니다. Manager 실 사용시에는 Update를 지워주세요
-        if (ModeChange.Instance.CurrentType != EModeType.FlyingSword) return;
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Fire();

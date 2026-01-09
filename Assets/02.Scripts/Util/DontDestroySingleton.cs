@@ -32,6 +32,7 @@ public class DontDestroySingleton<T> : MonoBehaviour where T : DontDestroySingle
         {
             _instance = this as T;
             DontDestroyOnLoad(transform.gameObject);
+            Initialize();
         }
         else
         {

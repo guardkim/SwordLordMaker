@@ -83,34 +83,34 @@ public class AdelFlyingSword : BaseFlyingSword
 
     private void HandleEject()
     {
-        transform.position += _currentVelocity * Time.deltaTime;
+        transform.position = ClampHeight(transform.position + _currentVelocity * Time.deltaTime);
         _currentVelocity = Vector3.Lerp(_currentVelocity, Vector3.zero, Time.deltaTime * 4f);
-        
-        if (_currentVelocity.sqrMagnitude > 0.1f) 
+
+        if (_currentVelocity.sqrMagnitude > 0.1f)
             LookAtDirection(_currentVelocity);
 
-        if (_currentVelocity.magnitude < 3.0f) 
+        if (_currentVelocity.magnitude < 3.0f)
         {
             _isEjecting = false;
-            if(Trail) Trail.emitting = true;
+            if (Trail) Trail.emitting = true;
         }
     }
 
     private void HandleContinuousFigure8()
     {
         bool isMyTurn = _controller.IsMyTurn(_myOrderIndex);
-        
-        float distFactor = Mathf.Abs(Mathf.Sin(_time)); 
-        bool approachingCenter = distFactor < 0.3f; 
 
-        float targetSpeed = PatrolSpeed; 
+        float distFactor = Mathf.Abs(Mathf.Sin(_time));
+        bool approachingCenter = distFactor < 0.3f;
+
+        float targetSpeed = PatrolSpeed;
 
         if (isMyTurn)
         {
             if (approachingCenter)
             {
                 targetSpeed = AttackBoostSpeed;
-                CheckCenterPass(); 
+                CheckCenterPass();
             }
         }
         else
@@ -120,34 +120,38 @@ public class AdelFlyingSword : BaseFlyingSword
 
         _time += Time.deltaTime * targetSpeed;
 
+        // 8자 궤도 계산 (XZ 평면 - 3D 환경 대응)
         float x = Mathf.Sin(_time) * CurveScale;
-        float y = Mathf.Sin(2f * _time) * (CurveScale * 0.5f); 
+        float z = Mathf.Sin(2f * _time) * (CurveScale * 0.5f);
 
-        Vector3 localPos = new Vector3(x, y, 0);
+        Vector3 localPos = new Vector3(x, 0, z);
 
         _axisRotation += _axisDriftSpeed * Time.deltaTime;
-        Quaternion rot = Quaternion.Euler(0, 0, _axisRotation);
-        
+        Quaternion rot = Quaternion.Euler(0, _axisRotation, 0);
+
         Vector3 virtualTargetPos = TargetEnemy.position + (rot * localPos);
 
-        transform.position = Vector3.SmoothDamp(transform.position, virtualTargetPos, ref _currentVelocity, SmoothTime);
+        Vector3 newPos = Vector3.SmoothDamp(transform.position, virtualTargetPos, ref _currentVelocity, SmoothTime);
+        transform.position = ClampHeight(newPos);
 
-        if (_currentVelocity.sqrMagnitude > 0.1f) 
+        if (_currentVelocity.sqrMagnitude > 0.1f)
             LookAtDirection(_currentVelocity);
     }
 
     private void HandleIdle()
     {
         float idleSpeedCalc = IdleSpeed * Time.deltaTime;
-        _time += idleSpeedCalc; 
-        
-        float angle = _time + (_myOrderIndex * 1.0f); 
+        _time += idleSpeedCalc;
+
+        // 대기 원형 궤도 (XZ 평면 - 3D 환경 대응)
+        float angle = _time + (_myOrderIndex * 1.0f);
         float x = Mathf.Cos(angle) * IdleRadius;
-        float y = Mathf.Sin(angle) * IdleRadius;
-        
-        Vector3 idlePos = _controller.transform.position + new Vector3(x, y, 0);
-        
-        transform.position = Vector3.SmoothDamp(transform.position, idlePos, ref _currentVelocity, SmoothTime);
+        float z = Mathf.Sin(angle) * IdleRadius;
+
+        Vector3 idlePos = _controller.transform.position + new Vector3(x, 0, z);
+
+        Vector3 newPos = Vector3.SmoothDamp(transform.position, idlePos, ref _currentVelocity, SmoothTime);
+        transform.position = ClampHeight(newPos);
         LookAtDirection(transform.position - _controller.transform.position);
     }
 
@@ -168,14 +172,24 @@ public class AdelFlyingSword : BaseFlyingSword
 
     private void LookAtDirection(Vector3 dir)
     {
-        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
-        Quaternion targetRot = Quaternion.AngleAxis(angle, Vector3.forward);
+        if (dir.sqrMagnitude < 0.001f) return;
+
+        // 검 모델의 Y축이 칼날 방향이므로 X축 -90도 추가 회전
+        Quaternion lookRot = Quaternion.LookRotation(dir, Vector3.up);
+        Quaternion tipCorrection = Quaternion.Euler(-90f, 0f, 0f);
+        Quaternion targetRot = lookRot * tipCorrection;
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 25f);
     }
 
+    // 3D 충돌 처리
+    private void OnTriggerEnter(Collider other)
+    {
+        TryDealDamage(other);
+    }
+
+    // 2D 충돌 처리 (하위 호환)
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // Adel은 닿으면 무조건 데미지 (쿨타임 X)
         TryDealDamage(other);
     }
 }

@@ -60,8 +60,8 @@ public class HypoFlyingSword : BaseFlyingSword
 
         if (_isDeparting)
         {
-            transform.position += _departDirection * (FlyAwaySpeed * Time.deltaTime);
-            return; 
+            transform.position = ClampHeight(transform.position + _departDirection * (FlyAwaySpeed * Time.deltaTime));
+            return;
         }
 
         // [수학] 속도 보정을 위한 미분값 계산
@@ -72,71 +72,93 @@ public class HypoFlyingSword : BaseFlyingSword
         float dTheta = (MoveSpeed * Time.deltaTime) / currentDerivative;
         _currentTheta += dTheta * _rotateDir;
 
-        // [수학] 위치 계산
+        // [수학] 위치 계산 (XZ 평면 - 3D 환경 대응)
         float precession = Time.time * PrecessionSpeed * _rotateDir;
-        Vector2 localPos = CalculateHypoPos(_currentTheta);
+        Vector3 localPos = CalculateHypoPos(_currentTheta);
         localPos = RotateVector(localPos, precession);
-        Vector3 targetPos = TargetEnemy.position + (Vector3)localPos;
+        Vector3 targetPos = TargetEnemy.position + localPos;
 
         // 이동 로직
         if (_isDeploying)
         {
-            transform.position = Vector3.MoveTowards(transform.position, targetPos, DeploySpeed * Time.deltaTime);
+            Vector3 newPos = Vector3.MoveTowards(transform.position, targetPos, DeploySpeed * Time.deltaTime);
+            transform.position = ClampHeight(newPos);
             RotateSelf(targetPos);
-            
-            if (Vector3.Distance(transform.position, targetPos) < 0.5f) 
-                _isDeploying = false; 
+
+            if (Vector3.Distance(transform.position, targetPos) < 0.5f)
+                _isDeploying = false;
         }
         else
         {
-            transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * SmoothingSpeed);
-            
-            // Look Ahead
-            float lookTheta = _currentTheta + (0.1f * _rotateDir); 
-            Vector2 nextLocal = RotateVector(CalculateHypoPos(lookTheta), precession);
-            Vector3 lookTarget = TargetEnemy.position + (Vector3)nextLocal;
+            Vector3 newPos = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * SmoothingSpeed);
+            transform.position = ClampHeight(newPos);
+
+            // Look Ahead (XZ 평면 - 3D 환경 대응)
+            float lookTheta = _currentTheta + (0.1f * _rotateDir);
+            Vector3 nextLocal = RotateVector(CalculateHypoPos(lookTheta), precession);
+            Vector3 lookTarget = TargetEnemy.position + nextLocal;
 
             RotateSelf(lookTarget);
             _departDirection = (lookTarget - transform.position).normalized;
         }
     }
 
-    private Vector2 CalculateHypoPos(float theta)
+    // XZ 평면 기준 Hypocycloid 위치 계산 (3D 환경 대응)
+    private Vector3 CalculateHypoPos(float theta)
     {
         float r = PatternSize * 0.25f;
         float x = r * Mathf.Cos(theta) + r * Mathf.Cos(theta * _kRatio);
-        float y = r * Mathf.Sin(theta) + r * Mathf.Sin(theta * _kRatio);
-        return new Vector2(x, y);
+        float z = r * Mathf.Sin(theta) + r * Mathf.Sin(theta * _kRatio);
+        return new Vector3(x, 0, z);
     }
 
-    private Vector2 RotateVector(Vector2 v, float degrees)
+    // XZ 평면 기준 벡터 회전 (Y축 회전)
+    private Vector3 RotateVector(Vector3 v, float degrees)
     {
         float rad = degrees * Mathf.Deg2Rad;
         float cos = Mathf.Cos(rad);
         float sin = Mathf.Sin(rad);
-        return new Vector2(v.x * cos - v.y * sin, v.x * sin + v.y * cos);
+        return new Vector3(v.x * cos - v.z * sin, 0, v.x * sin + v.z * cos);
     }
 
     private void RotateSelf(Vector3 target)
     {
         Vector3 dir = (target - transform.position).normalized;
-        if (dir != Vector3.zero)
-        {
-            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f;
-            transform.rotation = Quaternion.AngleAxis(angle, Vector3.forward);
-        }
+        if (dir.sqrMagnitude < 0.001f) return;
+
+        // 검 모델의 Y축이 칼날 방향이므로 X축 -90도 추가 회전
+        Quaternion lookRot = Quaternion.LookRotation(dir, Vector3.up);
+        Quaternion tipCorrection = Quaternion.Euler(-90f, 0f, 0f);
+        transform.rotation = lookRot * tipCorrection;
     }
 
+    // 3D 충돌 처리
+    private void OnTriggerEnter(Collider other)
+    {
+        HandleTrigger(other.CompareTag("Enemy"), other.GetComponent<IDamageable>());
+    }
+
+    // 2D 충돌 처리 (하위 호환)
     private void OnTriggerEnter2D(Collider2D other)
+    {
+        HandleTrigger(other.CompareTag("Enemy"), other.GetComponent<IDamageable>());
+    }
+
+    private void HandleTrigger(bool isEnemy, IDamageable target)
     {
         if (_isDeploying || _isDeparting) return;
         if (Time.time - _lastHitTime < 0.1f) return;
 
-        // 부모 메서드로 데미지 처리
-        bool hasHit = TryDealDamage(other);
+        bool hasHit = false;
+        if (target != null)
+        {
+            bool isCritical = (Random.Range(0, 100) % 2 != 0);
+            int finalDamage = isCritical ? Damage * 2 : Damage;
+            target.TakeDamage(finalDamage, isCritical);
+            hasHit = true;
+        }
 
-        // Enemy 태그 타격 시 횟수 증가 (기존 로직)
-        if (other.CompareTag("Enemy"))
+        if (isEnemy)
         {
             _hitCount++;
             if (_hitCount >= MaxAttackCount) StartDeparture();
