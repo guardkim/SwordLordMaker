@@ -29,14 +29,33 @@ public class DamageFloater : MonoBehaviour
     
     private readonly List<GameObject> _activeTexts = new List<GameObject>();
     private Sequence _mySequence;
-    private int[] _currentDamages; 
+    private int[] _currentDamages;
 
     // Z-Order 문제 해결을 위한 전역 변수
-    private static int _globalSortingOrder = 1000; 
+    private static int _globalSortingOrder = 1000;
+
+    // 빌보드 처리용
+    private Transform _cameraTransform;
 
     private void Awake()
     {
         if (TextTemplate != null) TextTemplate.SetActive(false);
+    }
+
+    private void Start()
+    {
+        if (Camera.main != null)
+        {
+            _cameraTransform = Camera.main.transform;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (_cameraTransform != null)
+        {
+            transform.rotation = _cameraTransform.rotation;
+        }
     }
 
     private void OnDestroy()

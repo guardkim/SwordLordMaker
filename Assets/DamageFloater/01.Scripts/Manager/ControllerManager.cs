@@ -2,10 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro; // UI 사용 시
 
-public class ControllerManager : MonoBehaviour
+public class ControllerManager : DontDestroySingleton<ControllerManager>
 {
-    // ■ 1. 싱글톤 패턴 구현
-    public static ControllerManager Instance { get; private set; }
 
     [Header("Controllers Assignment")]
     // Inspector에서 할당 (DIP 위반을 최소화하기 위해 인터페이스/추상클래스로 관리 가능하지만, 
@@ -17,40 +15,53 @@ public class ControllerManager : MonoBehaviour
     [Header("UI (Optional)")]
     public TextMeshProUGUI ModeText;
 
+    [Header("■ 쿨타임 설정")]
+    [SerializeField] private float _baseCooldown = 20f;
+    private float _cooldownTimer;
+    private bool _autoFireEnabled = true;
+
+    public float CooldownMultiplier { get; set; } = 1f;
+    private float CurrentCooldown => _baseCooldown * CooldownMultiplier;
+
     // 내부 관리용 딕셔너리 (OCP: 새로운 검이 추가돼도 Dictionary에만 넣으면 됨)
     private Dictionary<SwordType, BaseSwordController> _controllers;
-    
+
     // 현재 선택된 모드 기억
     private BaseSwordController _currentController;
     private SwordType _currentType;
 
-    private void Awake()
-    {
-        // 싱글톤 초기화
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject); // 씬 전환 시 유지하고 싶다면 사용, 아니면 제거
-        }
-        else
-        {
-            Destroy(gameObject);
-            return;
-        }
-
-        InitializeControllers();
-    }
-    /// <summary>
-    /// 테스트용 함수
-    /// </summary>
     private void Update()
     {
+        // 자동 발사 시스템
+        if (_autoFireEnabled)
+        {
+            _cooldownTimer += Time.deltaTime;
+            if (_cooldownTimer >= CurrentCooldown)
+            {
+                Fire();
+                _cooldownTimer = 0f;
+            }
+        }
+
+        // [검증용] Space 키 수동 발사 유지
         if (Input.GetKeyDown(KeyCode.Space))
         {
             Fire();
+            _cooldownTimer = 0f;
         }
     }
-    private void InitializeControllers()
+
+    public void SetCooldownMultiplier(float multiplier)
+    {
+        CooldownMultiplier = multiplier;
+    }
+
+    public void SetAutoFire(bool enabled)
+    {
+        _autoFireEnabled = enabled;
+        if (enabled) _cooldownTimer = 0f;
+    }
+    protected override void Initialize()
     {
         _controllers = new Dictionary<SwordType, BaseSwordController>
         {

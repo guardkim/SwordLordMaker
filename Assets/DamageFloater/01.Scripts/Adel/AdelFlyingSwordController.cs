@@ -11,6 +11,9 @@ public class AdelFlyingSwordController : BaseSwordController
     public int MaxSwordCount = 6;
     public float AttackDelay = 0.2f;
 
+    [Header("■ 타겟팅 설정")]
+    public float MaxTargetDistance = 25f;
+
     private readonly List<AdelFlyingSword> _activeSwords = new List<AdelFlyingSword>();
     private int _currentAttackerOrderIndex; 
     private int _spawnTotalCount;
@@ -43,20 +46,22 @@ public class AdelFlyingSwordController : BaseSwordController
     {
         if (_activeSwords.Count >= MaxSwordCount) return;
 
-        GameObject[] enemies = FindEnemies(); // 부모 메서드
-        if (enemies.Length == 0) return;
-        Transform target = GetRandomEnemyTarget(enemies); // 부모 메서드
+        GameObject[] enemies = FindEnemies();
+        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
+        if (validEnemies.Length == 0) return;
+
+        Transform target = GetRandomEnemyTarget(validEnemies);
 
         for (int i = 0; i < 2; i++)
         {
             if (_activeSwords.Count >= MaxSwordCount) break;
 
             Vector3 ejectDirection = (i == 0) ? Vector3.left : Vector3.right;
-            ejectDirection += Vector3.up * Random.Range(0.2f, 1.0f); 
+            ejectDirection += Vector3.up * Random.Range(0.2f, 1.0f);
 
             GameObject obj = Instantiate(SwordPrefab, transform.position, Quaternion.identity);
             AdelFlyingSword sword = obj.GetComponent<AdelFlyingSword>();
-            
+
             if (sword)
             {
                 int myOrder = _spawnTotalCount++;
@@ -65,6 +70,29 @@ public class AdelFlyingSwordController : BaseSwordController
                 _activeSwords.Add(sword);
                 sword.Init(this, target, ejectDirection, SpawnForce, myOrder);
             }
+        }
+    }
+
+    private GameObject[] FilterEnemiesByDistance(GameObject[] enemies)
+    {
+        Vector3 playerPos = transform.position;
+        return enemies
+            .Where(e => Vector3.Distance(e.transform.position, playerPos) <= MaxTargetDistance)
+            .ToArray();
+    }
+
+    public void RequestNewTarget(AdelFlyingSword sword)
+    {
+        GameObject[] enemies = FindEnemies();
+        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
+
+        if (validEnemies.Length > 0)
+        {
+            sword.SetTarget(validEnemies[Random.Range(0, validEnemies.Length)].transform);
+        }
+        else
+        {
+            sword.SetTarget(null);
         }
     }
 
@@ -107,10 +135,11 @@ public class AdelFlyingSwordController : BaseSwordController
     {
         if (_activeSwords.Count == 0) return;
         if (_activeSwords.All(s => s.HasTarget())) return;
-        
+
         GameObject[] enemies = FindEnemies();
-        
-        if (enemies.Length == 0)
+        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
+
+        if (validEnemies.Length == 0)
         {
             foreach (var s in _activeSwords) s.SetTarget(null);
             return;
@@ -118,9 +147,9 @@ public class AdelFlyingSwordController : BaseSwordController
 
         foreach (var s in _activeSwords)
         {
-            if (!s.HasTarget() && enemies.Length > 0)
+            if (!s.HasTarget())
             {
-                s.SetTarget(enemies[Random.Range(0, enemies.Length)].transform);
+                s.SetTarget(validEnemies[Random.Range(0, validEnemies.Length)].transform);
             }
         }
     }

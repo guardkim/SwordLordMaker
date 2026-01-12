@@ -2,15 +2,29 @@ using UnityEngine;
 
 public class AdelFlyingSword : BaseFlyingSword
 {
+    private enum SwordPhase
+    {
+        Ejecting,
+        Attacking,
+        Returning,
+        Idle
+    }
+
     [Header("■ 움직임 설정")]
-    public float CurveScale = 10.0f; 
-    public float SmoothTime = 0.2f; 
-    public float PatrolSpeed = 2.5f;       
+    public float CurveScale = 10.0f;
+    public float SmoothTime = 0.2f;
+    public float PatrolSpeed = 2.5f;
     public float AttackBoostSpeed = 23.8f;
-    
+
     [Header("■ 대기 모드 (Target 없음)")]
     public float IdleRadius = 3.0f;
-    public float IdleSpeed = 1.0f;         
+    public float IdleSpeed = 1.0f;
+
+    [Header("■ 복귀 설정")]
+    public float BaseReturnSpeed = 15f;
+    public float MaxReturnSpeed = 35f;
+    public float SpeedScaleDistance = 20f;
+    public float ReturnArriveThreshold = 5f;
 
     [Header("■ 기타")]
     public float MaxLifeTime = 40f;
@@ -21,13 +35,19 @@ public class AdelFlyingSword : BaseFlyingSword
     public int OrderIndex => _myOrderIndex;
 
     private float _currentLifeTime;
-    private bool _isEjecting = true;
     private Vector3 _currentVelocity;
 
+    // 상태 관리
+    private SwordPhase _currentPhase = SwordPhase.Ejecting;
+
+    // 복귀 관련
+    private Vector3 _returnStartPos;
+    private float _returnProgress;
+
     // 8자 궤도 수학 변수
-    private float _time; 
-    private float _axisRotation; 
-    private float _axisDriftSpeed; 
+    private float _time;
+    private float _axisRotation;
+    private float _axisDriftSpeed;
     private bool _hasPassedCenter;
 
     public void Init(AdelFlyingSwordController ctrl, Transform enemy, Vector3 ejectDir, float force, int orderIndex)
@@ -42,10 +62,10 @@ public class AdelFlyingSword : BaseFlyingSword
         _axisRotation = Random.Range(0f, 360f);
         _axisDriftSpeed = Random.Range(10f, 30f) * (Random.Range(0,2)==0 ? 1 : -1);
 
-        _currentVelocity = ejectDir.normalized * force; 
-        _isEjecting = true;
-        
-        if(Trail) Trail.Clear();
+        _currentVelocity = ejectDir.normalized * force;
+        _currentPhase = SwordPhase.Ejecting;
+
+        if (Trail) Trail.Clear();
     }
 
     public void SetTarget(Transform newTarget)
@@ -68,16 +88,25 @@ public class AdelFlyingSword : BaseFlyingSword
         }
         _currentLifeTime += Time.deltaTime;
 
-        if (_isEjecting)
+        switch (_currentPhase)
         {
-            HandleEject();
-        }
-        else
-        {
-            if (TargetEnemy)
-                HandleContinuousFigure8();
-            else
+            case SwordPhase.Ejecting:
+                HandleEject();
+                break;
+            case SwordPhase.Attacking:
+                if (TargetEnemy && IsTargetInRange())
+                    HandleContinuousFigure8();
+                else
+                    TransitionToIdle();
+                break;
+            case SwordPhase.Returning:
+                HandleReturning();
+                break;
+            case SwordPhase.Idle:
                 HandleIdle();
+                if (TargetEnemy && IsTargetInRange())
+                    TransitionToAttacking();
+                break;
         }
     }
 
@@ -91,7 +120,7 @@ public class AdelFlyingSword : BaseFlyingSword
 
         if (_currentVelocity.magnitude < 3.0f)
         {
-            _isEjecting = false;
+            _currentPhase = TargetEnemy ? SwordPhase.Attacking : SwordPhase.Idle;
             if (Trail) Trail.emitting = true;
         }
     }
@@ -163,11 +192,100 @@ public class AdelFlyingSword : BaseFlyingSword
         if (dist < 2.0f)
         {
             _hasPassedCenter = true;
-            _controller.NextTurn(); 
-            
-            _axisDriftSpeed = -_axisDriftSpeed; 
-            _axisRotation += Random.Range(20f, 60f); 
+            _controller.NextTurn();
+
+            // 복귀 시작
+            StartReturn();
         }
+    }
+
+    private void StartReturn()
+    {
+        _currentPhase = SwordPhase.Returning;
+        _returnStartPos = transform.position;
+        _returnProgress = 0f;
+    }
+
+    private void HandleReturning()
+    {
+        float returnSpeed = CalculateReturnSpeed();
+        _returnProgress += Time.deltaTime * returnSpeed * 0.1f;
+        _returnProgress = Mathf.Clamp01(_returnProgress);
+
+        Vector3 targetPos = CalculateReturnCurve();
+        Vector3 newPos = Vector3.SmoothDamp(transform.position, targetPos, ref _currentVelocity, SmoothTime);
+        transform.position = ClampHeight(newPos);
+
+        if (_currentVelocity.sqrMagnitude > 0.1f)
+            LookAtDirection(_currentVelocity);
+
+        float distToPlayer = Vector3.Distance(transform.position, _controller.transform.position);
+        if (distToPlayer < ReturnArriveThreshold || _returnProgress >= 1f)
+        {
+            CompleteReturn();
+        }
+    }
+
+    private float CalculateReturnSpeed()
+    {
+        float distanceToPlayer = Vector3.Distance(transform.position, _controller.transform.position);
+        float normalizedDist = Mathf.Clamp01(distanceToPlayer / SpeedScaleDistance);
+        float speedFactor = normalizedDist * normalizedDist;
+        return Mathf.Lerp(BaseReturnSpeed, MaxReturnSpeed, speedFactor);
+    }
+
+    private Vector3 CalculateReturnCurve()
+    {
+        Vector3 playerPos = _controller.transform.position;
+        Vector3 controlPoint = _returnStartPos + (_currentVelocity.normalized * CurveScale * 0.5f);
+
+        float t = _returnProgress;
+        float u = 1 - t;
+        return u * u * _returnStartPos + 2 * u * t * controlPoint + t * t * playerPos;
+    }
+
+    private void CompleteReturn()
+    {
+        _returnProgress = 0f;
+        _hasPassedCenter = false;
+
+        _controller.RequestNewTarget(this);
+
+        if (TargetEnemy && IsTargetInRange())
+        {
+            TransitionToAttacking();
+        }
+        else
+        {
+            TransitionToIdle();
+        }
+    }
+
+    private void TransitionToAttacking()
+    {
+        _currentPhase = SwordPhase.Attacking;
+        _time = Mathf.PI * 0.5f;
+        _axisRotation = CalculateEntryAngle();
+        _axisDriftSpeed = Random.Range(10f, 30f) * (Random.Range(0, 2) == 0 ? 1 : -1);
+    }
+
+    private void TransitionToIdle()
+    {
+        _currentPhase = SwordPhase.Idle;
+    }
+
+    private float CalculateEntryAngle()
+    {
+        if (!TargetEnemy) return Random.Range(0f, 360f);
+        Vector3 dirToSword = (transform.position - TargetEnemy.position).normalized;
+        return Mathf.Atan2(dirToSword.z, dirToSword.x) * Mathf.Rad2Deg;
+    }
+
+    private bool IsTargetInRange()
+    {
+        if (!TargetEnemy) return false;
+        float dist = Vector3.Distance(_controller.transform.position, TargetEnemy.position);
+        return dist <= _controller.MaxTargetDistance;
     }
 
     private void LookAtDirection(Vector3 dir)

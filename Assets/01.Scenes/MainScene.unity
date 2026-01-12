@@ -19028,6 +19028,52 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 9141411924133508470, guid: fc308f32ca974d342984dce58390ab1a, type: 3}
   m_PrefabInstance: {fileID: 1223953344}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1237042503
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1237042504}
+  - component: {fileID: 1237042505}
+  m_Layer: 0
+  m_Name: EffectManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1237042504
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1237042503}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -413.62616, y: -1760.9014, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1603959112}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1237042505
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1237042503}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bc8d4484c6ce9745bb75f23d1cf6342, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EffectManager
+  _hitVfxPrefab: {fileID: 2046140665488341963, guid: 9d292543345e17f47a88af867d7eabbd, type: 3}
+  _vfxLifetime: 1
 --- !u!1001 &1237706742
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -21410,6 +21456,7 @@ MonoBehaviour:
   SpawnForce: 10
   MaxSwordCount: 6
   AttackDelay: 0.2
+  MaxTargetDistance: 25
 --- !u!1001 &1397983280
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24951,6 +24998,8 @@ Transform:
   - {fileID: 1632573766}
   - {fileID: 716336731}
   - {fileID: 1293353359}
+  - {fileID: 1237042504}
+  - {fileID: 1894778279}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1611050685
@@ -25609,6 +25658,7 @@ MonoBehaviour:
   _hypoController: {fileID: 0}
   _pixelController: {fileID: 0}
   ModeText: {fileID: 0}
+  _baseCooldown: 20
 --- !u!1 &1645135877
 GameObject:
   m_ObjectHideFlags: 0
@@ -29103,6 +29153,75 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7996830194054340956, guid: e85679134c1fcc34795739cdb16d55fe, type: 3}
   m_PrefabInstance: {fileID: 1893021320}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1894778278
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1894778279}
+  - component: {fileID: 1894778280}
+  m_Layer: 0
+  m_Name: DamageFloaterManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1894778279
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894778278}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -421.16718, y: -1762.6477, z: 18.71599}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1603959112}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1894778280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1894778278}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6314e05170485344fa7a982b7fc04191, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DamageFloaterManager
+  DamageFloaterPrefab: {fileID: 6349936038727535309, guid: 3bcb34df28d1a0c4f893a5e6d78eee67, type: 3}
+  SingleFloaterOption:
+    numberFormat: 0
+    damageStyle: 0
+    singleNumberDuration: 1
+    delayBetweenNumbers: 0.1
+    lineSpacing: 0.7
+    driftDistance: 1
+    startScale: 0.5
+    popScale: 1.5
+    normalScale: 1
+    blade2Pivot: {x: 0.5, y: 0.5}
+  MultiFloaterOption:
+    numberFormat: 0
+    damageStyle: 0
+    singleNumberDuration: 1
+    delayBetweenNumbers: 0.1
+    lineSpacing: 0.7
+    driftDistance: 1
+    startScale: 0.5
+    popScale: 1.5
+    normalScale: 1
+    blade2Pivot: {x: 0.5, y: 0.5}
+  SpawnPos: {fileID: 0}
+  IsMulti: 0
 --- !u!1001 &1897925926
 PrefabInstance:
   m_ObjectHideFlags: 0

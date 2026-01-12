@@ -3,11 +3,8 @@ using UnityEngine;
 using System.Collections.Generic;
 using Random = UnityEngine.Random;
 
-public class DamageFloaterManager : MonoBehaviour
+public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
 {
-    // 어디서든 접근 가능한 싱글턴 인스턴스
-    public static DamageFloaterManager Instance;
-
     [Header("Reference")]
     [Tooltip("DamageFloater 컴포넌트가 붙어있는 프리팹")]
     public GameObject DamageFloaterPrefab;
@@ -23,12 +20,6 @@ public class DamageFloaterManager : MonoBehaviour
     public GameObject SpawnPos; // temp
     public bool IsMulti;
     private readonly List<int> _tempList = new List<int>();
-
-    private void Awake()
-    {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
-    }
 
     // -----------------------------------------------------------
     // 1. 옵션 설정 함수 (런타임에 옵션 변경 가능)
@@ -81,54 +72,6 @@ public class DamageFloaterManager : MonoBehaviour
         {
             floater.ApplyOption(MultiFloaterOption);
             floater.ShowDamage(damages.ToArray(), style, isCrit);
-        }
-    }
-    
-    /// <summary>
-    ///  테스트 Scene을 위한 함수
-    /// </summary>
-
-    public void ToggleMulti()
-    {
-        IsMulti = !IsMulti;
-    }
-    private void Start()
-    {
-        _tempList.Add(352342);
-        _tempList.Add(2455);
-        _tempList.Add(69384);
-        _tempList.Add(39483);
-        _tempList.Add(322);
-        _tempList.Add(28593);
-        _tempList.Add(21909);
-        _tempList.Add(592830217);
-        _tempList.Add(559934903);
-    }
-    private void Update()
-    {
-        //TODO : Demo용 코드입니다. Manager 실 사용시에는 Update를 지워주세요
-        if (ModeChange.Instance.CurrentType != EModeType.DamageFloater) return;
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            bool isCrit = Convert.ToBoolean(Random.Range(0, 2));
-            if (!IsMulti)
-            {
-                int random = Random.Range(9999, 99999);
-                ShowDamage((DamageStyle)SingleFloaterOption.damageStyle,random, SpawnPos.transform.position, isCrit);
-                
-            }
-            else
-            {
-                int random = Random.Range(2, 11);
-                _tempList.Clear();
-                for (int i = 0; i < random; i++)
-                {
-                    int temp = Random.Range(999, 999999);
-                    _tempList.Add(temp);
-                }
-                ShowDamage((DamageStyle)MultiFloaterOption.damageStyle,_tempList, SpawnPos.transform.position, isCrit);
-                    
-            }
         }
     }
 }

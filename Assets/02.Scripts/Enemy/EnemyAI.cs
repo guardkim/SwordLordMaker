@@ -158,6 +158,20 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         _currentHealth -= damage;
 
+        // 데미지 플로터 표시
+        if (DamageFloaterManager.Instance != null)
+        {
+            Vector3 floaterPos = transform.position + Vector3.up * 2f;
+            Debug.Log($"Damage : {damage}");
+            DamageFloaterManager.Instance.ShowDamage(DamageStyle.Basic, damage, floaterPos, isCrit);
+        }
+
+        // Hit VFX 재생
+        if (EffectManager.Instance != null)
+        {
+            EffectManager.Instance.PlayHitVfx(transform.position + Vector3.up);
+        }
+
         // HPBar 업데이트
         if (_hpBar)
         {
