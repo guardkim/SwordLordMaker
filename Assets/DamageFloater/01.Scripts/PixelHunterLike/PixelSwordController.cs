@@ -4,12 +4,23 @@ public class PixelSwordController : BaseSwordController
 {
     // SwordPrefab은 부모에 있음
 
-    [Header("■ 웨이브 설정")] public int SwordCount = 6;
+    [Header("■ 웨이브 설정")]
+    public int SwordCount = 6;
+    public int MaxWaves = 3;
 
-    public int MaxWaves = 3;        
+    [Header("■ Sword Stat")]
+    [SerializeField] private string _swordStatId = "PIXEL_SWORD";
+    private SwordStat _swordStat;
+    public SwordStat SwordStat => _swordStat;
 
-    private int _currentWaveIndex;      
-    private int _finishedSwordsInWave;  
+    private int _currentWaveIndex;
+    private int _finishedSwordsInWave;
+
+    private void Awake()
+    {
+        var repository = new SwordStatRepository();
+        _swordStat = repository.GetById(_swordStatId);
+    }  
 
     // 부모의 추상 메서드 구현
     protected override void ResetSequence()
@@ -42,7 +53,7 @@ public class PixelSwordController : BaseSwordController
             if (sword)
             {
                 Transform randomTarget = GetRandomEnemyTarget(enemies); // 부모 메서드
-                sword.Init(transform, randomTarget, OnSwordFinished);
+                sword.Init(transform, randomTarget, OnSwordFinished, _swordStat);
             }
         }
         

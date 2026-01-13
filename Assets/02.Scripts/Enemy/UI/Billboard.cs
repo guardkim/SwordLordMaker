@@ -2,10 +2,12 @@ using UnityEngine;
 
 public class Billboard : MonoBehaviour
 {
-    [Header("설정")]
-    [SerializeField] private Vector3 _offset = new Vector3(0, 2.2f, 0); // 머리 위 높이 조절
+    private const float DEFAULT_HEIGHT_OFFSET = 2.2f;
 
-    private Transform _target;   // 따라다닐 몬스터
+    [Header("설정")]
+    [SerializeField] private Vector3 _offset = new Vector3(0, DEFAULT_HEIGHT_OFFSET, 0);
+
+    private Transform _target;
     private Transform _cameraTransform;
     private Transform _transform;
 
@@ -16,20 +18,27 @@ public class Billboard : MonoBehaviour
 
     private void Start()
     {
-        // 메인 카메라 캐싱 (성능 최적화)
-        if (Camera.main != null)
-        {
-            _cameraTransform = Camera.main.transform;
-        }
+        CacheMainCamera();
+        SetupTarget();
+    }
 
-        // 1. 시작할 때 부모(몬스터)를 타겟으로 등록
+    private void CacheMainCamera()
+    {
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
+        {
+            _cameraTransform = mainCamera.transform;
+        }
+    }
+
+    private void SetupTarget()
+    {
         if (_target == null && transform.parent != null)
         {
             _target = transform.parent;
         }
 
-        // 2. [핵심] 부모-자식 관계를 끊어버림!
-        // 이렇게 해야 몬스터가 회전할 때 HP바가 같이 뱅글 돌지 않음
+        // 부모-자식 관계를 끊어 몬스터 회전과 독립적으로 동작
         transform.SetParent(null);
     }
 

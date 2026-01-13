@@ -29,12 +29,9 @@ public class PlayerAnimation : MonoBehaviour
 
     private void UpdateAnimationParameters()
     {
-        if (_animator == null || _movement == null)
-        {
-            return;
-        }
+        if (_animator == null || _movement == null) return;
 
-        float speed = _movement.MoveDirection.magnitude;
+        float speed = _movement.GetCurrentSpeed();
         _animator.SetFloat(_speedParam, speed);
     }
 }

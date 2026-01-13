@@ -33,19 +33,25 @@ public class HypoFlyingSword : BaseFlyingSword
     private Vector3 _departDirection;       
     private float _lastHitTime;        
 
-    public void Init(Transform startPoint, Transform enemy, Action onDeparture)
+    public void Init(Transform startPoint, Transform enemy, Action onDeparture, SwordStat stat)
     {
         TargetEnemy = enemy; // 부모 변수 사용
         transform.position = startPoint.position;
         _onDepartureCallback = onDeparture;
-        
+
+        InitializeStat(stat);
+        if (stat != null)
+        {
+            MoveSpeed = stat.MoveSpeed;
+        }
+
         _hitCount = 0;
-        _isDeploying = true; 
+        _isDeploying = true;
         _isDeparting = false;
-        
+
         _rotateDir = (Random.value > 0.5f) ? 1.0f : -1.0f;
         _currentTheta = Random.Range(0f, 360f * Mathf.Deg2Rad);
-        
+
         // k = 1 - N (Hypocycloid 공식)
         _kRatio = 1.0f - PetalCount;
     }
@@ -152,8 +158,11 @@ public class HypoFlyingSword : BaseFlyingSword
         bool hasHit = false;
         if (target != null)
         {
-            bool isCritical = (Random.Range(0, 100) % 2 != 0);
-            int finalDamage = isCritical ? Damage * 2 : Damage;
+            bool isCritical = Random.value < (_stat?.CritChance ?? 0.5f);
+            int baseDamage = _stat?.AttackDamage ?? 10;
+            int finalDamage = isCritical
+                ? Mathf.RoundToInt(baseDamage * (_stat?.CritDamage ?? 2f))
+                : baseDamage;
             target.TakeDamage(finalDamage, isCritical);
             hasHit = true;
         }

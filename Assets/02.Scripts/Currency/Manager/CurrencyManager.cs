@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Numerics;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public class CurrencyManager : DontDestroySingleton<CurrencyManager>
@@ -19,20 +20,37 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     protected override void Initialize()
     {
-        _repository = new CurrencyRepository();
+        _repository = CreateRepository();
         _autoSaveWait = new WaitForSeconds(GoldAutoSaveInterval);
-        LoadCurrencyAsync();
+        LoadCurrency();
     }
 
-    private async void LoadCurrencyAsync()
+    private ICurrencyRepository CreateRepository()
     {
-        _currency = await _repository.LoadAsync();
-        _currency.OnChanged += HandleCurrencyChanged;
+        return new CurrencyRepository();
+    }
 
-        _autoSaveCoroutine = StartCoroutine(AutoSaveGoldRoutine());
+    private void LoadCurrency()
+    {
+        _ = LoadCurrencyInternalAsync();
+    }
 
-        OnCurrencyChanged?.Invoke(CurrencyType.Gold, _currency.Gold);
-        OnCurrencyChanged?.Invoke(CurrencyType.Ruby, _currency.Ruby);
+    private async Task LoadCurrencyInternalAsync()
+    {
+        try
+        {
+            _currency = await _repository.LoadAsync();
+            _currency.OnChanged += HandleCurrencyChanged;
+
+            _autoSaveCoroutine = StartCoroutine(AutoSaveGoldRoutine());
+
+            OnCurrencyChanged?.Invoke(CurrencyType.Gold, _currency.Gold);
+            OnCurrencyChanged?.Invoke(CurrencyType.Ruby, _currency.Ruby);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[CurrencyManager] 로드 실패: {e.Message}");
+        }
     }
 
     private void HandleCurrencyChanged(CurrencyType type, BigInteger newValue)
@@ -45,9 +63,21 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         }
     }
 
-    private async void SaveRubyImmediate(BigInteger ruby)
+    private void SaveRubyImmediate(BigInteger ruby)
     {
-        await _repository.SaveRubyAsync(ruby);
+        _ = SaveRubyInternalAsync(ruby);
+    }
+
+    private async Task SaveRubyInternalAsync(BigInteger ruby)
+    {
+        try
+        {
+            await _repository.SaveRubyAsync(ruby);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[CurrencyManager] 루비 저장 실패: {e.Message}");
+        }
     }
 
     private IEnumerator AutoSaveGoldRoutine()
@@ -59,13 +89,22 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         }
     }
 
-    private async void SaveGold()
+    private void SaveGold()
     {
-        if (_currency == null)
+        if (_currency == null) return;
+        _ = SaveGoldInternalAsync();
+    }
+
+    private async Task SaveGoldInternalAsync()
+    {
+        try
         {
-            return;
+            await _repository.SaveGoldAsync(_currency.Gold);
         }
-        await _repository.SaveGoldAsync(_currency.Gold);
+        catch (Exception e)
+        {
+            Debug.LogError($"[CurrencyManager] 골드 저장 실패: {e.Message}");
+        }
     }
 
     public void AddGold(BigInteger amount)
@@ -97,24 +136,29 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
     {
         if (pauseStatus)
         {
-            SaveAll();
+            SaveAllSync();
         }
     }
 
     private void OnApplicationQuit()
     {
-        SaveAll();
+        SaveAllSync();
     }
 
-    private async void SaveAll()
+    private void SaveAllSync()
     {
-        if (_currency == null)
-        {
-            return;
-        }
+        if (_currency == null) return;
 
-        await _repository.SaveAsync(_currency);
-        _repository.ForceSaveToDisk();
+        try
+        {
+            // 동기식으로 저장 (앱 종료 시 비동기 완료 보장 불가)
+            _repository.SaveAsync(_currency).Wait();
+            _repository.ForceSaveToDisk();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[CurrencyManager] 저장 실패: {e.Message}");
+        }
     }
 
     private void OnDestroy()

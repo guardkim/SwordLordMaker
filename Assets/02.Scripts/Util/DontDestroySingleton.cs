@@ -3,6 +3,7 @@ using UnityEngine;
 public class DontDestroySingleton<T> : MonoBehaviour where T : DontDestroySingleton<T>
 {
     private static T _instance;
+    private bool _isInitialized;
 
     public static T Instance
     {
@@ -14,7 +15,7 @@ public class DontDestroySingleton<T> : MonoBehaviour where T : DontDestroySingle
                 if (_instance == null)
                 {
                     _instance = new GameObject(nameof(T)).AddComponent<T>();
-                    _instance.Initialize();
+                    // Initialize()는 Awake에서 호출됨
                 }
             }
             return _instance;
@@ -23,28 +24,29 @@ public class DontDestroySingleton<T> : MonoBehaviour where T : DontDestroySingle
 
     protected virtual void Awake()
     {
-        if (this.transform.parent != null)
+        if (transform.parent != null)
         {
-            this.transform.SetParent(null);
+            transform.SetParent(null);
         }
 
-        if (_instance == null || _instance == this)
+        if (_instance == null)
         {
             _instance = this as T;
-            DontDestroyOnLoad(transform.gameObject);
-            Initialize();
-        }
-        else
-        {
-            if (this != _instance)
+            DontDestroyOnLoad(gameObject);
+
+            if (!_isInitialized)
             {
-                Destroy(this.gameObject);
+                _isInitialized = true;
+                Initialize();
             }
+        }
+        else if (_instance != this)
+        {
+            Destroy(gameObject);
         }
     }
 
     protected virtual void Initialize()
     {
-
     }
 }

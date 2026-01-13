@@ -34,16 +34,22 @@ public class PixelFlyingSword : BaseFlyingSword
     private float _lastHitTime;
     private Vector3 _departDirection;
 
-    public void Init(Transform startPoint, Transform target, Action onFinished)
+    public void Init(Transform startPoint, Transform target, Action onFinished, SwordStat stat)
     {
         TargetEnemy = target; // 부모 변수 할당
         _onDepartureCallback = onFinished;
         transform.position = startPoint.position;
-        
+
+        InitializeStat(stat);
+        if (stat != null)
+        {
+            OrbitalSpeed = stat.MoveSpeed * 100f; // MoveSpeed를 OrbitalSpeed에 적용 (스케일 조정)
+        }
+
         _hitCount = 0;
         _isDeploying = true;
         _isDeparting = false;
-        
+
         // [로직 1 복원] 초기화
         _currentPhase = 0f;
         _rotateDir = 1.0f;     // 반시계 시작
@@ -182,8 +188,11 @@ public class PixelFlyingSword : BaseFlyingSword
         bool hasHit = false;
         if (target != null)
         {
-            bool isCritical = (Random.Range(0, 100) % 2 != 0);
-            int finalDamage = isCritical ? Damage * 2 : Damage;
+            bool isCritical = Random.value < (_stat?.CritChance ?? 0.5f);
+            int baseDamage = _stat?.AttackDamage ?? 10;
+            int finalDamage = isCritical
+                ? Mathf.RoundToInt(baseDamage * (_stat?.CritDamage ?? 2f))
+                : baseDamage;
             target.TakeDamage(finalDamage, isCritical);
             hasHit = true;
         }

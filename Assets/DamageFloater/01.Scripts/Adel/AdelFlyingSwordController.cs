@@ -14,15 +14,26 @@ public class AdelFlyingSwordController : BaseSwordController
     [Header("■ 타겟팅 설정")]
     public float MaxTargetDistance = 25f;
 
+    [Header("■ Sword Stat")]
+    [SerializeField] private string _swordStatId = "ADEL_SWORD";
+    private SwordStat _swordStat;
+    public SwordStat SwordStat => _swordStat;
+
     private readonly List<AdelFlyingSword> _activeSwords = new List<AdelFlyingSword>();
     private int _currentAttackerOrderIndex; 
     private int _spawnTotalCount;
     private float _delayTimer;
 
     // [최적화용 변수 추가]
-    private float _searchTimer; 
+    private float _searchTimer;
     private const float SearchInterval = 0.2f; // 0.2초마다 탐색
-    
+
+    private void Awake()
+    {
+        var repository = new SwordStatRepository();
+        _swordStat = repository.GetById(_swordStatId);
+    }
+
     // 부모 추상 메서드 구현
     protected override void ResetSequence()
     {
@@ -68,7 +79,7 @@ public class AdelFlyingSwordController : BaseSwordController
                 if (_activeSwords.Count == 0) _currentAttackerOrderIndex = myOrder;
 
                 _activeSwords.Add(sword);
-                sword.Init(this, target, ejectDirection, SpawnForce, myOrder);
+                sword.Init(this, target, ejectDirection, SpawnForce, myOrder, _swordStat);
             }
         }
     }

@@ -18,8 +18,13 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
 
     protected override void Initialize()
     {
-        _repository = new EnemyStatRepository();
+        _repository = CreateRepository();
         CreatePool();
+    }
+
+    private IEnemyStatRepository CreateRepository()
+    {
+        return new EnemyStatRepository();
     }
 
     private void CreatePool()
@@ -119,4 +124,16 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
     }
 
     public int SpawnPointCount => _spawnPoints?.Length ?? 0;
+
+    public EnemyAI SpawnAtRandomPoint(string statId)
+    {
+        if (_spawnPoints == null || _spawnPoints.Length == 0)
+        {
+            Debug.LogError("[EnemySpawner] 스폰 포인트가 설정되지 않았습니다.");
+            return null;
+        }
+
+        int randomIndex = Random.Range(0, _spawnPoints.Length);
+        return Spawn(statId, randomIndex);
+    }
 }

@@ -21457,6 +21457,7 @@ MonoBehaviour:
   MaxSwordCount: 6
   AttackDelay: 0.2
   MaxTargetDistance: 25
+  _swordStatId: ADEL_SWORD
 --- !u!1001 &1397983280
 PrefabInstance:
   m_ObjectHideFlags: 0

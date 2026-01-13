@@ -50,17 +50,23 @@ public class AdelFlyingSword : BaseFlyingSword
     private float _axisDriftSpeed;
     private bool _hasPassedCenter;
 
-    public void Init(AdelFlyingSwordController ctrl, Transform enemy, Vector3 ejectDir, float force, int orderIndex)
+    public void Init(AdelFlyingSwordController ctrl, Transform enemy, Vector3 ejectDir, float force, int orderIndex, SwordStat stat)
     {
         _controller = ctrl;
         TargetEnemy = enemy; // 부모 변수
         _myOrderIndex = orderIndex;
 
+        InitializeStat(stat);
+        if (stat != null)
+        {
+            PatrolSpeed = stat.MoveSpeed;
+        }
+
         _currentLifeTime = 0f;
-        
+
         _time = (Random.Range(0, 2) == 0) ? Mathf.PI * 0.5f : Mathf.PI * 1.5f;
         _axisRotation = Random.Range(0f, 360f);
-        _axisDriftSpeed = Random.Range(10f, 30f) * (Random.Range(0,2)==0 ? 1 : -1);
+        _axisDriftSpeed = Random.Range(10f, 30f) * (Random.Range(0, 2) == 0 ? 1 : -1);
 
         _currentVelocity = ejectDir.normalized * force;
         _currentPhase = SwordPhase.Ejecting;

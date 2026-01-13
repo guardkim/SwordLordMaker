@@ -12,6 +12,10 @@ public class EnemyAI : MonoBehaviour, IDamageable
         Dead
     }
 
+    private const float DAMAGE_FLOATER_HEIGHT_OFFSET = 2f;
+    private const float HIT_VFX_HEIGHT_OFFSET = 1f;
+    private const float DEATH_POOL_RETURN_DELAY = 3f;
+
     [Header("▼ 참조")]
     [SerializeField] private Transform _target;
     [SerializeField] private EnemyAnimation _enemyAnimation;
@@ -39,6 +43,8 @@ public class EnemyAI : MonoBehaviour, IDamageable
     public State CurrentState => _currentState;
     public float Speed => _agent != null ? _agent.velocity.magnitude : 0f;
     public bool IsDead => _currentState == State.Dead;
+    public bool IsMoving => _currentState == State.Chase;
+    public bool IsAttacking => _currentState == State.Attack;
 
     private void Awake()
     {
@@ -151,37 +157,48 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     public void TakeDamage(int damage, bool isCrit)
     {
-        if (_currentState == State.Dead)
-        {
-            return;
-        }
+        if (_currentState == State.Dead) return;
 
         _currentHealth -= damage;
-
-        // 데미지 플로터 표시
-        if (DamageFloaterManager.Instance != null)
-        {
-            Vector3 floaterPos = transform.position + Vector3.up * 2f;
-            Debug.Log($"Damage : {damage}");
-            DamageFloaterManager.Instance.ShowDamage(DamageStyle.Basic, damage, floaterPos, isCrit);
-        }
-
-        // Hit VFX 재생
-        if (EffectManager.Instance != null)
-        {
-            EffectManager.Instance.PlayHitVfx(transform.position + Vector3.up);
-        }
-
-        // HPBar 업데이트
-        if (_hpBar)
-        {
-            _hpBar.UpdateHP(_currentHealth);
-        }
+        ShowDamageEffects(damage, isCrit);
+        UpdateHealthBar();
 
         if (_currentHealth <= 0)
         {
             Die();
         }
+    }
+
+    private void ShowDamageEffects(int damage, bool isCrit)
+    {
+        if (DamageFloaterManager.Instance != null)
+        {
+            DamageFloaterManager.Instance.ShowDamage(
+                DamageStyle.Basic, damage, GetDamageFloaterPosition(), isCrit);
+        }
+
+        if (EffectManager.Instance != null)
+        {
+            EffectManager.Instance.PlayHitVfx(GetHitVfxPosition());
+        }
+    }
+
+    private void UpdateHealthBar()
+    {
+        if (_hpBar != null)
+        {
+            _hpBar.UpdateHP(_currentHealth);
+        }
+    }
+
+    private Vector3 GetDamageFloaterPosition()
+    {
+        return transform.position + Vector3.up * DAMAGE_FLOATER_HEIGHT_OFFSET;
+    }
+
+    private Vector3 GetHitVfxPosition()
+    {
+        return transform.position + Vector3.up * HIT_VFX_HEIGHT_OFFSET;
     }
 
     private void Die()
@@ -218,7 +235,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
 
         // 풀로 반환 (사망 애니메이션 후)
-        StartCoroutine(ReturnToPoolAfterDelay(3f));
+        StartCoroutine(ReturnToPoolAfterDelay(DEATH_POOL_RETURN_DELAY));
     }
 
     private IEnumerator ReturnToPoolAfterDelay(float delay)

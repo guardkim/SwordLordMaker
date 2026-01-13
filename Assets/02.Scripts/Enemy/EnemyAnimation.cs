@@ -38,18 +38,10 @@ public class EnemyAnimation : MonoBehaviour
 
     private void UpdateAnimationParameters()
     {
-        if (_animator == null || _enemyAI == null)
-        {
-            return;
-        }
+        if (_animator == null || _enemyAI == null) return;
 
-        EnemyAI.State state = _enemyAI.CurrentState;
-
-        bool isMoving = state == EnemyAI.State.Chase;
-        bool isAttacking = state == EnemyAI.State.Attack;
-
-        _animator.SetBool(_isMovingParam, isMoving);
-        _animator.SetBool(_isAttackingParam, isAttacking);
+        _animator.SetBool(_isMovingParam, _enemyAI.IsMoving);
+        _animator.SetBool(_isAttackingParam, _enemyAI.IsAttacking);
     }
 
     public void Die()

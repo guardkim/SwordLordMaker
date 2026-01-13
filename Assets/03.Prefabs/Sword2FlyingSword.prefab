@@ -216,13 +216,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed4171eb03da6f6438e511a20f8e0200, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Damage: 10
+  MinHeight: 0.5
   CurveScale: 10
   SmoothTime: 0.2
   PatrolSpeed: 2.5
   AttackBoostSpeed: 23.8
   IdleRadius: 3
   IdleSpeed: 1
+  BaseReturnSpeed: 15
+  MaxReturnSpeed: 35
+  SpeedScaleDistance: 20
+  ReturnArriveThreshold: 5
   MaxLifeTime: 40
   Trail: {fileID: 2510148337307143321}
 --- !u!54 &5747850869053512456
@@ -295,7 +299,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7044476285236031898, guid: d7e67ff5daed3494fbe6d1904e928589, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7044476285236031898, guid: d7e67ff5daed3494fbe6d1904e928589, type: 3}
       propertyPath: m_LocalRotation.x
@@ -303,11 +307,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7044476285236031898, guid: d7e67ff5daed3494fbe6d1904e928589, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7044476285236031898, guid: d7e67ff5daed3494fbe6d1904e928589, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7044476285236031898, guid: d7e67ff5daed3494fbe6d1904e928589, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -319,7 +323,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7044476285236031898, guid: d7e67ff5daed3494fbe6d1904e928589, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 7676615874565401376, guid: d7e67ff5daed3494fbe6d1904e928589, type: 3}
       propertyPath: m_Name

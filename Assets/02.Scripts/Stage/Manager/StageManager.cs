@@ -29,8 +29,13 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     protected override void Initialize()
     {
-        _repository = new StageRepository();
+        _repository = CreateRepository();
         _maxStageId = _repository.GetMaxStageId();
+    }
+
+    private IStageRepository CreateRepository()
+    {
+        return new StageRepository();
     }
 
     private void Start()
@@ -89,16 +94,7 @@ public class StageManager : DontDestroySingleton<StageManager>
             return;
         }
 
-        int spawnPointCount = EnemySpawner.Instance.SpawnPointCount;
-        if (spawnPointCount == 0)
-        {
-            Debug.LogError("[StageManager] 스폰 포인트가 없습니다.");
-            return;
-        }
-
-        int randomIndex = UnityEngine.Random.Range(0, spawnPointCount);
-        EnemyAI enemy = EnemySpawner.Instance.Spawn(enemyStatId, randomIndex);
-
+        EnemyAI enemy = EnemySpawner.Instance.SpawnAtRandomPoint(enemyStatId);
         if (enemy != null)
         {
             _aliveEnemies.Add(enemy);

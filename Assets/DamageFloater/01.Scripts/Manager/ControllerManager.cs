@@ -20,8 +20,22 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
     private float _cooldownTimer;
     private bool _autoFireEnabled = true;
 
-    public float CooldownMultiplier { get; set; } = 1f;
-    private float CurrentCooldown => _baseCooldown * CooldownMultiplier;
+    private float CurrentCooldown
+    {
+        get
+        {
+            float cooldownMultiplier = 1f;
+
+            if (_currentController is AdelFlyingSwordController adel)
+                cooldownMultiplier = adel.SwordStat?.Cooldown ?? 1f;
+            else if (_currentController is HypoSwordController hypo)
+                cooldownMultiplier = hypo.SwordStat?.Cooldown ?? 1f;
+            else if (_currentController is PixelSwordController pixel)
+                cooldownMultiplier = pixel.SwordStat?.Cooldown ?? 1f;
+
+            return _baseCooldown * cooldownMultiplier;
+        }
+    }
 
     // 내부 관리용 딕셔너리 (OCP: 새로운 검이 추가돼도 Dictionary에만 넣으면 됨)
     private Dictionary<SwordType, BaseSwordController> _controllers;
@@ -49,11 +63,6 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
             Fire();
             _cooldownTimer = 0f;
         }
-    }
-
-    public void SetCooldownMultiplier(float multiplier)
-    {
-        CooldownMultiplier = multiplier;
     }
 
     public void SetAutoFire(bool enabled)
