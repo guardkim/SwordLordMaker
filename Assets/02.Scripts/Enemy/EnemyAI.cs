@@ -9,12 +9,14 @@ public class EnemyAI : MonoBehaviour, IDamageable
         Idle,
         Chase,
         Attack,
+        Hit,
         Dead
     }
 
     private const float DAMAGE_FLOATER_HEIGHT_OFFSET = 2f;
     private const float HIT_VFX_HEIGHT_OFFSET = 1f;
     private const float DEATH_POOL_RETURN_DELAY = 3f;
+    private const float HIT_STUN_DURATION = 0.3f;
 
     [Header("▼ 참조")]
     [SerializeField] private Transform _target;
@@ -45,6 +47,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
     public bool IsDead => _currentState == State.Dead;
     public bool IsMoving => _currentState == State.Chase;
     public bool IsAttacking => _currentState == State.Attack;
+    public bool IsHit => _currentState == State.Hit;
 
     private void Awake()
     {
@@ -140,7 +143,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void Update()
     {
-        if (_currentState == State.Dead)
+        if (_currentState == State.Dead || _currentState == State.Hit)
         {
             return;
         }
@@ -166,6 +169,44 @@ public class EnemyAI : MonoBehaviour, IDamageable
         if (_currentHealth <= 0)
         {
             Die();
+        }
+        else
+        {
+            TriggerHitState();
+        }
+    }
+
+    private void TriggerHitState()
+    {
+        if (_currentState == State.Dead || _currentState == State.Hit) return;
+
+        _currentState = State.Hit;
+
+        if (_agent != null)
+        {
+            _agent.isStopped = true;
+        }
+
+        if (_enemyAnimation != null)
+        {
+            _enemyAnimation.TriggerHit();
+        }
+
+        StartCoroutine(RecoverFromHit());
+    }
+
+    private IEnumerator RecoverFromHit()
+    {
+        yield return new WaitForSeconds(HIT_STUN_DURATION);
+
+        if (_currentState == State.Hit)
+        {
+            _currentState = State.Idle;
+
+            if (_agent != null)
+            {
+                _agent.isStopped = false;
+            }
         }
     }
 

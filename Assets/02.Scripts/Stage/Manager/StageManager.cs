@@ -123,8 +123,9 @@ public class StageManager : DontDestroySingleton<StageManager>
         }
         else
         {
-            // 모든 스테이지 클리어
+            // 모든 스테이지 클리어 이벤트 발생 후 마지막 스테이지 반복
             OnAllStagesCleared?.Invoke();
+            StartStage(_maxStageId);
         }
     }
 

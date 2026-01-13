@@ -12,6 +12,7 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector3 _moveDirection;
     private CharacterController _controller;
+    private bool _isEnabled = true;
 
     public Vector3 MoveDirection => _moveDirection;
     public bool IsMoving => _moveDirection.magnitude > MOVING_THRESHOLD;
@@ -28,9 +29,25 @@ public class PlayerMovement : MonoBehaviour
 
     private void Update()
     {
+        if (!_isEnabled)
+        {
+            _moveDirection = Vector3.zero;
+            return;
+        }
+
         HandleInput();
         Move();
         Rotate();
+    }
+
+    public void SetEnabled(bool enabled)
+    {
+        _isEnabled = enabled;
+
+        if (!enabled)
+        {
+            _moveDirection = Vector3.zero;
+        }
     }
 
     private void HandleInput()

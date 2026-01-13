@@ -8,6 +8,9 @@ public class PlayerAnimation : MonoBehaviour
 
     [Header("▼ 애니메이션 파라미터")]
     [SerializeField] private string _speedParam = "Speed";
+    [SerializeField] private string _isDeadParam = "IsDead";
+
+    private bool _isDead;
 
     private void Awake()
     {
@@ -24,6 +27,8 @@ public class PlayerAnimation : MonoBehaviour
 
     private void Update()
     {
+        if (_isDead) return;
+
         UpdateAnimationParameters();
     }
 
@@ -33,5 +38,23 @@ public class PlayerAnimation : MonoBehaviour
 
         float speed = _movement.GetCurrentSpeed();
         _animator.SetFloat(_speedParam, speed);
+    }
+
+    public void Die()
+    {
+        if (_animator == null || _isDead) return;
+
+        _isDead = true;
+        _animator.SetBool(_isDeadParam, true);
+    }
+
+    public void Revive()
+    {
+        if (_animator == null || !_isDead) return;
+
+        _isDead = false;
+        _animator.SetBool(_isDeadParam, false);
+        _animator.Rebind();
+        _animator.Update(0f);
     }
 }
