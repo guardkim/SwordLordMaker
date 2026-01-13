@@ -19074,6 +19074,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EffectManager
   _hitVfxPrefab: {fileID: 2046140665488341963, guid: 9d292543345e17f47a88af867d7eabbd, type: 3}
   _vfxLifetime: 1
+  _poolSize: 20
 --- !u!1001 &1237706742
 PrefabInstance:
   m_ObjectHideFlags: 0
