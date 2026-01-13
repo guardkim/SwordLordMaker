@@ -41,6 +41,14 @@ public class EnemyAnimation : MonoBehaviour
     {
         if (_animator == null || _enemyAI == null) return;
 
+        // Hit 상태에서는 이동/공격 애니메이션 즉시 중단
+        if (_enemyAI.IsHit)
+        {
+            _animator.SetBool(_isMovingParam, false);
+            _animator.SetBool(_isAttackingParam, false);
+            return;
+        }
+
         _animator.SetBool(_isMovingParam, _enemyAI.IsMoving);
         _animator.SetBool(_isAttackingParam, _enemyAI.IsAttacking);
     }

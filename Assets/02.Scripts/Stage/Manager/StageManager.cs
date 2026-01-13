@@ -131,7 +131,20 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     public void RestartCurrentStage()
     {
-        // 현재 스폰된 모든 Enemy 제거
+        ClearAllEnemies();
+        StopAllCoroutines();
+        StartStage(_currentStageId);
+    }
+
+    public void RestartFromStage(int stageId)
+    {
+        ClearAllEnemies();
+        StopAllCoroutines();
+        StartStage(stageId);
+    }
+
+    private void ClearAllEnemies()
+    {
         foreach (var enemy in _aliveEnemies.ToArray())
         {
             if (enemy != null)
@@ -140,8 +153,5 @@ public class StageManager : DontDestroySingleton<StageManager>
             }
         }
         _aliveEnemies.Clear();
-
-        StopAllCoroutines();
-        StartStage(_currentStageId);
     }
 }

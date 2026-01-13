@@ -17,6 +17,8 @@ public class EnemyAI : MonoBehaviour, IDamageable
     private const float HIT_VFX_HEIGHT_OFFSET = 1f;
     private const float DEATH_POOL_RETURN_DELAY = 3f;
     private const float HIT_STUN_DURATION = 0.3f;
+    private const float KNOCKBACK_DISTANCE = 0.5f;
+    private const float KNOCKBACK_DURATION = 0.15f;
 
     [Header("▼ 참조")]
     [SerializeField] private Transform _target;
@@ -182,9 +184,11 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         _currentState = State.Hit;
 
-        if (_agent != null)
+        if (_agent != null && _agent.isOnNavMesh)
         {
             _agent.isStopped = true;
+            _agent.velocity = Vector3.zero;
+            _agent.ResetPath();
         }
 
         if (_enemyAnimation != null)
@@ -192,7 +196,43 @@ public class EnemyAI : MonoBehaviour, IDamageable
             _enemyAnimation.TriggerHit();
         }
 
+        StartCoroutine(ApplyKnockback());
         StartCoroutine(RecoverFromHit());
+    }
+
+    private IEnumerator ApplyKnockback()
+    {
+        // 바라보는 방향의 반대(뒤쪽)로 넉백
+        Vector3 knockbackDirection = -transform.forward;
+        knockbackDirection.y = 0f;
+
+        Vector3 startPosition = transform.position;
+        Vector3 targetPosition = startPosition + knockbackDirection * KNOCKBACK_DISTANCE;
+
+        // NavMesh 위의 유효한 위치인지 확인
+        if (NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, KNOCKBACK_DISTANCE, NavMesh.AllAreas))
+        {
+            targetPosition = hit.position;
+        }
+        else
+        {
+            yield break;
+        }
+
+        float elapsed = 0f;
+        while (elapsed < KNOCKBACK_DURATION)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / KNOCKBACK_DURATION;
+
+            // EaseOut 효과로 자연스러운 넉백
+            t = 1f - (1f - t) * (1f - t);
+
+            transform.position = Vector3.Lerp(startPosition, targetPosition, t);
+            yield return null;
+        }
+
+        transform.position = targetPosition;
     }
 
     private IEnumerator RecoverFromHit()
