@@ -1,8 +1,12 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
+    private const float RESPAWN_DELAY = 5f;
+    private const int RESPAWN_STAGE_ID = 1;
+
     [Header("▼ 체력 설정")]
     [SerializeField] private int _maxHealth = 100;
 
@@ -78,6 +82,23 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         // 사망 이벤트 발생 (게임 오버 처리 등 외부에서 구독)
         OnDeath?.Invoke();
+
+        // 5초 후 부활 및 스테이지 리셋
+        StartCoroutine(RespawnAfterDelay());
+    }
+
+    private IEnumerator RespawnAfterDelay()
+    {
+        yield return new WaitForSeconds(RESPAWN_DELAY);
+
+        // 스테이지 1-1로 리셋
+        if (StageManager.Instance != null)
+        {
+            StageManager.Instance.RestartFromStage(RESPAWN_STAGE_ID);
+        }
+
+        // 체력 가득 채우고 부활
+        Revive(_maxHealth);
     }
 
     public void Revive(int healthAmount = -1)
