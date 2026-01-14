@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Numerics;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -43,7 +44,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     // DB에서 로드한 스탯
     private EnemyStat _stat;
-    private int _currentHealth;
+    private BigInteger _currentHealth;
 
     public State CurrentState => _currentState;
     public float Speed => _agent != null ? _agent.velocity.magnitude : 0f;
@@ -104,7 +105,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         _currentState = State.Idle;
         _previousState = State.Idle;
         _stat = null;
-        _currentHealth = 0;
+        _currentHealth = BigInteger.Zero;
         _lastUpdateTime = 0f;
         _lastAttackTime = 0f;
 
@@ -162,15 +163,20 @@ public class EnemyAI : MonoBehaviour, IDamageable
         ExecuteState(distanceToTarget);
     }
 
-    public void TakeDamage(int damage, bool isCrit)
+    public void TakeDamage(BigInteger damage, bool isCrit)
     {
         if (_currentState == State.Dead) return;
 
         _currentHealth -= damage;
+        if (_currentHealth < BigInteger.Zero)
+        {
+            _currentHealth = BigInteger.Zero;
+        }
+
         ShowDamageEffects(damage, isCrit);
         UpdateHealthBar();
 
-        if (_currentHealth <= 0)
+        if (_currentHealth <= BigInteger.Zero)
         {
             Die();
         }
@@ -259,12 +265,15 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
     }
 
-    private void ShowDamageEffects(int damage, bool isCrit)
+    private void ShowDamageEffects(BigInteger damage, bool isCrit)
     {
         if (DamageFloaterManager.Instance != null)
         {
+            // BigInteger를 표시용으로 변환 (DamageFloater가 int 사용 시)
+            // 큰 숫자는 축약 표기 사용 권장 (예: 1.5M, 2.3B)
+            int displayDamage = damage > int.MaxValue ? int.MaxValue : (int)damage;
             DamageFloaterManager.Instance.ShowDamage(
-                DamageStyle.Basic, damage, GetDamageFloaterPosition(), isCrit);
+                DamageStyle.Basic, displayDamage, GetDamageFloaterPosition(), isCrit);
         }
 
         if (EffectManager.Instance != null)

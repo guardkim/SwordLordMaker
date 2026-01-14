@@ -57,7 +57,7 @@ public class PlayerUpgradeLevels
                 }
             }
         }
-        catch (Exception e)
+        catch (ArgumentException  e)
         {
             // JSON 파싱 실패 시 빈 레벨 반환
             UnityEngine.Debug.LogError($"[PlayerUpgradeLevels] JSON 파싱에 실패했습니다. 오류: {e.Message}");

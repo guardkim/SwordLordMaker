@@ -1,30 +1,33 @@
+using System.Numerics;
 using UnityEngine;
 
-public interface IDamageable
-{
-    public void TakeDamage(int damage, bool isCrit);
-}
 public class DummyEnemy : MonoBehaviour, IDamageable
 {
-    [SerializeField] private float _maxHealth = 100f;
+    [SerializeField] private string _maxHealthString = "100";
     [SerializeField] private bool _randomMove = true;
-    
-    private float _currentHealth;
+
+    private BigInteger _maxHealth;
+    private BigInteger _currentHealth;
     private float _directionChangeTimer;
     
     private void Start()
     {
+        _maxHealth = BigInteger.Parse(_maxHealthString);
         _currentHealth = _maxHealth;
     }
-    
-    public void TakeDamage(int damage, bool isCrit)
+
+    public void TakeDamage(BigInteger damage, bool isCrit)
     {
         _currentHealth -= damage;
+        if (_currentHealth < BigInteger.Zero)
+        {
+            _currentHealth = BigInteger.Zero;
+        }
         
         // 피격 이펙트 (깜빡임)
         StartCoroutine(FlashEffect());
         
-        if (_currentHealth <= 0)
+        if (_currentHealth <= BigInteger.Zero)
         {
             Die();
         }
