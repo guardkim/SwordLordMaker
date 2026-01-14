@@ -1,5 +1,8 @@
 using System.Collections;
+using System.Numerics;
 using UnityEngine;
+using Vector2 = UnityEngine.Vector2;
+using Vector3 = UnityEngine.Vector3;
 
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(SpriteRenderer))]
@@ -238,5 +241,9 @@ public class OrangeMushroomAnimation : MonoBehaviour, IDamageable
             _minX = minScreen.x + _spriteHalfWidth;
             _maxX = maxScreen.x - _spriteHalfWidth;
         }
+    }
+
+    public void TakeDamage(BigInteger damage, bool isCrit)
+    {
     }
 }

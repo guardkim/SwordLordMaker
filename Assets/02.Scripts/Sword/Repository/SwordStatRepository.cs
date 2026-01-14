@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Numerics;
 using BansheeGz.BGDatabase;
 using UnityEngine;
 
@@ -60,12 +61,23 @@ public class SwordStatRepository : ISwordStatRepository
 
     private SwordStat CreateStatFromEntity(BGEntity entity)
     {
+        string attackDamageStr = entity.Get<string>(AttackDamageField);
+        string critDamageStr = entity.Get<string>(CritDamageField);
+        
+        BigInteger attackDamage = string.IsNullOrEmpty(attackDamageStr) 
+            ? BigInteger.Zero 
+            : BigInteger.Parse(attackDamageStr);
+
+        BigInteger critDamage = string.IsNullOrEmpty(critDamageStr) 
+            ? BigInteger.Zero 
+            : BigInteger.Parse(critDamageStr);
+        
         return new SwordStat(
             entity.Name,
-            entity.Get<int>(AttackDamageField),
+            attackDamage,
             entity.Get<float>(CooldownField),
             entity.Get<float>(MoveSpeedField),
-            entity.Get<float>(CritDamageField),
+            critDamage,
             entity.Get<float>(CritChanceField)
         );
     }

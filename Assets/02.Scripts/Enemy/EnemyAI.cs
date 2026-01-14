@@ -2,6 +2,8 @@ using System.Collections;
 using System.Numerics;
 using UnityEngine;
 using UnityEngine.AI;
+using Quaternion = UnityEngine.Quaternion;
+using Vector3 = UnityEngine.Vector3;
 
 public class EnemyAI : MonoBehaviour, IDamageable
 {

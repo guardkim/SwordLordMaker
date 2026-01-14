@@ -1,11 +1,12 @@
+using System.Numerics;
 using UnityEngine;
 
 public record UpgradeData(
     string Id,
     string DisplayName,
     int BaseCost,
-    float CostMultiplier,
-    float BonusPerLevel,
+    float CostMultiplier, 
+    string BonusPerLevel,
     int MaxLevel
 )
 {
@@ -16,9 +17,13 @@ public record UpgradeData(
 
     public float GetTotalBonus(int level)
     {
-        return BonusPerLevel * level;
+        return float.Parse(BonusPerLevel) * level;
     }
-
+    public BigInteger GetTotalBigIntBonus(int level)
+    {
+        BigInteger bonus = BigInteger.Parse(BonusPerLevel);
+        return bonus * level;
+    }
     public bool IsMaxLevel(int currentLevel)
     {
         return currentLevel >= MaxLevel;

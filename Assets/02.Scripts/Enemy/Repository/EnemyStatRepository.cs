@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Numerics;
 using BansheeGz.BGDatabase;
 using UnityEngine;
 
@@ -63,12 +64,20 @@ public class EnemyStatRepository : IEnemyStatRepository
 
     private EnemyStat CreateStatFromEntity(BGEntity entity)
     {
+        string maxHpStr = entity.Get<string>(MaxHPField);
+        string atkStr = entity.Get<string>(AttackDamageField);
+        string goldStr = entity.Get<string>(GoldRewardField);
+
+        BigInteger maxHP = string.IsNullOrEmpty(maxHpStr) ? BigInteger.Zero : BigInteger.Parse(maxHpStr);
+        BigInteger attackDamage = string.IsNullOrEmpty(atkStr) ? BigInteger.Zero : BigInteger.Parse(atkStr);
+        BigInteger goldReward = string.IsNullOrEmpty(goldStr) ? BigInteger.Zero : BigInteger.Parse(goldStr);
+        
         return new EnemyStat(
             entity.Name,  // BGDatabase 기본 name 필드를 Id로 사용
-            entity.Get<int>(MaxHPField),
-            entity.Get<int>(AttackDamageField),
+            maxHP,
+            attackDamage,
             entity.Get<float>(MoveSpeedField),
-            entity.Get<int>(GoldRewardField)
+            goldReward
         );
     }
 }

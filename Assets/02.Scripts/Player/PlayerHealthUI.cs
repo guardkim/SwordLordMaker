@@ -1,3 +1,4 @@
+using System.Numerics;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,11 +31,17 @@ public class PlayerHealthUI : MonoBehaviour
         }
     }
 
-    private void UpdateHealthUI(int current, int max)
+    private void UpdateHealthUI(BigInteger current, BigInteger max)
     {
+        if (max <= 0)
+        {
+            if (_healthFillImage != null) _healthFillImage.fillAmount = 0f; 
+            return;
+        }
+        
         if (_healthFillImage != null)
         {
-            _healthFillImage.fillAmount = (float)current / max;
+            _healthFillImage.fillAmount = (float)(current * 1000 / max) / 1000f;
         }
     }
 }

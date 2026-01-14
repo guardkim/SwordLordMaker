@@ -115,7 +115,7 @@ public class UpgradeRepository : IUpgradeRepository
             entity.Get<string>(DisplayNameField) ?? entity.Name,
             entity.Get<int>(BaseCostField),
             entity.Get<float>(CostMultiplierField),
-            entity.Get<float>(BonusPerLevelField),
+            entity.Get<string>(BonusPerLevelField),
             entity.Get<int>(MaxLevelField)
         );
     }
