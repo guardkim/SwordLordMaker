@@ -11,33 +11,26 @@ public class GameManager : DontDestroySingleton<GameManager>
 
     public event Action OnPlayerDeath;
     public event Action OnPlayerRevive;
+    public event Action<int> OnRequestStageRestart;
 
-    protected override void Initialize()
+    private void OnDestroy()
     {
-        FindPlayer();
+        UnsubscribeFromPlayer();
     }
 
-    private void FindPlayer()
+    public void RegisterPlayer(PlayerHealth playerHealth)
     {
-        if (_playerHealth != null) return;
+        UnsubscribeFromPlayer();
 
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-        {
-            _playerHealth = player.GetComponent<PlayerHealth>();
-            SubscribeToPlayerEvents();
-        }
-    }
+        _playerHealth = playerHealth;
 
-    private void SubscribeToPlayerEvents()
-    {
         if (_playerHealth != null)
         {
             _playerHealth.OnDeath += HandlePlayerDeath;
         }
     }
 
-    private void OnDestroy()
+    private void UnsubscribeFromPlayer()
     {
         if (_playerHealth != null)
         {
@@ -55,11 +48,8 @@ public class GameManager : DontDestroySingleton<GameManager>
     {
         yield return new WaitForSeconds(RESPAWN_DELAY);
 
-        // 스테이지 리셋
-        if (StageManager.Instance != null)
-        {
-            StageManager.Instance.RestartFromStage(RESPAWN_STAGE_ID);
-        }
+        // 스테이지 리셋 요청 이벤트 발생
+        OnRequestStageRestart?.Invoke(RESPAWN_STAGE_ID);
 
         // 플레이어 부활
         if (_playerHealth != null)
@@ -68,16 +58,5 @@ public class GameManager : DontDestroySingleton<GameManager>
         }
 
         OnPlayerRevive?.Invoke();
-    }
-
-    public void RegisterPlayer(PlayerHealth playerHealth)
-    {
-        if (_playerHealth != null)
-        {
-            _playerHealth.OnDeath -= HandlePlayerDeath;
-        }
-
-        _playerHealth = playerHealth;
-        SubscribeToPlayerEvents();
     }
 }

@@ -1,28 +1,32 @@
 using System;
+using System.Numerics;
 using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [Header("▼ 체력 설정")]
-    [SerializeField] private int _baseMaxHealth = 100;
+    [SerializeField] private string _baseMaxHealthString = "100";
 
     [Header("▼ 참조")]
     [SerializeField] private PlayerAnimation _playerAnimation;
     [SerializeField] private PlayerMovement _playerMovement;
 
-    private int _maxHealth;
-    private int _currentHealth;
+    private BigInteger _baseMaxHealth;
+    private BigInteger _maxHealth;
+    private BigInteger _currentHealth;
     private bool _isDead;
 
-    public int MaxHealth => _maxHealth;
-    public int CurrentHealth => _currentHealth;
+    public BigInteger MaxHealth => _maxHealth;
+    public BigInteger CurrentHealth => _currentHealth;
     public bool IsDead => _isDead;
 
-    public event Action<int, int> OnHealthChanged;  // (current, max)
+    public event Action<BigInteger, BigInteger> OnHealthChanged;  // (current, max)
     public event Action OnDeath;
 
     private void Awake()
     {
+        _baseMaxHealth = BigInteger.Parse(_baseMaxHealthString);
+
         if (_playerAnimation == null)
         {
             _playerAnimation = GetComponent<PlayerAnimation>();
@@ -40,6 +44,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         _currentHealth = _maxHealth;
         _isDead = false;
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+
+        // GameManager에 등록 (의존성 주입)
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.RegisterPlayer(this);
+        }
 
         // 강화 시 스탯 갱신 구독
         if (UpgradeManager.Instance != null)
@@ -67,7 +77,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void ApplyUpgradeBonus()
     {
-        int bonus = 0;
+        BigInteger bonus = BigInteger.Zero;
         if (UpgradeManager.Instance != null)
         {
             bonus = UpgradeManager.Instance.GetPlayerHealthBonus();
@@ -75,7 +85,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         _maxHealth = _baseMaxHealth + bonus;
     }
 
-    public void TakeDamage(int damage, bool isCrit)
+    public void TakeDamage(BigInteger damage, bool isCrit)
     {
         if (IsDead)
         {
@@ -83,11 +93,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         _currentHealth -= damage;
-        _currentHealth = Mathf.Max(0, _currentHealth);
+        if (_currentHealth < BigInteger.Zero)
+        {
+            _currentHealth = BigInteger.Zero;
+        }
 
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
 
-        if (_currentHealth <= 0)
+        if (_currentHealth <= BigInteger.Zero)
         {
             Die();
         }
@@ -115,13 +128,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         OnDeath?.Invoke();
     }
 
-    public void Revive(int healthAmount = -1)
+    public void Revive()
     {
         if (!_isDead) return;
 
         _isDead = false;
-        _currentHealth = healthAmount > 0 ? healthAmount : _maxHealth;
-        _currentHealth = Mathf.Min(_currentHealth, _maxHealth);
+        _currentHealth = _maxHealth;
 
         // 이동 활성화
         if (_playerMovement != null)
@@ -138,7 +150,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 
-    public void Heal(int amount)
+    public void Heal(BigInteger amount)
     {
         if (IsDead)
         {
@@ -146,12 +158,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         _currentHealth += amount;
-        _currentHealth = Mathf.Min(_currentHealth, _maxHealth);
+        if (_currentHealth > _maxHealth)
+        {
+            _currentHealth = _maxHealth;
+        }
 
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 
-    public void SetMaxHealth(int maxHealth, bool healToFull = false)
+    public void SetMaxHealth(BigInteger maxHealth, bool healToFull = false)
     {
         _maxHealth = maxHealth;
 
@@ -159,9 +174,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         {
             _currentHealth = _maxHealth;
         }
-        else
+        else if (_currentHealth > _maxHealth)
         {
-            _currentHealth = Mathf.Min(_currentHealth, _maxHealth);
+            _currentHealth = _maxHealth;
         }
 
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);

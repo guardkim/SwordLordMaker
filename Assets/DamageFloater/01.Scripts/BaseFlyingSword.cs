@@ -1,4 +1,6 @@
+using System.Numerics;
 using UnityEngine;
+using Vector3 = UnityEngine.Vector3;
 
 public abstract class BaseFlyingSword : MonoBehaviour
 {
@@ -32,10 +34,9 @@ public abstract class BaseFlyingSword : MonoBehaviour
             }
 
             bool isCritical = Random.value < _stat.CritChance;
-            int finalDamage = isCritical
-                ? Mathf.RoundToInt(_stat.AttackDamage * _stat.CritDamage)
+            BigInteger finalDamage = isCritical
+                ? _stat.AttackDamage * _stat.CritDamage
                 : _stat.AttackDamage;
-
             target.TakeDamage(finalDamage, isCritical);
             return true;
         }
@@ -54,8 +55,8 @@ public abstract class BaseFlyingSword : MonoBehaviour
             }
 
             bool isCritical = Random.value < _stat.CritChance;
-            int finalDamage = isCritical
-                ? Mathf.RoundToInt(_stat.AttackDamage * _stat.CritDamage)
+            BigInteger finalDamage = isCritical
+                ? _stat.AttackDamage * _stat.CritDamage
                 : _stat.AttackDamage;
 
             target.TakeDamage(finalDamage, isCritical);

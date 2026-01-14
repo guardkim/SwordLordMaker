@@ -40,10 +40,38 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     private void Start()
     {
+        SubscribeToGameManager();
+
         if (_autoStartOnAwake)
         {
             StartGame();
         }
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeFromGameManager();
+    }
+
+    private void SubscribeToGameManager()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnRequestStageRestart += HandleStageRestartRequest;
+        }
+    }
+
+    private void UnsubscribeFromGameManager()
+    {
+        if (GameManager.Instance != null)
+        {
+            GameManager.Instance.OnRequestStageRestart -= HandleStageRestartRequest;
+        }
+    }
+
+    private void HandleStageRestartRequest(int stageId)
+    {
+        RestartFromStage(stageId);
     }
 
     public void StartGame()

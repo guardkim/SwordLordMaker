@@ -1,6 +1,9 @@
 using System;
+using System.Numerics;
 using UnityEngine;
+using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
+using Vector3 = UnityEngine.Vector3;
 
 public class PixelFlyingSword : BaseFlyingSword
 {
@@ -189,9 +192,9 @@ public class PixelFlyingSword : BaseFlyingSword
         if (target != null)
         {
             bool isCritical = Random.value < (_stat?.CritChance ?? 0.5f);
-            int baseDamage = _stat?.AttackDamage ?? 10;
-            int finalDamage = isCritical
-                ? Mathf.RoundToInt(baseDamage * (_stat?.CritDamage ?? 2f))
+            BigInteger baseDamage = _stat?.AttackDamage ?? 10;
+            BigInteger finalDamage = isCritical
+                ? baseDamage * (_stat?.CritDamage ?? 2)
                 : baseDamage;
             target.TakeDamage(finalDamage, isCritical);
             hasHit = true;

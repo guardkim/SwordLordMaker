@@ -65,7 +65,18 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
     {
         return _playerLevels.GetLevel(upgradeId);
     }
+    public BigInteger GetBigIntBonus(string upgradeId)
+    {
+        UpgradeData data = _repository.GetUpgradeData(upgradeId);
+        if (data == null) return BigInteger.Zero; // 0 대신 BigInteger.Zero 반환
 
+        int level = _playerLevels.GetLevel(upgradeId);
+    
+        // data.GetTotalBonus도 내부적으로 BigInteger를 반환하도록 수정되어야 합니다!
+        // 만약 data가 float만 뱉는다면 여기서 (BigInteger)캐스팅을 해야 하지만, 
+        // 근본적으로는 data 쪽도 BigInteger를 지원해야 합니다.
+        return data.GetTotalBigIntBonus(level); 
+    }
     public float GetBonus(string upgradeId)
     {
         UpgradeData data = _repository.GetUpgradeData(upgradeId);
@@ -120,10 +131,10 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
     {
         return baseStat with
         {
-            AttackDamage = baseStat.AttackDamage + (int)GetBonus(UpgradeId.SwordAttackDamage),
+            AttackDamage = baseStat.AttackDamage + GetBigIntBonus(UpgradeId.SwordAttackDamage),
             Cooldown = Mathf.Max(0.1f, baseStat.Cooldown - GetBonus(UpgradeId.SwordCooldown)),
             MoveSpeed = baseStat.MoveSpeed + GetBonus(UpgradeId.SwordMoveSpeed),
-            CritDamage = baseStat.CritDamage + GetBonus(UpgradeId.SwordCritDamage),
+            CritDamage = baseStat.CritDamage + GetBigIntBonus(UpgradeId.SwordCritDamage),
             CritChance = Mathf.Min(1f, baseStat.CritChance + GetBonus(UpgradeId.SwordCritChance))
         };
     }

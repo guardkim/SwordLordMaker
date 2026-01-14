@@ -1,3 +1,4 @@
+using System.Numerics;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -87,8 +88,8 @@ public class UpgradeSlotUI : MonoBehaviour
         int currentLevel = UpgradeManager.Instance.GetLevel(_upgradeId);
         int maxLevel = _upgradeData.MaxLevel;
         int cost = _upgradeData.GetCost(currentLevel);
-        float totalBonus = _upgradeData.GetTotalBonus(currentLevel);
-        float nextBonus = _upgradeData.BonusPerLevel;
+        BigInteger totalBonus = _upgradeData.GetTotalBigIntBonus(currentLevel);
+        BigInteger nextBonus = BigInteger.Parse(_upgradeData.BonusPerLevel);
         bool isMaxLevel = currentLevel >= maxLevel;
 
         // 이름
