@@ -8,12 +8,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private const int RESPAWN_STAGE_ID = 1;
 
     [Header("▼ 체력 설정")]
-    [SerializeField] private int _maxHealth = 100;
+    [SerializeField] private int _baseMaxHealth = 100;
 
     [Header("▼ 참조")]
     [SerializeField] private PlayerAnimation _playerAnimation;
     [SerializeField] private PlayerMovement _playerMovement;
 
+    private int _maxHealth;
     private int _currentHealth;
     private bool _isDead;
 
@@ -39,9 +40,43 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Start()
     {
+        ApplyUpgradeBonus();
         _currentHealth = _maxHealth;
         _isDead = false;
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+
+        // 강화 시 스탯 갱신 구독
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+        }
+    }
+
+    private void OnUpgradeChanged(string upgradeId, int newLevel)
+    {
+        if (upgradeId == UpgradeId.PlayerHealth)
+        {
+            ApplyUpgradeBonus();
+            OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
+        }
+    }
+
+    private void ApplyUpgradeBonus()
+    {
+        int bonus = 0;
+        if (UpgradeManager.Instance != null)
+        {
+            bonus = UpgradeManager.Instance.GetPlayerHealthBonus();
+        }
+        _maxHealth = _baseMaxHealth + bonus;
     }
 
     public void TakeDamage(int damage, bool isCrit)

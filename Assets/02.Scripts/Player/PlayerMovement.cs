@@ -6,10 +6,11 @@ public class PlayerMovement : MonoBehaviour
     private const float MOVING_THRESHOLD = 0.1f;
 
     [Header("▼ 이동 설정")]
-    [SerializeField] private float _moveSpeed = 5f;
+    [SerializeField] private float _baseMoveSpeed = 5f;
     [SerializeField] private float _rotationSpeed = 10f;
     [SerializeField] private float _quarterViewYaw = 45f;
 
+    private float _moveSpeed;
     private Vector3 _moveDirection;
     private CharacterController _controller;
     private bool _isEnabled = true;
@@ -25,6 +26,42 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         _controller = GetComponent<CharacterController>();
+    }
+
+    private void Start()
+    {
+        ApplyUpgradeBonus();
+
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+        }
+    }
+
+    private void OnUpgradeChanged(string upgradeId, int newLevel)
+    {
+        if (upgradeId == UpgradeId.PlayerMoveSpeed)
+        {
+            ApplyUpgradeBonus();
+        }
+    }
+
+    private void ApplyUpgradeBonus()
+    {
+        float bonus = 0f;
+        if (UpgradeManager.Instance != null)
+        {
+            bonus = UpgradeManager.Instance.GetPlayerMoveSpeedBonus();
+        }
+        _moveSpeed = _baseMoveSpeed + bonus;
     }
 
     private void Update()
