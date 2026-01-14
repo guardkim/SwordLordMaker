@@ -4,7 +4,6 @@ public class EnemyAnimation : MonoBehaviour
 {
     [Header("▼ 참조")]
     [SerializeField] private Animator _animator;
-    [SerializeField] private EnemyAI _enemyAI;
 
     [Header("▼ 애니메이션 파라미터")]
     [SerializeField] private string _isMovingParam = "IsMoving";
@@ -20,37 +19,25 @@ public class EnemyAnimation : MonoBehaviour
         {
             _animator = GetComponent<Animator>();
         }
-
-        if (_enemyAI == null)
-        {
-            _enemyAI = GetComponent<EnemyAI>();
-        }
     }
 
-    private void Update()
+    public void SetMoving(bool isMoving)
     {
-        if (_isDead)
-        {
-            return;
-        }
-
-        UpdateAnimationParameters();
+        if (_animator == null || _isDead) return;
+        _animator.SetBool(_isMovingParam, isMoving);
     }
 
-    private void UpdateAnimationParameters()
+    public void SetAttacking(bool isAttacking)
     {
-        if (_animator == null || _enemyAI == null) return;
+        if (_animator == null || _isDead) return;
+        _animator.SetBool(_isAttackingParam, isAttacking);
+    }
 
-        // Hit 상태에서는 이동/공격 애니메이션 즉시 중단
-        if (_enemyAI.IsHit)
-        {
-            _animator.SetBool(_isMovingParam, false);
-            _animator.SetBool(_isAttackingParam, false);
-            return;
-        }
-
-        _animator.SetBool(_isMovingParam, _enemyAI.IsMoving);
-        _animator.SetBool(_isAttackingParam, _enemyAI.IsAttacking);
+    public void StopAllActions()
+    {
+        if (_animator == null) return;
+        _animator.SetBool(_isMovingParam, false);
+        _animator.SetBool(_isAttackingParam, false);
     }
 
     public void TriggerHit()

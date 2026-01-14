@@ -37,6 +37,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private NavMeshAgent _agent;
     private State _currentState = State.Idle;
+    private State _previousState = State.Idle;
     private float _lastUpdateTime;
     private float _lastAttackTime;
 
@@ -101,6 +102,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
     public void ResetForPool()
     {
         _currentState = State.Idle;
+        _previousState = State.Idle;
         _stat = null;
         _currentHealth = 0;
         _lastUpdateTime = 0f;
@@ -193,6 +195,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         if (_enemyAnimation != null)
         {
+            _enemyAnimation.StopAllActions();
             _enemyAnimation.TriggerHit();
         }
 
@@ -233,6 +236,12 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
 
         transform.position = targetPosition;
+
+        // NavMeshAgent 위치 동기화
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.Warp(targetPosition);
+        }
     }
 
     private IEnumerator RecoverFromHit()
@@ -336,17 +345,47 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void UpdateState(float distanceToTarget)
     {
+        State newState;
+
         if (distanceToTarget <= _attackRange)
         {
-            _currentState = State.Attack;
+            newState = State.Attack;
         }
         else if (distanceToTarget <= _chaseRange)
         {
-            _currentState = State.Chase;
+            newState = State.Chase;
         }
         else
         {
-            _currentState = State.Idle;
+            newState = State.Idle;
+        }
+
+        if (newState != _currentState)
+        {
+            _previousState = _currentState;
+            _currentState = newState;
+            OnStateChanged();
+        }
+    }
+
+    private void OnStateChanged()
+    {
+        if (_enemyAnimation == null) return;
+
+        switch (_currentState)
+        {
+            case State.Idle:
+                _enemyAnimation.SetMoving(false);
+                _enemyAnimation.SetAttacking(false);
+                break;
+            case State.Chase:
+                _enemyAnimation.SetMoving(true);
+                _enemyAnimation.SetAttacking(false);
+                break;
+            case State.Attack:
+                _enemyAnimation.SetMoving(false);
+                _enemyAnimation.SetAttacking(true);
+                break;
         }
     }
 
