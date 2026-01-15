@@ -113,7 +113,7 @@ public class UpgradeRepository : IUpgradeRepository
         return new UpgradeData(
             entity.Name,
             entity.Get<string>(DisplayNameField) ?? entity.Name,
-            entity.Get<int>(BaseCostField),
+            entity.Get<string>(BaseCostField) ?? "100",
             entity.Get<float>(CostMultiplierField),
             entity.Get<string>(BonusPerLevelField),
             entity.Get<int>(MaxLevelField)

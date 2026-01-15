@@ -1,7 +1,10 @@
 using System;
+using System.Numerics;
 using UnityEngine;
 using System.Collections.Generic;
+using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
+using Vector3 = UnityEngine.Vector3;
 
 public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
 {
@@ -72,6 +75,24 @@ public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
         {
             floater.ApplyOption(MultiFloaterOption);
             floater.ShowDamage(damages.ToArray(), style, isCrit);
+        }
+    }
+
+    // -----------------------------------------------------------
+    // 4. BigInteger 데미지 (무한 스케일링 지원)
+    // -----------------------------------------------------------
+    public void ShowDamage(DamageStyle style, BigInteger damage, Vector3 spawnPoint, bool isCrit)
+    {
+        if (DamageFloaterPrefab == null) return;
+
+        GameObject obj = Instantiate(DamageFloaterPrefab, spawnPoint, Quaternion.identity);
+        DamageFloater floater = obj.GetComponent<DamageFloater>();
+
+        if (floater != null)
+        {
+            floater.ApplyOption(SingleFloaterOption);
+            string formattedDamage = CurrencyFormatter.FormatAbbreviated(damage);
+            floater.ShowFormattedDamage(formattedDamage, style, isCrit);
         }
     }
 }

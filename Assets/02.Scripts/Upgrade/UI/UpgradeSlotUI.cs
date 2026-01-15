@@ -87,9 +87,9 @@ public class UpgradeSlotUI : MonoBehaviour
 
         int currentLevel = UpgradeManager.Instance.GetLevel(_upgradeId);
         int maxLevel = _upgradeData.MaxLevel;
-        int cost = _upgradeData.GetCost(currentLevel);
+        BigInteger cost = _upgradeData.GetCost(currentLevel);
         BigInteger totalBonus = _upgradeData.GetTotalBigIntBonus(currentLevel);
-        BigInteger nextBonus = BigInteger.Parse(_upgradeData.BonusPerLevel);
+        BigInteger nextBonus = ParseBonusPerLevel(_upgradeData.BonusPerLevel);
         bool isMaxLevel = currentLevel >= maxLevel;
 
         // 이름
@@ -107,19 +107,21 @@ public class UpgradeSlotUI : MonoBehaviour
         // 비용
         if (_costText != null)
         {
-            _costText.text = isMaxLevel ? "-" : $"{cost:N0} G";
+            _costText.text = isMaxLevel ? "-" : $"{CurrencyFormatter.FormatAbbreviated(cost)} G";
         }
 
         // 보너스
         if (_bonusText != null)
         {
+            string totalBonusStr = CurrencyFormatter.FormatAbbreviated(totalBonus);
             if (isMaxLevel)
             {
-                _bonusText.text = $"+{totalBonus:F2}";
+                _bonusText.text = $"+{totalBonusStr}";
             }
             else
             {
-                _bonusText.text = $"+{totalBonus:F2} (+{nextBonus:F2})";
+                string nextBonusStr = CurrencyFormatter.FormatAbbreviated(nextBonus);
+                _bonusText.text = $"+{totalBonusStr} (+{nextBonusStr})";
             }
         }
 
@@ -131,7 +133,7 @@ public class UpgradeSlotUI : MonoBehaviour
         if (_upgradeButton == null || UpgradeManager.Instance == null) return;
 
         bool isMaxLevel = UpgradeManager.Instance.IsMaxLevel(_upgradeId);
-        int cost = UpgradeManager.Instance.GetCost(_upgradeId);
+        BigInteger cost = UpgradeManager.Instance.GetCost(_upgradeId);
         bool canAfford = CurrencyManager.Instance != null &&
                          CurrencyManager.Instance.Gold >= cost;
 
@@ -143,5 +145,20 @@ public class UpgradeSlotUI : MonoBehaviour
         if (UpgradeManager.Instance == null) return;
 
         UpgradeManager.Instance.TryUpgrade(_upgradeId);
+    }
+
+    private BigInteger ParseBonusPerLevel(string value)
+    {
+        if (BigInteger.TryParse(value, out BigInteger intBonus))
+        {
+            return intBonus;
+        }
+
+        if (double.TryParse(value, out double floatBonus))
+        {
+            return new BigInteger(floatBonus);
+        }
+
+        return BigInteger.Zero;
     }
 }

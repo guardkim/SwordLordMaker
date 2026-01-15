@@ -6,10 +6,10 @@ public class PlayerMovement : MonoBehaviour
     private const float MOVING_THRESHOLD = 0.1f;
 
     [Header("▼ 이동 설정")]
-    [SerializeField] private float _baseMoveSpeed = 5f;
     [SerializeField] private float _rotationSpeed = 10f;
     [SerializeField] private float _quarterViewYaw = 45f;
 
+    private float _baseMoveSpeed;
     private float _moveSpeed;
     private Vector3 _moveDirection;
     private CharacterController _controller;
@@ -26,6 +26,18 @@ public class PlayerMovement : MonoBehaviour
     private void Awake()
     {
         _controller = GetComponent<CharacterController>();
+
+        // PlayerStatManager에서 기본값 로드
+        if (PlayerStatManager.Instance != null)
+        {
+            _baseMoveSpeed = PlayerStatManager.Instance.BaseMoveSpeed;
+        }
+        else
+        {
+            // 폴백: Manager가 없으면 기본값 사용
+            _baseMoveSpeed = 5f;
+            Debug.LogWarning("[PlayerMovement] PlayerStatManager가 없어 기본값 사용");
+        }
     }
 
     private void Start()

@@ -34,9 +34,7 @@ public abstract class BaseFlyingSword : MonoBehaviour
             }
 
             bool isCritical = Random.value < _stat.CritChance;
-            BigInteger finalDamage = isCritical
-                ? _stat.AttackDamage * _stat.CritDamage
-                : _stat.AttackDamage;
+            BigInteger finalDamage = _stat.CalculateDamage(isCritical);
             target.TakeDamage(finalDamage, isCritical);
             return true;
         }
@@ -55,10 +53,7 @@ public abstract class BaseFlyingSword : MonoBehaviour
             }
 
             bool isCritical = Random.value < _stat.CritChance;
-            BigInteger finalDamage = isCritical
-                ? _stat.AttackDamage * _stat.CritDamage
-                : _stat.AttackDamage;
-
+            BigInteger finalDamage = _stat.CalculateDamage(isCritical);
             target.TakeDamage(finalDamage, isCritical);
             return true;
         }
