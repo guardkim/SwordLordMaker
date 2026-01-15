@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 
 public abstract class BaseSwordController : MonoBehaviour
@@ -35,7 +36,13 @@ public abstract class BaseSwordController : MonoBehaviour
     // --- 공통 유틸리티 ---
     protected GameObject[] FindEnemies()
     {
-        return GameObject.FindGameObjectsWithTag("Enemy");
+        return GameObject.FindGameObjectsWithTag("Enemy")
+            .Where(e =>
+            {
+                var enemy = e.GetComponent<EnemyAI>();
+                return enemy == null || !enemy.IsDead;
+            })
+            .ToArray();
     }
 
     protected Transform GetRandomEnemyTarget(GameObject[] enemies)

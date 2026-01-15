@@ -61,7 +61,17 @@ public class HypoFlyingSword : BaseFlyingSword
 
     private void Update()
     {
-        if (!TargetEnemy) 
+        // 타겟이 죽었으면 null 처리
+        if (TargetEnemy != null)
+        {
+            var enemy = TargetEnemy.GetComponent<EnemyAI>();
+            if (enemy != null && enemy.IsDead)
+            {
+                TargetEnemy = null;
+            }
+        }
+
+        if (!TargetEnemy)
         {
             Destroy(gameObject);
             return;
@@ -162,10 +172,7 @@ public class HypoFlyingSword : BaseFlyingSword
         if (target != null)
         {
             bool isCritical = Random.value < (_stat?.CritChance ?? 0.5f);
-            BigInteger baseDamage = _stat?.AttackDamage ?? 10;
-            BigInteger finalDamage = isCritical
-                ?baseDamage * (_stat?.CritDamage ?? 2)
-                : baseDamage;
+            BigInteger finalDamage = _stat?.CalculateDamage(isCritical) ?? new BigInteger(10);
             target.TakeDamage(finalDamage, isCritical);
             hasHit = true;
         }

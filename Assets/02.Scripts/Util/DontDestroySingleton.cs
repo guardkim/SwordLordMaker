@@ -14,10 +14,12 @@ public class DontDestroySingleton<T> : MonoBehaviour where T : DontDestroySingle
                 _instance = FindFirstObjectByType<T>();
                 if (_instance == null)
                 {
-                    _instance = new GameObject(nameof(T)).AddComponent<T>();
-                    // Initialize()는 Awake에서 호출됨
+                    _instance = new GameObject(typeof(T).Name).AddComponent<T>();
                 }
             }
+
+            // Awake 이전에 접근 시에도 초기화 보장
+            _instance.EnsureInitialized();
             return _instance;
         }
     }
@@ -33,16 +35,20 @@ public class DontDestroySingleton<T> : MonoBehaviour where T : DontDestroySingle
         {
             _instance = this as T;
             DontDestroyOnLoad(gameObject);
-
-            if (!_isInitialized)
-            {
-                _isInitialized = true;
-                Initialize();
-            }
+            EnsureInitialized();
         }
         else if (_instance != this)
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void EnsureInitialized()
+    {
+        if (!_isInitialized)
+        {
+            _isInitialized = true;
+            Initialize();
         }
     }
 

@@ -94,6 +94,16 @@ public class AdelFlyingSword : BaseFlyingSword
         }
         _currentLifeTime += Time.deltaTime;
 
+        // 타겟이 죽었으면 새 타겟 요청
+        if (TargetEnemy != null)
+        {
+            var enemy = TargetEnemy.GetComponent<EnemyAI>();
+            if (enemy != null && enemy.IsDead)
+            {
+                _controller?.RequestNewTarget(this);
+            }
+        }
+
         switch (_currentPhase)
         {
             case SwordPhase.Ejecting:

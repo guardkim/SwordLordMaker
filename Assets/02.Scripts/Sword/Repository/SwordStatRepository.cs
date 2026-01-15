@@ -62,22 +62,21 @@ public class SwordStatRepository : ISwordStatRepository
     private SwordStat CreateStatFromEntity(BGEntity entity)
     {
         string attackDamageStr = entity.Get<string>(AttackDamageField);
-        string critDamageStr = entity.Get<string>(CritDamageField);
-        
-        BigInteger attackDamage = string.IsNullOrEmpty(attackDamageStr) 
-            ? BigInteger.Zero 
+
+        BigInteger attackDamage = string.IsNullOrEmpty(attackDamageStr)
+            ? BigInteger.Zero
             : BigInteger.Parse(attackDamageStr);
 
-        BigInteger critDamage = string.IsNullOrEmpty(critDamageStr) 
-            ? BigInteger.Zero 
-            : BigInteger.Parse(critDamageStr);
-        
+        // CritDamage는 배율 (float, 기본 2.0 = 2배)
+        float critDamageMultiplier = entity.Get<float>(CritDamageField);
+        if (critDamageMultiplier <= 0f) critDamageMultiplier = 2.0f;
+
         return new SwordStat(
             entity.Name,
             attackDamage,
             entity.Get<float>(CooldownField),
             entity.Get<float>(MoveSpeedField),
-            critDamage,
+            critDamageMultiplier,
             entity.Get<float>(CritChanceField)
         );
     }

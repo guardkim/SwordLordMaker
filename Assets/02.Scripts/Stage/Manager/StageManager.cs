@@ -1,12 +1,13 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class StageManager : DontDestroySingleton<StageManager>
 {
-    [Header("▼ 설정")]
+    [Header("Settings")]
     [SerializeField] private bool _autoStartOnAwake = true;
-    [SerializeField] private float _spawnInterval = 0.5f;
+    [SerializeField] private float _spawnInterval = 1f;
     [SerializeField] private float _stageTransitionDelay = 2f;
 
     private IStageRepository _repository;
@@ -14,18 +15,23 @@ public class StageManager : DontDestroySingleton<StageManager>
     private int _maxStageId;
 
     private List<EnemyAI> _aliveEnemies = new List<EnemyAI>();
-    private int _remainingSpawnCount;
+    private EnemyAI _currentBoss;
     private bool _isSpawning;
+    private bool _bossSpawned;
     private StageStat _currentStageStat;
+    private Coroutine _spawnCoroutine;
 
     public int CurrentStageId => _currentStageId;
     public string CurrentStageName => _currentStageStat?.StageName ?? "";
     public StageStat CurrentStageStat => _currentStageStat;
     public int AliveEnemyCount => _aliveEnemies.Count;
+    public bool IsBossSpawned => _bossSpawned;
+    public bool IsBossAlive => _currentBoss != null && !_currentBoss.IsDead;
 
     public event Action<int> OnStageStarted;
     public event Action<int> OnStageCleared;
     public event Action OnAllStagesCleared;
+    public event Action<EnemyAI> OnBossSpawned;
 
     protected override void Initialize()
     {
@@ -85,64 +91,112 @@ public class StageManager : DontDestroySingleton<StageManager>
         StageStat stage = _repository.GetByStageId(stageId);
         if (stage == null)
         {
-            Debug.LogError($"[StageManager] 스테이지를 찾을 수 없습니다: {stageId}");
+            Debug.LogError($"[StageManager] Stage not found: {stageId}");
             return;
         }
 
         _currentStageId = stageId;
         _currentStageStat = stage;
         _aliveEnemies.Clear();
-        _remainingSpawnCount = stage.SpawnCount;
+        _currentBoss = null;
+        _bossSpawned = false;
         _isSpawning = true;
 
         OnStageStarted?.Invoke(_currentStageId);
 
-        StartCoroutine(SpawnEnemiesRoutine(stage));
+        _spawnCoroutine = StartCoroutine(SpawnEnemiesRoutine(stage));
     }
 
-    private System.Collections.IEnumerator SpawnEnemiesRoutine(StageStat stage)
+    // 1초마다 무한 스폰 (보스 처치 전까지)
+    private IEnumerator SpawnEnemiesRoutine(StageStat stage)
     {
         var wait = new WaitForSeconds(_spawnInterval);
 
-        while (_remainingSpawnCount > 0)
+        while (_isSpawning)
         {
-            SpawnEnemy(stage.EnemyStatId);
-            _remainingSpawnCount--;
+            SpawnEnemy(stage);
             yield return wait;
         }
-
-        _isSpawning = false;
     }
 
-    private void SpawnEnemy(string enemyStatId)
+    private void SpawnEnemy(StageStat stage)
     {
         if (EnemySpawner.Instance == null)
         {
-            Debug.LogError("[StageManager] EnemySpawner가 없습니다.");
+            Debug.LogError("[StageManager] EnemySpawner not found.");
             return;
         }
 
-        EnemyAI enemy = EnemySpawner.Instance.SpawnAtRandomPoint(enemyStatId);
+        // 배율 적용된 Enemy 스폰
+        EnemyAI enemy = EnemySpawner.Instance.SpawnWithMultiplier(stage.EnemyStatId, stage);
         if (enemy != null)
         {
             _aliveEnemies.Add(enemy);
         }
     }
 
-    public void OnEnemyDied(EnemyAI enemy)
+    // 외부에서 호출하여 보스 스폰 (UI 버튼 등)
+    public void SpawnBoss()
     {
-        _aliveEnemies.Remove(enemy);
-
-        // 스폰 완료 + 모든 Enemy 처치 시 스테이지 클리어
-        if (!_isSpawning && _aliveEnemies.Count == 0)
+        if (_bossSpawned)
         {
-            OnStageCleared?.Invoke(_currentStageId);
-            StartCoroutine(TransitionToNextStage());
+            Debug.LogWarning("[StageManager] Boss already spawned.");
+            return;
+        }
+
+        if (_currentStageStat == null || string.IsNullOrEmpty(_currentStageStat.BossStatId))
+        {
+            Debug.LogWarning("[StageManager] No boss configured for this stage.");
+            return;
+        }
+
+        if (EnemySpawner.Instance == null)
+        {
+            Debug.LogError("[StageManager] EnemySpawner not found.");
+            return;
+        }
+
+        EnemyAI boss = EnemySpawner.Instance.SpawnBoss(_currentStageStat.BossStatId, _currentStageStat);
+        if (boss != null)
+        {
+            _currentBoss = boss;
+            _bossSpawned = true;
+            OnBossSpawned?.Invoke(boss);
         }
     }
 
-    private System.Collections.IEnumerator TransitionToNextStage()
+    // 일반 Enemy 사망 처리
+    public void OnEnemyDied(EnemyAI enemy)
     {
+        _aliveEnemies.Remove(enemy);
+    }
+
+    // 보스 사망 처리 -> 스테이지 클리어
+    public void OnBossDied(EnemyAI boss)
+    {
+        if (boss != _currentBoss) return;
+
+        _currentBoss = null;
+        _isSpawning = false;
+
+        if (_spawnCoroutine != null)
+        {
+            StopCoroutine(_spawnCoroutine);
+            _spawnCoroutine = null;
+        }
+
+        // 스테이지 클리어
+        OnStageCleared?.Invoke(_currentStageId);
+
+        // 남은 적들 제거 후 다음 스테이지로 전환
+        StartCoroutine(TransitionToNextStage());
+    }
+
+    private IEnumerator TransitionToNextStage()
+    {
+        // 남은 적들 정리
+        ClearAllEnemies();
+
         yield return new WaitForSeconds(_stageTransitionDelay);
 
         if (_currentStageId < _maxStageId)
@@ -151,7 +205,6 @@ public class StageManager : DontDestroySingleton<StageManager>
         }
         else
         {
-            // 모든 스테이지 클리어 이벤트 발생 후 마지막 스테이지 반복
             OnAllStagesCleared?.Invoke();
             StartStage(_maxStageId);
         }
@@ -159,16 +212,26 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     public void RestartCurrentStage()
     {
+        StopSpawning();
         ClearAllEnemies();
-        StopAllCoroutines();
         StartStage(_currentStageId);
     }
 
     public void RestartFromStage(int stageId)
     {
+        StopSpawning();
         ClearAllEnemies();
-        StopAllCoroutines();
         StartStage(stageId);
+    }
+
+    private void StopSpawning()
+    {
+        _isSpawning = false;
+        if (_spawnCoroutine != null)
+        {
+            StopCoroutine(_spawnCoroutine);
+            _spawnCoroutine = null;
+        }
     }
 
     private void ClearAllEnemies()
@@ -181,5 +244,12 @@ public class StageManager : DontDestroySingleton<StageManager>
             }
         }
         _aliveEnemies.Clear();
+
+        // 보스도 제거
+        if (_currentBoss != null)
+        {
+            Destroy(_currentBoss.gameObject);
+            _currentBoss = null;
+        }
     }
 }

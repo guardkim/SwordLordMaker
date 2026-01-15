@@ -161,6 +161,17 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         }
     }
 
+#if UNITY_EDITOR
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F1))
+        {
+            AddGold(new BigInteger(100000));
+            Debug.Log("[CurrencyManager] 테스트: 10만 골드 추가");
+        }
+    }
+#endif
+
     private void OnDestroy()
     {
         if (_autoSaveCoroutine != null)

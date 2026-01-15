@@ -1,15 +1,17 @@
 using System.Collections.Generic;
-using System.Linq;
 using BansheeGz.BGDatabase;
 using UnityEngine;
 
 public class StageRepository : IStageRepository
 {
     private const string TableName = "StageStat";
-    // name 필드는 BGDatabase 기본 필드 (entity.Name으로 접근) - StageName으로 사용
     private const string StageIdField = "StageId";
     private const string EnemyStatIdField = "EnemyStatId";
-    private const string SpawnCountField = "SpawnCount";
+    private const string BossStatIdField = "BossStatId";
+    private const string HpMultiplierField = "HpMultiplier";
+    private const string AttackMultiplierField = "AttackMultiplier";
+    private const string SpeedMultiplierField = "SpeedMultiplier";
+    private const string GoldMultiplierField = "GoldMultiplier";
 
     private readonly BGMetaEntity _meta;
     private readonly Dictionary<int, StageStat> _cache;
@@ -35,10 +37,7 @@ public class StageRepository : IStageRepository
         _cache.Clear();
         _maxStageId = 0;
 
-        if (_meta == null)
-        {
-            return result;
-        }
+        if (_meta == null) return result;
 
         int count = _meta.CountEntities;
         for (int i = 0; i < count; i++)
@@ -75,11 +74,20 @@ public class StageRepository : IStageRepository
 
     private StageStat CreateStatFromEntity(BGEntity entity)
     {
+        float hpMult = entity.Get<float>(HpMultiplierField);
+        float atkMult = entity.Get<float>(AttackMultiplierField);
+        float spdMult = entity.Get<float>(SpeedMultiplierField);
+        float goldMult = entity.Get<float>(GoldMultiplierField);
+
         return new StageStat(
             entity.Get<int>(StageIdField),
-            entity.Name,  // BGDatabase 기본 name 필드를 StageName으로 사용
+            entity.Name,
             entity.Get<string>(EnemyStatIdField),
-            entity.Get<int>(SpawnCountField)
+            entity.Get<string>(BossStatIdField) ?? "",
+            hpMult <= 0 ? 1f : hpMult,
+            atkMult <= 0 ? 1f : atkMult,
+            spdMult <= 0 ? 1f : spdMult,
+            goldMult <= 0 ? 1f : goldMult
         );
     }
 }
