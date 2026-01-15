@@ -245,5 +245,24 @@ public class OrangeMushroomAnimation : MonoBehaviour, IDamageable
 
     public void TakeDamage(BigInteger damage, bool isCrit)
     {
+        if (_currentState == State.Dead) return;
+
+        // BigInteger를 float로 변환 (이 몬스터는 체력이 작으므로 float로 충분)
+        float floatDamage = (float)damage;
+        _currentHealth -= floatDamage;
+
+        // BigInteger 오버로드 사용
+        DamageFloaterManager.Instance.ShowDamage(DamageFloaterTester.CurrentStyle, damage, transform.position, isCrit);
+
+        if (_currentActionCoroutine != null) StopCoroutine(_currentActionCoroutine);
+
+        if (_currentHealth <= 0)
+        {
+            _currentActionCoroutine = StartCoroutine(DieRoutine());
+        }
+        else
+        {
+            _currentActionCoroutine = StartCoroutine(HitRoutine());
+        }
     }
 }

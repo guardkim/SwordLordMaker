@@ -4,9 +4,6 @@ using UnityEngine;
 
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
-    [Header("▼ 체력 설정")]
-    [SerializeField] private string _baseMaxHealthString = "100";
-
     [Header("▼ 참조")]
     [SerializeField] private PlayerAnimation _playerAnimation;
     [SerializeField] private PlayerMovement _playerMovement;
@@ -25,7 +22,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Awake()
     {
-        _baseMaxHealth = BigInteger.Parse(_baseMaxHealthString);
+        // PlayerStatManager에서 기본값 로드
+        if (PlayerStatManager.Instance != null)
+        {
+            _baseMaxHealth = PlayerStatManager.Instance.BaseMaxHealth;
+        }
+        else
+        {
+            // 폴백: Manager가 없으면 기본값 사용
+            _baseMaxHealth = new BigInteger(100);
+            UnityEngine.Debug.LogWarning("[PlayerHealth] PlayerStatManager가 없어 기본값 사용");
+        }
 
         if (_playerAnimation == null)
         {
@@ -70,7 +77,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (upgradeId == UpgradeId.PlayerHealth)
         {
+            BigInteger oldMaxHealth = _maxHealth;
             ApplyUpgradeBonus();
+
+            // 증가한 만큼 현재 체력도 증가
+            BigInteger healthIncrease = _maxHealth - oldMaxHealth;
+            if (healthIncrease > BigInteger.Zero)
+            {
+                _currentHealth += healthIncrease;
+            }
+
             OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
         }
     }

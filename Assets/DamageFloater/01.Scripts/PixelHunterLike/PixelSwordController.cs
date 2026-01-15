@@ -18,9 +18,50 @@ public class PixelSwordController : BaseSwordController
 
     private void Awake()
     {
+        LoadAndApplyUpgrades();
+    }
+
+    private void Start()
+    {
+        // 강화 이벤트 구독
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+        }
+    }
+
+    private void OnUpgradeChanged(string upgradeId, int newLevel)
+    {
+        // 검 관련 강화 시 스탯 재적용
+        if (upgradeId.StartsWith("Sword_"))
+        {
+            LoadAndApplyUpgrades();
+        }
+    }
+
+    private void LoadAndApplyUpgrades()
+    {
         var repository = new SwordStatRepository();
-        _swordStat = repository.GetById(_swordStatId);
-    }  
+        SwordStat baseStat = repository.GetById(_swordStatId);
+
+        // 강화 보너스 적용
+        if (UpgradeManager.Instance != null)
+        {
+            _swordStat = UpgradeManager.Instance.ApplyUpgrades(baseStat);
+        }
+        else
+        {
+            _swordStat = baseStat;
+        }
+    }
 
     // 부모의 추상 메서드 구현
     protected override void ResetSequence()

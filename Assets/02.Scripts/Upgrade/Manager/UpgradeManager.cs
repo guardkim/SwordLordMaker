@@ -37,7 +37,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
             return false;
         }
 
-        int cost = data.GetCost(currentLevel);
+        BigInteger cost = data.GetCost(currentLevel);
 
         if (CurrencyManager.Instance == null)
         {
@@ -47,7 +47,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
 
         if (!CurrencyManager.Instance.TrySpendGold(cost))
         {
-            Debug.Log($"[UpgradeManager] 골드 부족: 필요 {cost}");
+            Debug.Log($"[UpgradeManager] 골드 부족: 필요 {CurrencyFormatter.FormatAbbreviated(cost)}");
             return false;
         }
 
@@ -86,10 +86,10 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         return data.GetTotalBonus(level);
     }
 
-    public int GetCost(string upgradeId)
+    public BigInteger GetCost(string upgradeId)
     {
         UpgradeData data = _repository.GetUpgradeData(upgradeId);
-        if (data == null) return 0;
+        if (data == null) return BigInteger.Zero;
 
         int currentLevel = _playerLevels.GetLevel(upgradeId);
         return data.GetCost(currentLevel);
@@ -116,9 +116,9 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
     }
 
     // 플레이어 스탯 보너스 조회
-    public int GetPlayerHealthBonus()
+    public BigInteger GetPlayerHealthBonus()
     {
-        return (int)GetBonus(UpgradeId.PlayerHealth);
+        return GetBigIntBonus(UpgradeId.PlayerHealth);
     }
 
     public float GetPlayerMoveSpeedBonus()

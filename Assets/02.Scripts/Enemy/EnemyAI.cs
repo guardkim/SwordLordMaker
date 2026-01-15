@@ -271,11 +271,9 @@ public class EnemyAI : MonoBehaviour, IDamageable
     {
         if (DamageFloaterManager.Instance != null)
         {
-            // BigInteger를 표시용으로 변환 (DamageFloater가 int 사용 시)
-            // 큰 숫자는 축약 표기 사용 권장 (예: 1.5M, 2.3B)
-            int displayDamage = damage > int.MaxValue ? int.MaxValue : (int)damage;
+            // BigInteger 오버로드 사용 (축약 표기 자동 지원)
             DamageFloaterManager.Instance.ShowDamage(
-                DamageStyle.Basic, displayDamage, GetDamageFloaterPosition(), isCrit);
+                DamageStyle.Basic, damage, GetDamageFloaterPosition(), isCrit);
         }
 
         if (EffectManager.Instance != null)

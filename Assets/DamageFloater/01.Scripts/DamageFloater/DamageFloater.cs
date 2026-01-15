@@ -95,9 +95,58 @@ public class DamageFloater : MonoBehaviour
         PlayAnimation(style);
     }
 
+    // BigInteger용 이미 포맷된 문자열 표시 (축약 표기: 1.5A, 999B 등)
+    public void ShowFormattedDamage(string formattedText, DamageStyle style, bool isCrit = false)
+    {
+        _currentDamages = new[] { 0 };
+        InitFormattedText(formattedText, style, isCrit);
+        PlayAnimation(style);
+    }
+
     // ----------------------------------------------------------------
     // 초기화 및 텍스트 생성
     // ----------------------------------------------------------------
+
+    // BigInteger 포맷된 문자열용 초기화
+    private void InitFormattedText(string formattedText, DamageStyle style, bool isCrit)
+    {
+        ClearTexts();
+
+        _globalSortingOrder += 20;
+        int currentBaseOrder = _globalSortingOrder;
+
+        TMP_SpriteAsset targetFont = isCrit ? CritFont : NonCritFont;
+        string prefix = isCrit ? CritHeaderString : "";
+
+        GameObject newObj = Instantiate(TextTemplate, transform);
+        newObj.SetActive(true);
+        newObj.transform.SetAsLastSibling();
+
+        var rend = newObj.GetComponent<Renderer>();
+        if (rend) rend.sortingOrder = currentBaseOrder;
+
+        var rect = newObj.GetComponent<RectTransform>();
+        if (rect) rect.pivot = new Vector2(0.5f, 0.5f);
+
+        var tmp = newObj.GetComponent<TMP_Text>();
+        if (tmp)
+        {
+            tmp.alignment = TextAlignmentOptions.Center;
+            tmp.alpha = 0;
+        }
+
+        var helper = newObj.GetComponent<PixelTextHelper>();
+        if (helper)
+        {
+            helper.SetText(formattedText, targetFont, prefix);
+        }
+
+        newObj.transform.localPosition = Vector3.zero;
+        newObj.transform.localScale = Vector3.zero;
+
+        _activeTexts.Add(newObj);
+    }
+
     // [수정됨] 폰트 적용 로직 추가
     private void InitTexts(int[] damages, DamageStyle style, bool isCrit)
     {
