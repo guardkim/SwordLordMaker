@@ -134,7 +134,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
             AttackDamage = baseStat.AttackDamage + GetBigIntBonus(UpgradeId.SwordAttackDamage),
             Cooldown = Mathf.Max(0.1f, baseStat.Cooldown - GetBonus(UpgradeId.SwordCooldown)),
             MoveSpeed = baseStat.MoveSpeed + GetBonus(UpgradeId.SwordMoveSpeed),
-            CritDamage = baseStat.CritDamage + GetBigIntBonus(UpgradeId.SwordCritDamage),
+            CritDamageMultiplier = baseStat.CritDamageMultiplier + GetBonus(UpgradeId.SwordCritDamage),
             CritChance = Mathf.Min(1f, baseStat.CritChance + GetBonus(UpgradeId.SwordCritChance))
         };
     }

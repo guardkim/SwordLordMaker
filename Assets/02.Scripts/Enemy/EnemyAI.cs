@@ -12,6 +12,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         Idle,
         Chase,
         Attack,
+        SkillAttack,
         Hit,
         Dead
     }
@@ -38,6 +39,12 @@ public class EnemyAI : MonoBehaviour, IDamageable
     [SerializeField] private float _updateIntervalFar = 0.5f;
     [SerializeField] private float _farDistanceThreshold = 10f;
 
+    [Header("▼ 보스 스킬 설정")]
+    [SerializeField] private float _skillCooldown = 5f;
+    [SerializeField] private float _skillRadius = 3f;
+    [SerializeField] private float _skillChargeTime = 1f;
+    [SerializeField] private float _skillDamageMultiplier = 2f;
+
     private NavMeshAgent _agent;
     private State _currentState = State.Idle;
     private State _previousState = State.Idle;
@@ -47,6 +54,11 @@ public class EnemyAI : MonoBehaviour, IDamageable
     // DB에서 로드한 스탯
     private EnemyStat _stat;
     private BigInteger _currentHealth;
+    private bool _isBoss;
+
+    // 보스 스킬 상태
+    private float _lastSkillTime;
+    private bool _isUsingSkill;
 
     public State CurrentState => _currentState;
     public float Speed => _agent != null ? _agent.velocity.magnitude : 0f;
@@ -54,6 +66,8 @@ public class EnemyAI : MonoBehaviour, IDamageable
     public bool IsMoving => _currentState == State.Chase;
     public bool IsAttacking => _currentState == State.Attack;
     public bool IsHit => _currentState == State.Hit;
+    public bool IsBoss => _isBoss;
+    public bool IsUsingSkill => _isUsingSkill;
 
     private void Awake()
     {
@@ -101,6 +115,13 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
     }
 
+    // 보스로 초기화
+    public void InitializeAsBoss(EnemyStat stat)
+    {
+        Initialize(stat);
+        _isBoss = true;
+    }
+
     // 풀로 반환될 때 호출 (상태 리셋)
     public void ResetForPool()
     {
@@ -110,6 +131,9 @@ public class EnemyAI : MonoBehaviour, IDamageable
         _currentHealth = BigInteger.Zero;
         _lastUpdateTime = 0f;
         _lastAttackTime = 0f;
+        _isBoss = false;
+        _lastSkillTime = 0f;
+        _isUsingSkill = false;
 
         if (_agent != null)
         {
@@ -150,7 +174,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void Update()
     {
-        if (_currentState == State.Dead || _currentState == State.Hit)
+        if (_currentState == State.Dead || _currentState == State.Hit || _currentState == State.SkillAttack)
         {
             return;
         }
@@ -321,10 +345,17 @@ public class EnemyAI : MonoBehaviour, IDamageable
             CurrencyManager.Instance.AddGold(_stat.GoldReward);
         }
 
-        // StageManager에 사망 알림
+        // StageManager에 사망 알림 (보스/일반 구분)
         if (StageManager.Instance != null)
         {
-            StageManager.Instance.OnEnemyDied(this);
+            if (_isBoss)
+            {
+                StageManager.Instance.OnBossDied(this);
+            }
+            else
+            {
+                StageManager.Instance.OnEnemyDied(this);
+            }
         }
 
         // 사망 애니메이션
@@ -354,6 +385,15 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void UpdateState(float distanceToTarget)
     {
+        if (_isUsingSkill) return;
+
+        // 보스 스킬 체크 (공격 범위 내에서 스킬 쿨다운이 찼을 때)
+        if (_isBoss && distanceToTarget <= _attackRange && CanUseSkill())
+        {
+            StartCoroutine(ExecuteSkillAttack());
+            return;
+        }
+
         State newState;
 
         if (distanceToTarget <= _attackRange)
@@ -394,6 +434,10 @@ public class EnemyAI : MonoBehaviour, IDamageable
             case State.Attack:
                 _enemyAnimation.SetMoving(false);
                 _enemyAnimation.SetAttacking(true);
+                break;
+            case State.SkillAttack:
+                _enemyAnimation.SetMoving(false);
+                _enemyAnimation.SetAttacking(false);
                 break;
         }
     }
@@ -469,5 +513,76 @@ public class EnemyAI : MonoBehaviour, IDamageable
     public void SetTarget(Transform target)
     {
         _target = target;
+    }
+
+    // 보스 스킬 사용 가능 여부 체크
+    private bool CanUseSkill()
+    {
+        if (!_isBoss) return false;
+        if (_isUsingSkill) return false;
+        return Time.time - _lastSkillTime >= _skillCooldown;
+    }
+
+    // 스킬 공격 실행 (AoE 범위 공격)
+    private IEnumerator ExecuteSkillAttack()
+    {
+        _isUsingSkill = true;
+        _currentState = State.SkillAttack;
+
+        // NavMeshAgent 정지
+        if (_agent != null && _agent.isOnNavMesh)
+        {
+            _agent.isStopped = true;
+        }
+
+        // 차징 애니메이션
+        _enemyAnimation?.TriggerSkill();
+
+        // 차징 시간 대기
+        yield return new WaitForSeconds(_skillChargeTime);
+
+        // 범위 내 플레이어에게 데미지
+        ApplyAoEDamage();
+
+        _lastSkillTime = Time.time;
+        _isUsingSkill = false;
+        _currentState = State.Idle;
+
+        // NavMeshAgent 재개
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.isStopped = false;
+        }
+    }
+
+    // AoE 범위 데미지 적용
+    private void ApplyAoEDamage()
+    {
+        Collider[] hits = Physics.OverlapSphere(transform.position, _skillRadius);
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Player"))
+            {
+                IDamageable target = hit.GetComponent<IDamageable>();
+                if (target != null)
+                {
+                    BigInteger skillDamage = MultiplyBigInteger(_stat.AttackDamage, _skillDamageMultiplier);
+                    target.TakeDamage(skillDamage, false);
+                }
+            }
+        }
+
+        // 스킬 VFX 재생
+        EffectManager.Instance?.PlaySkillVfx(transform.position);
+    }
+
+    // BigInteger에 float 배율 적용
+    private BigInteger MultiplyBigInteger(BigInteger value, float multiplier)
+    {
+        if (multiplier <= 0f) return value;
+        if (multiplier == 1f) return value;
+
+        int scaledMultiplier = (int)(multiplier * 1000);
+        return value * scaledMultiplier / 1000;
     }
 }

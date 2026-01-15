@@ -56,6 +56,15 @@ public class AdelFlyingSwordController : BaseSwordController
         if (upgradeId.StartsWith("Sword_"))
         {
             LoadAndApplyUpgrades();
+
+            // 기존 활성 검들에도 새 스탯 즉시 적용
+            foreach (var sword in _activeSwords)
+            {
+                if (sword != null)
+                {
+                    sword.InitializeStat(_swordStat);
+                }
+            }
         }
     }
 

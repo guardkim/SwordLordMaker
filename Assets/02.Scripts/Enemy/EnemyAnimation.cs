@@ -10,6 +10,7 @@ public class EnemyAnimation : MonoBehaviour
     [SerializeField] private string _isAttackingParam = "IsAttacking";
     [SerializeField] private string _isDeadParam = "IsDead";
     [SerializeField] private string _hitTriggerParam = "Hit";
+    [SerializeField] private string _skillTriggerParam = "Skill";
 
     private bool _isDead;
 
@@ -48,6 +49,16 @@ public class EnemyAnimation : MonoBehaviour
         }
 
         _animator.SetTrigger(_hitTriggerParam);
+    }
+
+    public void TriggerSkill()
+    {
+        if (_animator == null || _isDead)
+        {
+            return;
+        }
+
+        _animator.SetTrigger(_skillTriggerParam);
     }
 
     public void Die()

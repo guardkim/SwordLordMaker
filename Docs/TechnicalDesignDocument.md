@@ -1,7 +1,7 @@
 # SwordLordMaker - Technical Design Document (TDD)
 
-> **버전**: 1.0
-> **최종 업데이트**: 2026-01-14
+> **버전**: 1.1
+> **최종 업데이트**: 2026-01-15
 > **엔진**: Unity 6
 > **장르**: 방치형 모바일 RPG
 
@@ -54,7 +54,7 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │                     Repository Layer (Infrastructure)                │
 │  CurrencyRepository, UpgradeRepository, StageRepository,            │
-│  EnemyStatRepository, SwordStatRepository                           │
+│  EnemyStatRepository, SwordStatRepository, BossStatRepository       │
 │  - BGDatabase 연동                                                   │
 │  - 데이터 영속화 (저장/로드)                                          │
 └─────────────────────────────────────────────────────────────────────┘
@@ -62,7 +62,7 @@
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────┐
 │                         Data Layer (Domain)                          │
-│  Currency, SwordStat, EnemyStat, StageStat, UpgradeData,            │
+│  Currency, SwordStat, EnemyStat, BossStat, StageStat, UpgradeData,  │
 │  PlayerUpgradeLevels, CurrencyType, UpgradeId                       │
 │  - 순수 데이터 클래스 (POCO)                                          │
 │  - record 타입으로 불변성 보장                                        │
@@ -138,6 +138,7 @@ Assets/
 │   └── StartScene.unity         # 시작 씬 (로딩)
 │
 ├── 02.Scripts/                  # 핵심 게임 스크립트
+│   ├── Boss/                    # 보스 시스템
 │   ├── Currency/                # 재화 시스템
 │   ├── Effect/                  # 이펙트 시스템
 │   ├── Enemy/                   # 적 시스템
@@ -170,6 +171,13 @@ Assets/
 
 ```
 Assets/02.Scripts/
+│
+├── Boss/                        # ═══ 보스 시스템 ═══
+│   ├── Data/
+│   │   ├── BossStat.cs          # 보스 스탯 record
+│   │   └── IBossStatRepository.cs
+│   └── Repository/
+│       └── BossStatRepository.cs
 │
 ├── Currency/                    # ═══ 재화 시스템 ═══
 │   ├── Data/
@@ -306,13 +314,13 @@ Assets/DamageFloater/01.Scripts/
 | 클래스 | 역할 | 주요 함수 |
 |--------|------|----------|
 | **GameManager** | 게임 전체 흐름 관리, 플레이어 사망/부활 처리 | `RegisterPlayer()`, `HandlePlayerDeath()` |
-| **StageManager** | 스테이지 진행, 적 스폰 관리, 스테이지 전환 | `StartStage()`, `OnEnemyDied()`, `RestartFromStage()` |
+| **StageManager** | 스테이지 진행, 무한 스폰, 보스 처치 시 클리어 | `StartStage()`, `SpawnBoss()`, `OnEnemyDied()`, `OnBossDied()` |
 | **CurrencyManager** | 재화(Gold/Ruby) 관리, 자동 저장 | `AddGold()`, `TrySpendGold()`, `LoadCurrency()` |
 | **UpgradeManager** | 강화 시스템, 스탯 보너스 계산 | `TryUpgrade()`, `GetBonus()`, `ApplyUpgrades()` |
-| **EnemySpawner** | 적 오브젝트 풀, 스폰/반환 | `Spawn()`, `Return()`, `SpawnAtRandomPoint()` |
+| **EnemySpawner** | 적 오브젝트 풀, 스폰/반환, 보스 스폰 | `Spawn()`, `Return()`, `SpawnWithMultiplier()`, `SpawnBoss()` |
 | **ControllerManager** | 검 타입 전환, 자동 발사 | `Fire()`, `SetMode()`, `SwitchMode()` |
 | **DamageFloaterManager** | 데미지 텍스트 인스턴싱 | `ShowDamage()` |
-| **EffectManager** | VFX 재생 | `PlayHitVfx()` |
+| **EffectManager** | VFX 재생 | `PlayHitVfx()`, `PlaySkillVfx()` |
 
 ### 3.2 Data 클래스 (record/class)
 
@@ -323,7 +331,8 @@ Assets/DamageFloater/01.Scripts/
 |--------|------|----------------------|------|
 | **SwordStat** | `record` | AttackDamage, CritDamage | 검 스탯 (공격력, 치명타 데미지) |
 | **EnemyStat** | `record` | MaxHP, AttackDamage, GoldReward | 적 스탯 (체력, 공격력, 골드) |
-| **StageStat** | `record` | - | 스테이지 정보 (SpawnCount는 int 유지) |
+| **BossStat** | `record` | MaxHP, AttackDamage, GoldReward | 보스 스탯 (EnemyStat과 동일 구조) |
+| **StageStat** | `record` | - | 스테이지 정보 + 배율 (HpMultiplier 등) |
 | **UpgradeData** | `record` | BaseCost, BonusPerLevel | 강화 정보 (비용, 보너스) |
 | **Currency** | `class` | Gold, Ruby | 재화 데이터 + 이벤트 |
 | **PlayerUpgradeLevels** | `class` | - | 강화 레벨 저장 (레벨은 int) |
@@ -349,9 +358,11 @@ Assets/DamageFloater/01.Scripts/
 
 | 클래스 | 역할 | 주요 함수 |
 |--------|------|----------|
-| **EnemyAI** | FSM 기반 AI (Idle/Chase/Attack/Hit/Dead) | `TakeDamage()`, `TriggerHitState()`, `Die()` |
-| **EnemyAnimation** | 명령 기반 애니메이션 | `SetMoving()`, `SetAttacking()`, `TriggerHit()` |
+| **EnemyAI** | FSM 기반 AI (Idle/Chase/Attack/SkillAttack/Hit/Dead) | `TakeDamage()`, `TriggerHitState()`, `Die()`, `InitializeAsBoss()` |
+| **EnemyAnimation** | 명령 기반 애니메이션 | `SetMoving()`, `SetAttacking()`, `TriggerHit()`, `TriggerSkill()` |
 | **EnemyHPBar** | HP바 UI | `Initialize()`, `UpdateHP()` |
+
+> **보스 구분**: `EnemyAI.IsBoss` 프로퍼티로 보스 여부 판별, 보스만 `SkillAttack` 상태(AoE 범위 공격) 사용
 
 ### 3.5 Flying Sword 클래스 (전략 패턴)
 
@@ -473,19 +484,20 @@ flowchart TD
 
     subgraph EnemyDeath["적 사망 처리"]
         R --> S[CurrencyManager.AddGold]
-        R --> T[StageManager.OnEnemyDied]
+        R --> T{IsBoss?}
+        T -->|Yes| T1[StageManager.OnBossDied]
+        T -->|No| T2[StageManager.OnEnemyDied]
         R --> U[사망 애니메이션]
         U --> V[3초 후 Pool 반환]
     end
 
     subgraph StageProgress["스테이지 진행"]
-        T --> W{모든 적 처치?}
-        W -->|Yes| X[OnStageCleared 이벤트]
-        X --> Y[2초 대기]
+        T1 --> X[OnStageCleared 이벤트]
+        X --> Y[남은 적 제거 + 2초 대기]
         Y --> Z{다음 스테이지?}
         Z -->|Yes| AA[StartStage N+1]
         Z -->|No| AB[마지막 스테이지 반복]
-        AA --> AC[새 적 스폰]
+        AA --> AC[1초마다 무한 스폰]
         AB --> AC
     end
 ```
@@ -659,8 +671,23 @@ flowchart TD
 |------|--------|--------|------|
 | StageId | int | int | 스테이지 번호 (1~10) |
 | StageName | string | string | 표시 이름 ("1-1" 등) |
-| SpawnCount | int | int | 스폰할 적 수 |
 | EnemyStatId | string | string | 스폰할 적 타입 |
+| BossStatId | string | string | 보스 스탯 ID |
+| HpMultiplier | float | float | 체력 배율 (기본 1.0) |
+| AttackMultiplier | float | float | 공격력 배율 (기본 1.0) |
+| SpeedMultiplier | float | float | 이동속도 배율 (기본 1.0) |
+| GoldMultiplier | float | float | 골드 배율 (기본 1.0) |
+
+> **스테이지 진행**: 1초마다 무한 스폰, 보스 처치 시에만 다음 스테이지로 전환
+
+#### BossStat 테이블 (읽기 전용)
+| 필드 | DB 타입 | C# 타입 | 설명 |
+|------|--------|--------|------|
+| name | string | string | 보스 ID (예: "Boss_Dragon") |
+| MaxHP | string | **BigInteger** | 최대 체력 |
+| AttackDamage | string | **BigInteger** | 공격력 |
+| MoveSpeed | float | float | 이동 속도 |
+| GoldReward | string | **BigInteger** | 처치 시 골드 |
 
 #### UpgradeData 테이블 (읽기 전용)
 | 필드 | DB 타입 | C# 타입 | 설명 |
@@ -879,18 +906,22 @@ MainScene
 |--------|------|----------|
 | **Player** | `03.Prefabs/Player.prefab` | PlayerHealth, PlayerMovement, PlayerAnimation, CharacterController |
 | **Enemy_Skeleton** | `03.Prefabs/Enemy_Skeleton.prefab` | EnemyAI, EnemyAnimation, NavMeshAgent, EnemyHPBar |
+| **Boss_Dragon** | `03.Prefabs/Boss_Dragon.prefab` | EnemyAI (IsBoss), EnemyAnimation, NavMeshAgent, EnemyHPBar |
 | **DamageFloater** | `DamageFloater/02.Prefabs/DamageFloater.prefab` | DamageFloater, TextMeshPro |
 | **AdelSword** | `DamageFloater/02.Prefabs/AdelSword.prefab` | AdelFlyingSword, Collider |
 | **HypoSword** | `DamageFloater/02.Prefabs/HypoSword.prefab` | HypoFlyingSword, Collider |
 | **PixelSword** | `DamageFloater/02.Prefabs/PixelSword.prefab` | PixelFlyingSword, Collider |
 | **HitVFX** | `03.Prefabs/Effects/HitVFX.prefab` | ParticleSystem |
+| **SkillVFX** | `03.Prefabs/Effects/SkillVFX.prefab` | ParticleSystem (보스 스킬용) |
 
 ### 6.3 Manager Inspector 설정
 
 #### EnemySpawner
 ```
 Enemy Prefab: Enemy_Skeleton (Prefab)
+Boss Prefab: Boss_Dragon (Prefab) - 선택적
 Spawn Points: [SpawnPoint_01, SpawnPoint_02, ...]
+Boss Spawn Point: BossSpawnPoint (Transform) - 선택적
 Default Capacity: 10
 Max Size: 50
 ```
@@ -898,7 +929,7 @@ Max Size: 50
 #### StageManager
 ```
 Auto Start On Awake: ✓
-Spawn Interval: 0.5
+Spawn Interval: 1.0 (1초마다 무한 스폰)
 Stage Transition Delay: 2.0
 ```
 
@@ -916,6 +947,16 @@ Base Cooldown: 20.0
 Damage Floater Prefab: DamageFloater (Prefab)
 Single Floater Option: (FloaterOption)
 Multi Floater Option: (FloaterOption)
+```
+
+#### EffectManager
+```
+Hit VFX Prefab: HitVFX (Prefab)
+VFX Lifetime: 1.0
+Pool Size: 20
+Skill VFX Prefab: SkillVFX (Prefab) - 보스 스킬용
+Skill VFX Lifetime: 1.5
+Skill Pool Size: 5
 ```
 
 ### 6.4 태그 및 레이어 설정
@@ -955,13 +996,19 @@ Multi Floater Option: (FloaterOption)
 ### 6.7 프로젝트 빌드 체크리스트
 
 - [ ] BGDatabase 테이블 데이터 입력 완료
+  - [ ] StageStat: BossStatId, 배율 필드 설정
+  - [ ] BossStat: 보스 데이터 입력
 - [ ] NavMesh Bake 완료
 - [ ] 모든 Prefab 연결 확인
+  - [ ] Boss Prefab 생성 (선택)
+  - [ ] Skill VFX Prefab 생성
 - [ ] SpawnPoints 배치 완료
+  - [ ] Boss Spawn Point 배치 (선택)
 - [ ] Manager 싱글톤 씬에 배치
 - [ ] Player 태그 설정
 - [ ] Enemy 태그 설정
 - [ ] UI Canvas 해상도 설정
+- [ ] Animator에 Skill Trigger 파라미터 추가 (보스용)
 
 ---
 
@@ -976,6 +1023,7 @@ Multi Floater Option: (FloaterOption)
 | GameManager | OnRequestStageRestart | int stageId | 스테이지 리셋 요청 |
 | StageManager | OnStageStarted | int stageId | 스테이지 시작 |
 | StageManager | OnStageCleared | int stageId | 스테이지 클리어 |
+| StageManager | OnBossSpawned | EnemyAI boss | 보스 스폰 |
 | CurrencyManager | OnCurrencyChanged | CurrencyType, BigInteger | 재화 변경 |
 | UpgradeManager | OnUpgraded | string upgradeId, int level | 강화 완료 |
 | PlayerHealth | OnHealthChanged | int current, int max | 체력 변경 |
