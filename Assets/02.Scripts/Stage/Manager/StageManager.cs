@@ -8,7 +8,7 @@ public class StageManager : DontDestroySingleton<StageManager>
     [Header("Settings")]
     [SerializeField] private bool _autoStartOnAwake = true;
     [SerializeField] private float _spawnInterval = 1f;
-    [SerializeField] private float _stageTransitionDelay = 2f;
+    [SerializeField] private float _stageTransitionDelay = 5f;
 
     private IStageRepository _repository;
     private int _currentStageId = 1;
@@ -155,6 +155,10 @@ public class StageManager : DontDestroySingleton<StageManager>
             Debug.LogError("[StageManager] EnemySpawner not found.");
             return;
         }
+
+        // 스폰 중지 + 모든 몬스터 제거
+        StopSpawning();
+        ClearAllEnemies();
 
         EnemyAI boss = EnemySpawner.Instance.SpawnBoss(_currentStageStat.BossStatId, _currentStageStat);
         if (boss != null)
