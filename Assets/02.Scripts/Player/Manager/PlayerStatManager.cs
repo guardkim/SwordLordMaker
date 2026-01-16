@@ -18,7 +18,8 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
 
     protected override void Initialize()
     {
-        _repository = new PlayerStatRepository();
+        string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
+        _repository = new PlayerStatRepository(playerName);
         _baseStat = _repository.Load();
     }
 

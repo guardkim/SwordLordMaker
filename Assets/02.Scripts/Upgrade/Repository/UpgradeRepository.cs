@@ -17,14 +17,16 @@ public class UpgradeRepository : IUpgradeRepository
     // PlayerProfile 필드
     private const string UpgradeLevelsField = "UpgradeLevels";
 
+    private readonly string _playerName;
     private readonly BGMetaEntity _upgradeDataMeta;
     private readonly BGMetaEntity _playerProfileMeta;
     private BGEntity _playerEntity;
 
     private readonly Dictionary<string, UpgradeData> _upgradeDataCache;
 
-    public UpgradeRepository()
+    public UpgradeRepository(string playerName)
     {
+        _playerName = playerName;
         _upgradeDataCache = new Dictionary<string, UpgradeData>();
 
         _upgradeDataMeta = BGRepo.I[UpgradeDataTableName];
@@ -48,10 +50,27 @@ public class UpgradeRepository : IUpgradeRepository
     {
         if (_playerProfileMeta == null) return;
 
-        if (_playerProfileMeta.CountEntities > 0)
+        _playerEntity = FindEntityByName(_playerName);
+    }
+
+    private BGEntity FindEntityByName(string playerName)
+    {
+        if (_playerProfileMeta == null || _playerProfileMeta.CountEntities == 0)
         {
-            _playerEntity = _playerProfileMeta.GetEntity(0);
+            return null;
         }
+
+        int count = _playerProfileMeta.CountEntities;
+        for (int i = 0; i < count; i++)
+        {
+            BGEntity entity = _playerProfileMeta.GetEntity(i);
+            if (entity.Name == playerName)
+            {
+                return entity;
+            }
+        }
+
+        return null;
     }
 
     public List<UpgradeData> LoadAllUpgradeData()

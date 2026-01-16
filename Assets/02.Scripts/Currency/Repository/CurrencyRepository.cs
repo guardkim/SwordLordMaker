@@ -9,11 +9,13 @@ public class CurrencyRepository : ICurrencyRepository
     private const string GoldField = "Gold";
     private const string RubyField = "Ruby";
 
+    private readonly string _playerName;
     private BGMetaEntity _meta;
     private BGEntity _playerEntity;
 
-    public CurrencyRepository()
+    public CurrencyRepository(string playerName)
     {
+        _playerName = playerName;
         InitializeDatabase();
     }
 
@@ -26,16 +28,40 @@ public class CurrencyRepository : ICurrencyRepository
             return;
         }
 
-        if (_meta.CountEntities > 0)
+        _playerEntity = FindEntityByName(_playerName);
+        if (_playerEntity == null)
         {
-            _playerEntity = _meta.GetEntity(0);
+            _playerEntity = CreateNewPlayerEntity();
         }
-        else
+    }
+
+    private BGEntity FindEntityByName(string playerName)
+    {
+        if (_meta == null || _meta.CountEntities == 0)
         {
-            _playerEntity = _meta.NewEntity();
-            _playerEntity.Set(GoldField, "0");
-            _playerEntity.Set(RubyField, "0");
+            return null;
         }
+
+        int count = _meta.CountEntities;
+        for (int i = 0; i < count; i++)
+        {
+            BGEntity entity = _meta.GetEntity(i);
+            if (entity.Name == playerName)
+            {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    private BGEntity CreateNewPlayerEntity()
+    {
+        BGEntity entity = _meta.NewEntity();
+        entity.Name = _playerName;
+        entity.Set(GoldField, "0");
+        entity.Set(RubyField, "0");
+        return entity;
     }
 
     public Task<Currency> LoadAsync()

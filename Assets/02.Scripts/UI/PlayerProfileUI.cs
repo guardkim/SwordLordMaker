@@ -19,9 +19,9 @@ public class PlayerProfileUI : MonoBehaviour
 
     private void InitializePlayerId()
     {
-        if (PlayerStatManager.Instance == null)
+        if (PlayerSessionManager.Instance == null)
         {
-            Debug.LogError("[PlayerProfileUI] PlayerStatManager not found.");
+            Debug.LogError("[PlayerProfileUI] PlayerSessionManager not found.");
             if (_playerIdText != null)
             {
                 _playerIdText.text = "N/A";
@@ -31,7 +31,7 @@ public class PlayerProfileUI : MonoBehaviour
 
         if (_playerIdText != null)
         {
-            _playerIdText.text = "Player";
+            _playerIdText.text = PlayerSessionManager.Instance.CurrentPlayerName;
         }
     }
 

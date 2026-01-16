@@ -1,0 +1,49 @@
+using System;
+using UnityEngine;
+
+public class PlayerSessionManager : DontDestroySingleton<PlayerSessionManager>
+{
+    private const string PlayerNameKey = "LastPlayerName";
+    private const string DefaultPlayerName = "Player";
+
+    private string _currentPlayerName;
+
+    public string CurrentPlayerName => _currentPlayerName;
+
+    public event Action<string> OnPlayerNameChanged;
+
+    protected override void Initialize()
+    {
+        LoadPlayerName();
+    }
+
+    private void LoadPlayerName()
+    {
+        _currentPlayerName = PlayerPrefs.GetString(PlayerNameKey, DefaultPlayerName);
+
+        if (string.IsNullOrEmpty(_currentPlayerName))
+        {
+            _currentPlayerName = DefaultPlayerName;
+        }
+    }
+
+    public void SetPlayerName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            Debug.LogWarning("[PlayerSessionManager] 플레이어 이름이 비어있습니다.");
+            return;
+        }
+
+        _currentPlayerName = name;
+        PlayerPrefs.SetString(PlayerNameKey, name);
+        PlayerPrefs.Save();
+
+        OnPlayerNameChanged?.Invoke(_currentPlayerName);
+    }
+
+    public void CreateNewPlayer(string name)
+    {
+        SetPlayerName(name);
+    }
+}
