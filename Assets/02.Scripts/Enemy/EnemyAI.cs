@@ -351,6 +351,12 @@ public class EnemyAI : MonoBehaviour, IDamageable
             CurrencyManager.Instance.AddGold(_stat.GoldReward);
         }
 
+        // 경험치 지급 (스탯에서 가져옴)
+        if (_stat != null && PlayerStatManager.Instance != null)
+        {
+            PlayerStatManager.Instance.AddExp(_stat.Exp);
+        }
+
         // StageManager에 사망 알림 (보스/일반 구분)
         if (StageManager.Instance != null)
         {

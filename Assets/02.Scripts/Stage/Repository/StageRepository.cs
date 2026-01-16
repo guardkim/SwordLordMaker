@@ -12,6 +12,7 @@ public class StageRepository : IStageRepository
     private const string AttackMultiplierField = "AttackMultiplier";
     private const string SpeedMultiplierField = "SpeedMultiplier";
     private const string GoldMultiplierField = "GoldMultiplier";
+    private const string ExpMultiplierField = "ExpMultiplier";
 
     private readonly BGMetaEntity _meta;
     private readonly Dictionary<int, StageStat> _cache;
@@ -78,6 +79,7 @@ public class StageRepository : IStageRepository
         float atkMult = entity.Get<float>(AttackMultiplierField);
         float spdMult = entity.Get<float>(SpeedMultiplierField);
         float goldMult = entity.Get<float>(GoldMultiplierField);
+        float expMult = entity.Get<float>(ExpMultiplierField);
 
         return new StageStat(
             entity.Get<int>(StageIdField),
@@ -87,7 +89,8 @@ public class StageRepository : IStageRepository
             hpMult <= 0 ? 1f : hpMult,
             atkMult <= 0 ? 1f : atkMult,
             spdMult <= 0 ? 1f : spdMult,
-            goldMult <= 0 ? 1f : goldMult
+            goldMult <= 0 ? 1f : goldMult,
+            expMult <= 0 ? 1f : expMult
         );
     }
 }

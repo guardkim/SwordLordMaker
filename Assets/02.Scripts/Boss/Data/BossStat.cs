@@ -5,5 +5,6 @@ public record BossStat(
     BigInteger MaxHP,
     BigInteger AttackDamage,
     float MoveSpeed,
-    BigInteger GoldReward
+    BigInteger GoldReward,
+    double Exp
 );
