@@ -630,6 +630,7 @@ flowchart TD
 | Ruby | BGDatabase (PlayerProfile) | 즉시 (변경 시) | Manager Initialize |
 | 강화 레벨 | BGDatabase (PlayerProfile.UpgradeLevels) | 강화 성공 시 | Manager Initialize |
 | 적 스탯 | BGDatabase (EnemyStat) | 에디터에서 설정 | Spawner Initialize |
+| 보스 스탯 | BGDatabase (BossStat) | 에디터에서 설정 | Spawner Initialize |
 | 스테이지 정보 | BGDatabase (StageStat) | 에디터에서 설정 | StageManager Initialize |
 | 검 스탯 | BGDatabase (SwordStat) | 에디터에서 설정 | Controller Initialize |
 | 강화 정보 | BGDatabase (UpgradeData) | 에디터에서 설정 | UpgradeManager Initialize |
@@ -987,7 +988,8 @@ Skill Pool Size: 5
 2. **테이블 생성 순서**:
    - PlayerProfile (저장용)
    - EnemyStat (적 스탯)
-   - StageStat (스테이지 정보)
+   - BossStat (보스 스탯)
+   - StageStat (스테이지 정보 + 배율)
    - SwordStat (검 스탯)
    - UpgradeData (강화 정보)
 3. **필드 추가** (위 5.2 참고)

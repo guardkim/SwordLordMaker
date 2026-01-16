@@ -120,6 +120,12 @@ public class EnemyAI : MonoBehaviour, IDamageable
     {
         Initialize(stat);
         _isBoss = true;
+
+        // 보스 공격 범위 조정: 기본 공격 범위의 3배
+        _attackRange = _attackRange * 3f;
+
+        // 보스 스킬 범위 조정: 기본 공격 범위의 5배
+        _skillRadius = _attackRange * 5f;
     }
 
     // 풀로 반환될 때 호출 (상태 리셋)
