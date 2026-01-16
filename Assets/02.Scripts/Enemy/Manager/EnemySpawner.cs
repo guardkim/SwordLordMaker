@@ -207,7 +207,8 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
             bossStat.MaxHP,
             bossStat.AttackDamage,
             bossStat.MoveSpeed,
-            bossStat.GoldReward
+            bossStat.GoldReward,
+            bossStat.Exp
         );
 
         EnemyStat multipliedStat = ApplyMultiplier(bossEnemyStat, stageStat);
@@ -234,13 +235,15 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         BigInteger multipliedAttack = MultiplyBigInteger(baseStat.AttackDamage, stageStat.AttackMultiplier);
         BigInteger multipliedGold = MultiplyBigInteger(baseStat.GoldReward, stageStat.GoldMultiplier);
         float multipliedSpeed = baseStat.MoveSpeed * stageStat.SpeedMultiplier;
+        double multipliedExp = baseStat.Exp * stageStat.ExpMultiplier;
 
         return new EnemyStat(
             baseStat.Id,
             multipliedHP,
             multipliedAttack,
             multipliedSpeed,
-            multipliedGold
+            multipliedGold,
+            multipliedExp
         );
     }
 

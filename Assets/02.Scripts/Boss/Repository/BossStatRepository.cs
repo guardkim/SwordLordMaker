@@ -13,6 +13,7 @@ public class BossStatRepository : IBossStatRepository
 
     private readonly BGMetaEntity _meta;
     private readonly Dictionary<string, BossStat> _cache;
+    private const string ExpField = "Exp";
 
     public BossStatRepository()
     {
@@ -63,6 +64,7 @@ public class BossStatRepository : IBossStatRepository
         string maxHpStr = entity.Get<string>(MaxHPField);
         string atkStr = entity.Get<string>(AttackDamageField);
         string goldStr = entity.Get<string>(GoldRewardField);
+        double exp = entity.Get<double>(ExpField);
 
         BigInteger maxHP = string.IsNullOrEmpty(maxHpStr) ? BigInteger.Zero : BigInteger.Parse(maxHpStr);
         BigInteger attackDamage = string.IsNullOrEmpty(atkStr) ? BigInteger.Zero : BigInteger.Parse(atkStr);
@@ -73,7 +75,8 @@ public class BossStatRepository : IBossStatRepository
             maxHP,
             attackDamage,
             entity.Get<float>(MoveSpeedField),
-            goldReward
+            goldReward,
+            exp
         );
     }
 }

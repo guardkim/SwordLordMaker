@@ -8,5 +8,6 @@ public record StageStat(
     float HpMultiplier,     // 체력 배율
     float AttackMultiplier, // 공격력 배율
     float SpeedMultiplier,  // 이동속도 배율
-    float GoldMultiplier    // 골드 배율
+    float GoldMultiplier,   // 골드 배율
+    float ExpMultiplier     // 경험치 배율
 );

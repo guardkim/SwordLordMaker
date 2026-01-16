@@ -27,6 +27,17 @@ public class PlayerUpgradeLevels
         return new Dictionary<string, int>(_levels);
     }
 
+    // 모든 강화 레벨의 총합 계산
+    public int GetTotalLevel()
+    {
+        int total = 0;
+        foreach (var level in _levels.Values)
+        {
+            total += level;
+        }
+        return total;
+    }
+
     public string ToJson()
     {
         var wrapper = new SerializableWrapper { levels = new List<LevelEntry>() };

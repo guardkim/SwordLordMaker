@@ -15,5 +15,6 @@ public record EnemyStat(
     BigInteger MaxHP,       // 최대 체력 (BigInteger)
     BigInteger AttackDamage,// 공격력 (BigInteger)
     float MoveSpeed,        // 이동 속도 (float)
-    BigInteger GoldReward   // 처치 시 골드 보상 (BigInteger)
+    BigInteger GoldReward,  // 처치 시 골드 보상 (BigInteger)
+    double Exp             // 처치 시 경험치 보상 (double)
 );

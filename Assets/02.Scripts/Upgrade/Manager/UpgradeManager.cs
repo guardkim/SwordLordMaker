@@ -115,6 +115,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         return _repository.GetUpgradeData(upgradeId);
     }
 
+
     // 플레이어 스탯 보너스 조회
     public BigInteger GetPlayerHealthBonus()
     {

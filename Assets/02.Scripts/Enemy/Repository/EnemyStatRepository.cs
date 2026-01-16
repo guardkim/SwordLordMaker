@@ -11,6 +11,7 @@ public class EnemyStatRepository : IEnemyStatRepository
     private const string AttackDamageField = "AttackDamage";
     private const string MoveSpeedField = "MoveSpeed";
     private const string GoldRewardField = "GoldReward";
+    private const string ExpField = "Exp";
 
     private readonly BGMetaEntity _meta;
     private readonly Dictionary<string, EnemyStat> _cache;
@@ -67,17 +68,19 @@ public class EnemyStatRepository : IEnemyStatRepository
         string maxHpStr = entity.Get<string>(MaxHPField);
         string atkStr = entity.Get<string>(AttackDamageField);
         string goldStr = entity.Get<string>(GoldRewardField);
+        double exp = entity.Get<double>(ExpField);
 
         BigInteger maxHP = string.IsNullOrEmpty(maxHpStr) ? BigInteger.Zero : BigInteger.Parse(maxHpStr);
         BigInteger attackDamage = string.IsNullOrEmpty(atkStr) ? BigInteger.Zero : BigInteger.Parse(atkStr);
         BigInteger goldReward = string.IsNullOrEmpty(goldStr) ? BigInteger.Zero : BigInteger.Parse(goldStr);
-        
+
         return new EnemyStat(
             entity.Name,  // BGDatabase 기본 name 필드를 Id로 사용
             maxHP,
             attackDamage,
             entity.Get<float>(MoveSpeedField),
-            goldReward
+            goldReward,
+            exp
         );
     }
 }
