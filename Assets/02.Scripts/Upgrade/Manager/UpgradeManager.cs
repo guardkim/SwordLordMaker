@@ -17,7 +17,8 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
 
     private IUpgradeRepository CreateRepository()
     {
-        return new UpgradeRepository();
+        string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
+        return new UpgradeRepository(playerName);
     }
 
     public bool TryUpgrade(string upgradeId)

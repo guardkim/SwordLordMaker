@@ -11,11 +11,14 @@ public class PlayerStatRepository : IPlayerStatRepository
     private const string CurrentExpField = "CurrentExp";
     private const string MaxExpField = "MaxExp";
 
+    private readonly string _playerName;
     private readonly BGMetaEntity _meta;
+    private BGEntity _playerEntity;
     private PlayerStat _cachedStat;
 
-    public PlayerStatRepository()
+    public PlayerStatRepository(string playerName)
     {
+        _playerName = playerName;
         _meta = BGRepo.I[TableName];
 
         if (_meta == null)
@@ -23,33 +26,78 @@ public class PlayerStatRepository : IPlayerStatRepository
             Debug.LogWarning($"[PlayerStatRepository] 테이블을 찾을 수 없습니다: {TableName}. 기본값 사용.");
         }
 
-        Load();
+        InitializePlayerEntity();
+    }
+
+    private void InitializePlayerEntity()
+    {
+        _playerEntity = FindEntityByName(_playerName);
+        if (_playerEntity == null)
+        {
+            _playerEntity = CreateNewPlayerEntity();
+        }
+    }
+
+    private BGEntity FindEntityByName(string playerName)
+    {
+        if (_meta == null || _meta.CountEntities == 0)
+        {
+            return null;
+        }
+
+        int count = _meta.CountEntities;
+        for (int i = 0; i < count; i++)
+        {
+            BGEntity entity = _meta.GetEntity(i);
+            if (entity.Name == playerName)
+            {
+                return entity;
+            }
+        }
+
+        return null;
+    }
+
+    private BGEntity CreateNewPlayerEntity()
+    {
+        if (_meta == null)
+        {
+            return null;
+        }
+
+        BGEntity entity = _meta.NewEntity();
+        entity.Name = _playerName;
+        entity.Set(BaseMaxHealthField, "100");
+        entity.Set(BaseMoveSpeedField, 5f);
+        entity.Set(LevelField, 1);
+        entity.Set(CurrentExpField, 0.0);
+        entity.Set(MaxExpField, 10.0);
+        return entity;
     }
 
     public PlayerStat Load()
     {
-        if (_meta == null || _meta.CountEntities == 0)
+        if (_playerEntity == null)
         {
-            _cachedStat = new PlayerStat("Default", new BigInteger(100), 5f, 1, 0.0, 10.0);
+            _cachedStat = new PlayerStat(_playerName, new BigInteger(100), 5f, 1, 0.0, 10.0);
             return _cachedStat;
         }
 
-        BGEntity entity = _meta.GetEntity(0);
-        string healthStr = entity.Get<string>(BaseMaxHealthField);
+        string healthStr = _playerEntity.Get<string>(BaseMaxHealthField);
 
         BigInteger baseMaxHealth = string.IsNullOrEmpty(healthStr)
             ? new BigInteger(100)
             : BigInteger.Parse(healthStr);
 
-        float baseMoveSpeed = entity.Get<float>(BaseMoveSpeedField);
+        float baseMoveSpeed = _playerEntity.Get<float>(BaseMoveSpeedField);
         if (baseMoveSpeed <= 0f)
         {
             baseMoveSpeed = 5f;
         }
 
-        int level = entity.Get<int>(LevelField);
-        double currentExp = entity.Get<double>(CurrentExpField);
-        double maxExp = entity.Get<double>(MaxExpField);
+        int level = _playerEntity.Get<int>(LevelField);
+        double currentExp = _playerEntity.Get<double>(CurrentExpField);
+        double maxExp = _playerEntity.Get<double>(MaxExpField);
 
         // 기본값 검증: Level은 최소 1, MaxExp는 최소 10.0
         if (level < 1)
@@ -63,7 +111,7 @@ public class PlayerStatRepository : IPlayerStatRepository
         }
 
         _cachedStat = new PlayerStat(
-            entity.Name,
+            _playerEntity.Name,
             baseMaxHealth,
             baseMoveSpeed,
             level,
@@ -76,18 +124,17 @@ public class PlayerStatRepository : IPlayerStatRepository
 
     public void Save(PlayerStat stat)
     {
-        if (_meta == null || _meta.CountEntities == 0)
+        if (_playerEntity == null)
         {
-            Debug.LogWarning("[PlayerStatRepository] 테이블이 없어 저장할 수 없습니다.");
+            Debug.LogWarning("[PlayerStatRepository] PlayerEntity가 없어 저장할 수 없습니다.");
             return;
         }
 
-        BGEntity entity = _meta.GetEntity(0);
-        entity.Set(BaseMaxHealthField, stat.BaseMaxHealth.ToString());
-        entity.Set(BaseMoveSpeedField, stat.BaseMoveSpeed);
-        entity.Set(LevelField, stat.Level);
-        entity.Set(CurrentExpField, stat.CurrentExp);
-        entity.Set(MaxExpField, stat.MaxExp);
+        _playerEntity.Set(BaseMaxHealthField, stat.BaseMaxHealth.ToString());
+        _playerEntity.Set(BaseMoveSpeedField, stat.BaseMoveSpeed);
+        _playerEntity.Set(LevelField, stat.Level);
+        _playerEntity.Set(CurrentExpField, stat.CurrentExp);
+        _playerEntity.Set(MaxExpField, stat.MaxExp);
 
         _cachedStat = stat;
     }

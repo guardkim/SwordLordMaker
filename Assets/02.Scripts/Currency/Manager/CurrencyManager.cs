@@ -27,7 +27,8 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     private ICurrencyRepository CreateRepository()
     {
-        return new CurrencyRepository();
+        string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
+        return new CurrencyRepository(playerName);
     }
 
     private void LoadCurrency()
