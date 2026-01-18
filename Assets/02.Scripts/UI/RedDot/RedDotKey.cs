@@ -5,6 +5,10 @@ public enum RedDotKey
     // 메인 메뉴
     MainMenu = 1,
 
+    // 탭
+    TabHero = 10,
+    TabSword = 11,
+
     // 강화 시스템
     Upgrade = 100,
     UpgradePlayer = 101,
