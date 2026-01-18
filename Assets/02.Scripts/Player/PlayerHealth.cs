@@ -75,7 +75,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void OnUpgradeChanged(string upgradeId, int newLevel)
     {
-        if (upgradeId == UpgradeId.PlayerHealth)
+        if (upgradeId == UpgradeId.PlayerHealth.ToKey())
         {
             BigInteger oldMaxHealth = _maxHealth;
             ApplyUpgradeBonus();
