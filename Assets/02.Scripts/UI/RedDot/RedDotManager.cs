@@ -40,6 +40,15 @@ public class RedDotManager : DontDestroySingleton<RedDotManager>
         upgradeSword.AddChild(CreateNode(RedDotKey.UpgradeSwordCritChance));
         upgradeSword.AddChild(CreateNode(RedDotKey.UpgradeSwordCritDamage));
 
+        // 탭 트리
+        var tabHero = CreateNode(RedDotKey.TabHero);
+        mainMenu.AddChild(tabHero);
+        tabHero.AddChild(upgradePlayer);
+
+        var tabSword = CreateNode(RedDotKey.TabSword);
+        mainMenu.AddChild(tabSword);
+        tabSword.AddChild(upgradeSword);
+
         // 상점 트리
         var shop = CreateNode(RedDotKey.Shop);
         mainMenu.AddChild(shop);
