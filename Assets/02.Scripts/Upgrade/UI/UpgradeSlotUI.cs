@@ -1,41 +1,36 @@
 using System.Numerics;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class UpgradeSlotUI : MonoBehaviour
+public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("▼ 강화 ID")]
-    [SerializeField] private string _upgradeId;
+    [SerializeField] private UpgradeId _upgradeId;
 
     [Header("▼ UI 요소")]
     [SerializeField] private TextMeshProUGUI _nameText;
     [SerializeField] private TextMeshProUGUI _levelText;
     [SerializeField] private TextMeshProUGUI _costText;
     [SerializeField] private TextMeshProUGUI _bonusText;
-    [SerializeField] private Button _upgradeButton;
+    [SerializeField] private Image _upgradeButtonImage;
+    [SerializeField] private Color _enabledColor = Color.white;
+    [SerializeField] private Color _disabledColor = new Color(0.5f, 0.5f, 0.5f, 1f);
 
+    private bool _interactable = true;
     private UpgradeData _upgradeData;
+    private string _upgradeKey;
 
-    public string UpgradeId => _upgradeId;
+    public UpgradeId UpgradeId => _upgradeId;
 
     private void Start()
     {
-        if (_upgradeButton != null)
-        {
-            _upgradeButton.onClick.AddListener(OnUpgradeClicked);
-        }
-
         Initialize(_upgradeId);
     }
 
     private void OnDestroy()
     {
-        if (_upgradeButton != null)
-        {
-            _upgradeButton.onClick.RemoveListener(OnUpgradeClicked);
-        }
-
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
@@ -47,13 +42,27 @@ public class UpgradeSlotUI : MonoBehaviour
         }
     }
 
-    public void Initialize(string upgradeId)
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (!_interactable)
+        {
+            return;
+        }
+
+        OnUpgradeClicked();
+    }
+
+    public void Initialize(UpgradeId upgradeId)
     {
         _upgradeId = upgradeId;
+        _upgradeKey = upgradeId.ToKey();
 
-        if (UpgradeManager.Instance == null) return;
+        if (UpgradeManager.Instance == null)
+        {
+            return;
+        }
 
-        _upgradeData = UpgradeManager.Instance.GetUpgradeData(upgradeId);
+        _upgradeData = UpgradeManager.Instance.GetUpgradeData(_upgradeKey);
 
         UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
 
@@ -65,15 +74,15 @@ public class UpgradeSlotUI : MonoBehaviour
         Refresh();
     }
 
-    private void OnUpgradeChanged(string upgradeId, int newLevel)
+    private void OnUpgradeChanged(string upgradeKey, int newLevel)
     {
-        if (upgradeId == _upgradeId)
+        if (upgradeKey == _upgradeKey)
         {
             Refresh();
         }
     }
 
-    private void OnCurrencyChanged(CurrencyType type, System.Numerics.BigInteger amount)
+    private void OnCurrencyChanged(CurrencyType type, BigInteger amount)
     {
         if (type == CurrencyType.Gold)
         {
@@ -83,44 +92,47 @@ public class UpgradeSlotUI : MonoBehaviour
 
     public void Refresh()
     {
-        if (_upgradeData == null || UpgradeManager.Instance == null) return;
+        if (_upgradeData == null || UpgradeManager.Instance == null)
+        {
+            return;
+        }
 
-        int currentLevel = UpgradeManager.Instance.GetLevel(_upgradeId);
+        int currentLevel = UpgradeManager.Instance.GetLevel(_upgradeKey);
         int maxLevel = _upgradeData.MaxLevel;
         BigInteger cost = _upgradeData.GetCost(currentLevel);
         BigInteger totalBonus = _upgradeData.GetTotalBigIntBonus(currentLevel);
         BigInteger nextBonus = ParseBonusPerLevel(_upgradeData.BonusPerLevel);
         bool isMaxLevel = currentLevel >= maxLevel;
 
-        // 이름
         if (_nameText != null)
         {
             _nameText.text = _upgradeData.DisplayName;
         }
 
-        // 레벨
         if (_levelText != null)
         {
             _levelText.text = isMaxLevel ? $"Lv.{currentLevel} (MAX)" : $"Lv.{currentLevel} / {maxLevel}";
         }
 
-        // 비용
         if (_costText != null)
         {
             _costText.text = isMaxLevel ? "-" : $"{CurrencyFormatter.FormatAbbreviated(cost)} G";
         }
 
-        // 보너스
         if (_bonusText != null)
         {
-            string totalBonusStr = CurrencyFormatter.FormatAbbreviated(totalBonus);
+            float totalBonusFloat = _upgradeData.GetTotalBonus(currentLevel);
+            float nextBonusFloat = ParseBonusPerLevelFloat(_upgradeData.BonusPerLevel);
+
+            string totalBonusStr = FormatBonus(_upgradeId, totalBonusFloat, totalBonus);
+            string nextBonusStr = FormatBonus(_upgradeId, nextBonusFloat, nextBonus);
+
             if (isMaxLevel)
             {
                 _bonusText.text = $"+{totalBonusStr}";
             }
             else
             {
-                string nextBonusStr = CurrencyFormatter.FormatAbbreviated(nextBonus);
                 _bonusText.text = $"+{totalBonusStr} (+{nextBonusStr})";
             }
         }
@@ -130,21 +142,32 @@ public class UpgradeSlotUI : MonoBehaviour
 
     private void RefreshButtonState()
     {
-        if (_upgradeButton == null || UpgradeManager.Instance == null) return;
+        if (UpgradeManager.Instance == null)
+        {
+            return;
+        }
 
-        bool isMaxLevel = UpgradeManager.Instance.IsMaxLevel(_upgradeId);
-        BigInteger cost = UpgradeManager.Instance.GetCost(_upgradeId);
+        bool isMaxLevel = UpgradeManager.Instance.IsMaxLevel(_upgradeKey);
+        BigInteger cost = UpgradeManager.Instance.GetCost(_upgradeKey);
         bool canAfford = CurrencyManager.Instance != null &&
                          CurrencyManager.Instance.Gold >= cost;
 
-        _upgradeButton.interactable = !isMaxLevel && canAfford;
+        _interactable = !isMaxLevel && canAfford;
+
+        if (_upgradeButtonImage != null)
+        {
+            _upgradeButtonImage.color = _interactable ? _enabledColor : _disabledColor;
+        }
     }
 
     private void OnUpgradeClicked()
     {
-        if (UpgradeManager.Instance == null) return;
+        if (UpgradeManager.Instance == null)
+        {
+            return;
+        }
 
-        UpgradeManager.Instance.TryUpgrade(_upgradeId);
+        UpgradeManager.Instance.TryUpgrade(_upgradeKey);
     }
 
     private BigInteger ParseBonusPerLevel(string value)
@@ -160,5 +183,38 @@ public class UpgradeSlotUI : MonoBehaviour
         }
 
         return BigInteger.Zero;
+    }
+
+    private float ParseBonusPerLevelFloat(string value)
+    {
+        if (float.TryParse(value, out float result))
+        {
+            return result;
+        }
+        return 0f;
+    }
+
+    private string FormatBonus(UpgradeId upgradeId, float floatValue, BigInteger bigIntValue)
+    {
+        switch (upgradeId)
+        {
+            case UpgradeId.SwordCritChance:
+                return $"{floatValue * 100f:F1}%";
+
+            case UpgradeId.SwordCritDamage:
+                return $"{floatValue:F1}배";
+
+            case UpgradeId.SwordCooldown:
+                return $"{floatValue:F2}초";
+
+            case UpgradeId.SwordMoveSpeed:
+            case UpgradeId.PlayerMoveSpeed:
+                return $"{floatValue:F1}배";
+
+            case UpgradeId.PlayerHealth:
+            case UpgradeId.SwordAttackDamage:
+            default:
+                return CurrencyFormatter.FormatAbbreviated(bigIntValue);
+        }
     }
 }

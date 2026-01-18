@@ -1,22 +1,21 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-public class BossSpawnUI : MonoBehaviour
+public class BossSpawnUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("▼ UI 참조")]
-    [SerializeField] private Button _bossEnterButton;
+    [SerializeField] private Image _bossEnterButtonImage;
     [SerializeField] private TMPro.TextMeshProUGUI _buttonText;
+
+    [Header("▼ 색상 설정")]
+    [SerializeField] private Color _enabledColor = Color.white;
+    [SerializeField] private Color _disabledColor = new Color(0.5f, 0.5f, 0.5f, 1f);
+
+    private bool _interactable = true;
 
     private void Start()
     {
-        if (_bossEnterButton == null)
-        {
-            Debug.LogError("[BossSpawnUI] Boss Enter Button is not assigned.");
-            return;
-        }
-
-        _bossEnterButton.onClick.AddListener(OnBossEnterButtonClicked);
-
         if (StageManager.Instance != null)
         {
             StageManager.Instance.OnBossSpawned += OnBossSpawned;
@@ -30,11 +29,6 @@ public class BossSpawnUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (_bossEnterButton != null)
-        {
-            _bossEnterButton.onClick.RemoveListener(OnBossEnterButtonClicked);
-        }
-
         if (StageManager.Instance != null)
         {
             StageManager.Instance.OnBossSpawned -= OnBossSpawned;
@@ -42,8 +36,13 @@ public class BossSpawnUI : MonoBehaviour
         }
     }
 
-    private void OnBossEnterButtonClicked()
+    public void OnPointerClick(PointerEventData eventData)
     {
+        if (!_interactable)
+        {
+            return;
+        }
+
         if (StageManager.Instance != null)
         {
             StageManager.Instance.SpawnBoss();
@@ -54,12 +53,19 @@ public class BossSpawnUI : MonoBehaviour
         }
     }
 
+    private void SetInteractable(bool interactable)
+    {
+        _interactable = interactable;
+
+        if (_bossEnterButtonImage != null)
+        {
+            _bossEnterButtonImage.color = _interactable ? _enabledColor : _disabledColor;
+        }
+    }
+
     private void OnBossSpawned(EnemyAI boss)
     {
-        if (_bossEnterButton != null)
-        {
-            _bossEnterButton.interactable = false;
-        }
+        SetInteractable(false);
 
         if (_buttonText != null)
         {
@@ -69,10 +75,7 @@ public class BossSpawnUI : MonoBehaviour
 
     private void OnStageStarted(int stageId)
     {
-        if (_bossEnterButton != null)
-        {
-            _bossEnterButton.interactable = true;
-        }
+        SetInteractable(true);
 
         if (_buttonText != null)
         {
