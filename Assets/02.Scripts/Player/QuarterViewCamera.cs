@@ -1,7 +1,10 @@
+using DG.Tweening;
 using UnityEngine;
 
 public class QuarterViewCamera : MonoBehaviour
 {
+    public static QuarterViewCamera Instance { get; private set; }
+
     [Header("▼ 참조")]
     [SerializeField] private Transform _target;
 
@@ -9,6 +12,19 @@ public class QuarterViewCamera : MonoBehaviour
     [SerializeField] private Vector3 _positionOffset = new Vector3(-10f, 9f, -10f);
     [SerializeField] private Vector3 _rotation = new Vector3(30f, 45f, 0f);
     [SerializeField] private float _smoothSpeed = 10f;
+
+    [Header("▼ 카메라 쉐이크 (모바일용)")]
+    [SerializeField] private float _shakeDuration = 0.1f;
+    [SerializeField] private float _shakeStrength = 0.08f;
+    [SerializeField] private int _shakeVibrato = 30;
+
+    private Vector3 _shakeOffset;
+    private Tweener _shakeTweener;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -27,7 +43,29 @@ public class QuarterViewCamera : MonoBehaviour
             return;
         }
 
-        Vector3 targetPosition = _target.position + _positionOffset;
+        Vector3 targetPosition = _target.position + _positionOffset + _shakeOffset;
         transform.position = Vector3.Lerp(transform.position, targetPosition, _smoothSpeed * Time.deltaTime);
+    }
+
+    public void Shake()
+    {
+        Shake(_shakeDuration, _shakeStrength, _shakeVibrato);
+    }
+
+    public void Shake(float duration, float strength, int vibrato)
+    {
+        _shakeTweener?.Kill();
+        _shakeOffset = Vector3.zero;
+
+        _shakeTweener = DOTween.Shake(
+            () => _shakeOffset,
+            x => _shakeOffset = x,
+            duration,
+            strength,
+            vibrato,
+            90f,
+            false,
+            true
+        ).OnComplete(() => _shakeOffset = Vector3.zero);
     }
 }

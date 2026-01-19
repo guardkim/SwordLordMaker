@@ -28,6 +28,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
     [SerializeField] private Transform _target;
     [SerializeField] private EnemyAnimation _enemyAnimation;
     [SerializeField] private EnemyHPBar _hpBar;
+    [SerializeField] private HitFlashEffect _hitFlashEffect;
 
     [Header("▼ AI 설정")]
     [SerializeField] private float _chaseRange = 15f;
@@ -83,7 +84,22 @@ public class EnemyAI : MonoBehaviour, IDamageable
             FindComponents();
         }
     }
+    private void OnEnable()
+    {
+        if (_agent != null && _agent.isOnNavMesh && !IsDead)
+        {
+            _agent.isStopped = false;
+        }
+    }
 
+    private void OnDisable()
+    {
+        if (_agent != null && _agent.isOnNavMesh)
+        {
+            _agent.isStopped = true;
+            _agent.velocity = Vector3.zero; 
+        }
+    }
     // 풀에서 가져올 때 호출 (스탯 초기화)
     public void Initialize(EnemyStat stat)
     {
@@ -96,7 +112,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         {
             _agent.speed = stat.MoveSpeed;
             _agent.enabled = true;
-            _agent.isStopped = false;
+            _agent.isStopped = true;
         }
 
         // HPBar 초기화
@@ -155,6 +171,11 @@ public class EnemyAI : MonoBehaviour, IDamageable
             _hpBar.Reset();
         }
 
+        if (_hitFlashEffect != null)
+        {
+            _hitFlashEffect.ResetColors();
+        }
+
         StopAllCoroutines();
     }
 
@@ -175,6 +196,10 @@ public class EnemyAI : MonoBehaviour, IDamageable
         if (_enemyAnimation == null)
         {
             _enemyAnimation = GetComponent<EnemyAnimation>();
+        }
+        if (_hitFlashEffect == null)
+        {
+            _hitFlashEffect = GetComponent<HitFlashEffect>();
         }
     }
 
@@ -224,7 +249,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         _currentState = State.Hit;
 
-        if (_agent != null && _agent.isOnNavMesh)
+        if (_agent && _agent.isOnNavMesh)
         {
             _agent.isStopped = true;
             _agent.velocity = Vector3.zero;
@@ -235,6 +260,11 @@ public class EnemyAI : MonoBehaviour, IDamageable
         {
             _enemyAnimation.StopAllActions();
             _enemyAnimation.TriggerHit();
+        }
+
+        if (_hitFlashEffect != null)
+        {
+            _hitFlashEffect.Flash();
         }
 
         StartCoroutine(ApplyKnockback());
@@ -290,7 +320,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         {
             _currentState = State.Idle;
 
-            if (_agent != null)
+            if (_agent && _agent.isOnNavMesh && enabled)
             {
                 _agent.isStopped = false;
             }
@@ -308,7 +338,8 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         if (EffectManager.Instance != null)
         {
-            EffectManager.Instance.PlayHitVfx(GetHitVfxPosition());
+            EffectManager.Instance.PlayAllHitVfx(GetHitVfxPosition());
+            EffectManager.Instance.PlayHitCameraShake();
         }
     }
 
