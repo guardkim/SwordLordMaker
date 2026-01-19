@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -6,7 +7,7 @@ public class BossSpawnUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("▼ UI 참조")]
     [SerializeField] private Image _bossEnterButtonImage;
-    [SerializeField] private TMPro.TextMeshProUGUI _buttonText;
+    [SerializeField] private TextMeshProUGUI _buttonText;
 
     [Header("▼ 색상 설정")]
     [SerializeField] private Color _enabledColor = Color.white;
@@ -43,9 +44,18 @@ public class BossSpawnUI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        if (StageManager.Instance != null)
+        // [수정됨] 클릭 시 바로 소환하지 않고, 화면을 먼저 어둡게(FadeOut) 만듭니다.
+        if (StageManager.Instance != null && FadeManager.Instance != null)
         {
-            StageManager.Instance.SpawnBoss();
+            // 중복 클릭 방지
+            SetInteractable(false); 
+
+            // 1. 화면 어두워지기 시작
+            FadeManager.Instance.FadeOut(() => 
+            {
+                // 2. 화면이 다 어두워진 뒤(콜백) 보스 소환 요청
+                StageManager.Instance.SpawnBoss();
+            });
         }
         else
         {
@@ -56,8 +66,7 @@ public class BossSpawnUI : MonoBehaviour, IPointerClickHandler
     private void SetInteractable(bool interactable)
     {
         _interactable = interactable;
-
-        if (_bossEnterButtonImage != null)
+        if (_bossEnterButtonImage)
         {
             _bossEnterButtonImage.color = _interactable ? _enabledColor : _disabledColor;
         }
@@ -65,19 +74,24 @@ public class BossSpawnUI : MonoBehaviour, IPointerClickHandler
 
     private void OnBossSpawned(EnemyAI boss)
     {
-        SetInteractable(false);
+        if(boss != null) boss.enabled = false; 
 
-        if (_buttonText != null)
+        if (_buttonText != null) _buttonText.text = "보스 전투 중";
+        
+        FadeManager.Instance.FadeIn(() => 
         {
-            _buttonText.text = "보스 전투 중";
-        }
+            if (boss != null)
+            {
+                boss.enabled = true; 
+            }
+        });
     }
 
     private void OnStageStarted(int stageId)
     {
         SetInteractable(true);
 
-        if (_buttonText != null)
+        if (_buttonText)
         {
             _buttonText.text = "보스입장";
         }
