@@ -6,7 +6,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [Header("▼ 참조")]
     [SerializeField] private PlayerAnimation _playerAnimation;
-    [SerializeField] private PlayerMovement _playerMovement;
+    [SerializeField] private PlayerAutoMovement _playerMovement;
 
     private BigInteger _baseMaxHealth;
     private BigInteger _maxHealth;
@@ -41,7 +41,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         if (_playerMovement == null)
         {
-            _playerMovement = GetComponent<PlayerMovement>();
+            _playerMovement = GetComponent<PlayerAutoMovement>();
         }
     }
 
@@ -154,7 +154,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         // 이동 활성화
         if (_playerMovement != null)
         {
-            _playerMovement.SetEnabled(true);
+            _playerMovement.Revive();
         }
 
         // 애니메이션 리셋

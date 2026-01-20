@@ -4,7 +4,7 @@ public class PlayerAnimation : MonoBehaviour
 {
     [Header("▼ 참조")]
     [SerializeField] private Animator _animator;
-    [SerializeField] private PlayerMovement _movement;
+    [SerializeField] private PlayerAutoMovement _movement;
 
     [Header("▼ 애니메이션 파라미터")]
     [SerializeField] private string _speedParam = "Speed";
@@ -21,7 +21,7 @@ public class PlayerAnimation : MonoBehaviour
 
         if (_movement == null)
         {
-            _movement = GetComponent<PlayerMovement>();
+            _movement = GetComponent<PlayerAutoMovement>();
         }
     }
 
