@@ -41,6 +41,13 @@ public class GameManager : DontDestroySingleton<GameManager>
     private void HandlePlayerDeath()
     {
         OnPlayerDeath?.Invoke();
+
+        // 즉시 보스 및 모든 몬스터 제거
+        if (StageManager.Instance != null)
+        {
+            StageManager.Instance.OnPlayerDied();
+        }
+
         StartCoroutine(RespawnSequence());
     }
 

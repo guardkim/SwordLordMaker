@@ -101,6 +101,7 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         try
         {
             await _repository.SaveGoldAsync(_currency.Gold);
+            _repository.ForceSaveToDisk();
         }
         catch (Exception e)
         {

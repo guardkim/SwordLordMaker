@@ -1,10 +1,12 @@
 using System;
+using BansheeGz.BGDatabase;
 using UnityEngine;
 
 public class PlayerSessionManager : DontDestroySingleton<PlayerSessionManager>
 {
+    private const string PlayerProfileTableName = "PlayerProfile";
     private const string PlayerNameKey = "LastPlayerName";
-    private const string DefaultPlayerName = "Player";
+    private const string DefaultPlayerName = "Guardkim";
 
     private string _currentPlayerName;
 
@@ -19,12 +21,41 @@ public class PlayerSessionManager : DontDestroySingleton<PlayerSessionManager>
 
     private void LoadPlayerName()
     {
-        _currentPlayerName = PlayerPrefs.GetString(PlayerNameKey, DefaultPlayerName);
+        _currentPlayerName = LoadPlayerNameFromDatabase();
+
+        if (string.IsNullOrEmpty(_currentPlayerName))
+        {
+            _currentPlayerName = PlayerPrefs.GetString(PlayerNameKey, DefaultPlayerName);
+        }
 
         if (string.IsNullOrEmpty(_currentPlayerName))
         {
             _currentPlayerName = DefaultPlayerName;
         }
+
+        PlayerPrefs.SetString(PlayerNameKey, _currentPlayerName);
+        PlayerPrefs.Save();
+    }
+
+    private string LoadPlayerNameFromDatabase()
+    {
+        BGMetaEntity meta = BGRepo.I[PlayerProfileTableName];
+        if (meta == null || meta.CountEntities == 0)
+        {
+            return null;
+        }
+
+        int count = meta.CountEntities;
+        for (int i = 0; i < count; i++)
+        {
+            BGEntity entity = meta.GetEntity(i);
+            if (entity.Name == DefaultPlayerName)
+            {
+                return entity.Name;
+            }
+        }
+
+        return meta.GetEntity(0)?.Name;
     }
 
     public void SetPlayerName(string name)

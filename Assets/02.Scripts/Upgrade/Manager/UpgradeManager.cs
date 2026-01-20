@@ -13,6 +13,11 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
     {
         _repository = CreateRepository();
         _playerLevels = _repository.LoadPlayerLevels();
+
+        if (_playerLevels.IsEmpty())
+        {
+            _repository.SavePlayerLevels(_playerLevels);
+        }
     }
 
     private IUpgradeRepository CreateRepository()

@@ -228,6 +228,12 @@ public class StageManager : DontDestroySingleton<StageManager>
         StartStage(stageId);
     }
 
+    public void OnPlayerDied()
+    {
+        StopSpawning();
+        ClearAllEnemies();
+    }
+
     private void StopSpawning()
     {
         _isSpawning = false;
@@ -249,11 +255,27 @@ public class StageManager : DontDestroySingleton<StageManager>
         }
         _aliveEnemies.Clear();
 
+        // 태그로 남은 모든 Enemy 제거 (누락 방지)
+        GameObject[] remainingEnemies = GameObject.FindGameObjectsWithTag("Enemy");
+        foreach (var enemyObj in remainingEnemies)
+        {
+            if (enemyObj != null)
+            {
+                EnemyAI enemyAI = enemyObj.GetComponent<EnemyAI>();
+                if (enemyAI != null && enemyAI != _currentBoss)
+                {
+                    EnemySpawner.Instance?.Return(enemyAI);
+                }
+            }
+        }
+
         // 보스도 제거
         if (_currentBoss != null)
         {
             Destroy(_currentBoss.gameObject);
             _currentBoss = null;
         }
+
+        _bossSpawned = false;
     }
 }
