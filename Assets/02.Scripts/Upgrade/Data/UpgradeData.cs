@@ -41,6 +41,6 @@ public record UpgradeData(
 
     public bool IsMaxLevel(int currentLevel)
     {
-        return currentLevel >= MaxLevel;
+        return false;
     }
 }

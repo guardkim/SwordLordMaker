@@ -98,11 +98,9 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
         }
 
         int currentLevel = UpgradeManager.Instance.GetLevel(_upgradeKey);
-        int maxLevel = _upgradeData.MaxLevel;
         BigInteger cost = _upgradeData.GetCost(currentLevel);
         BigInteger totalBonus = _upgradeData.GetTotalBigIntBonus(currentLevel);
         BigInteger nextBonus = ParseBonusPerLevel(_upgradeData.BonusPerLevel);
-        bool isMaxLevel = currentLevel >= maxLevel;
 
         if (_nameText != null)
         {
@@ -111,12 +109,12 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
 
         if (_levelText != null)
         {
-            _levelText.text = isMaxLevel ? $"Lv.{currentLevel} (MAX)" : $"Lv.{currentLevel} / {maxLevel}";
+            _levelText.text = $"Lv.{currentLevel}";
         }
 
         if (_costText != null)
         {
-            _costText.text = isMaxLevel ? "-" : $"{CurrencyFormatter.FormatAbbreviated(cost)} G";
+            _costText.text = $"{CurrencyFormatter.FormatAbbreviated(cost)} G";
         }
 
         if (_bonusText != null)
@@ -127,14 +125,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
             string totalBonusStr = FormatBonus(_upgradeId, totalBonusFloat, totalBonus);
             string nextBonusStr = FormatBonus(_upgradeId, nextBonusFloat, nextBonus);
 
-            if (isMaxLevel)
-            {
-                _bonusText.text = $"+{totalBonusStr}";
-            }
-            else
-            {
-                _bonusText.text = $"+{totalBonusStr} (+{nextBonusStr})";
-            }
+            _bonusText.text = $"+{totalBonusStr} (+{nextBonusStr})";
         }
 
         RefreshButtonState();
@@ -147,12 +138,11 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        bool isMaxLevel = UpgradeManager.Instance.IsMaxLevel(_upgradeKey);
         BigInteger cost = UpgradeManager.Instance.GetCost(_upgradeKey);
         bool canAfford = CurrencyManager.Instance != null &&
                          CurrencyManager.Instance.Gold >= cost;
 
-        _interactable = !isMaxLevel && canAfford;
+        _interactable = canAfford;
 
         if (_upgradeButtonImage != null)
         {

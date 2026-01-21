@@ -36,11 +36,6 @@ public class UpgradeRedDotCondition : IRedDotCondition
             return false;
         }
 
-        if (UpgradeManager.Instance.IsMaxLevel(_upgradeId))
-        {
-            return false;
-        }
-
         var cost = UpgradeManager.Instance.GetCost(_upgradeId);
         var currentGold = CurrencyManager.Instance.Gold;
 
