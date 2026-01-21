@@ -376,6 +376,11 @@ public class EnemyAI : MonoBehaviour, IDamageable
             _agent.enabled = false;
         }
 
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(SfxId.MonsterDead, transform.position);
+        }
+
         // 골드 지급 (스탯에서 가져옴)
         if (CurrencyManager.Instance != null && _stat != null)
         {

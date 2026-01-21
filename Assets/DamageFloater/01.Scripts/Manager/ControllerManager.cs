@@ -52,6 +52,7 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
             _cooldownTimer += Time.deltaTime;
             if (_cooldownTimer >= CurrentCooldown)
             {
+                Debug.Log($"AutoFire!!!");
                 Fire();
                 _cooldownTimer = 0f;
             }
@@ -83,6 +84,7 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
         // 여기서는 BaseSwordController가 입력을 안 받으므로 굳이 enabled를 끌 필요는 없으나,
         // 확실한 상태 관리를 위해 StopSequence 호출 가능
         SwitchMode(SwordType.Adel);
+        Fire();
     }
 
     // ■ 2. 외부에서 사용하는 API

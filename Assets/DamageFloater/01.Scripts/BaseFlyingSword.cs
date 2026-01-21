@@ -30,15 +30,25 @@ public abstract class BaseFlyingSword : MonoBehaviour
             if (_stat == null)
             {
                 target.TakeDamage(10, false);
+                PlayHitSound(other.transform.position);
                 return true;
             }
 
             bool isCritical = Random.value < _stat.CritChance;
             BigInteger finalDamage = _stat.CalculateDamage(isCritical);
             target.TakeDamage(finalDamage, isCritical);
+            PlayHitSound(other.transform.position);
             return true;
         }
         return false;
+    }
+
+    private void PlayHitSound(Vector3 position)
+    {
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(SfxId.SwordHit, position);
+        }
     }
 
     protected bool TryDealDamage(Collider2D other)
@@ -49,12 +59,14 @@ public abstract class BaseFlyingSword : MonoBehaviour
             if (_stat == null)
             {
                 target.TakeDamage(10, false);
+                PlayHitSound(other.transform.position);
                 return true;
             }
 
             bool isCritical = Random.value < _stat.CritChance;
             BigInteger finalDamage = _stat.CalculateDamage(isCritical);
             target.TakeDamage(finalDamage, isCritical);
+            PlayHitSound(other.transform.position);
             return true;
         }
         return false;

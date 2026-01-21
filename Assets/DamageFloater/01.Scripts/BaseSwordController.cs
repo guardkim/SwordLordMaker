@@ -15,7 +15,13 @@ public abstract class BaseSwordController : MonoBehaviour
     {
         // 기존에 실행 중이던 시퀀스나 코루틴이 있다면 정지
         StopSequence();
-        
+
+        // 공격 시작 효과음
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySFX(SfxId.SwordAttack);
+        }
+
         // 자식 클래스의 고유 로직 실행
         ResetSequence();
     }

@@ -84,6 +84,11 @@ public class StageManager : DontDestroySingleton<StageManager>
     {
         _currentStageId = 1;
         StartStage(_currentStageId);
+
+        if (SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlayBGM(BgmId.Main);
+        }
     }
 
     public void StartStage(int stageId)
