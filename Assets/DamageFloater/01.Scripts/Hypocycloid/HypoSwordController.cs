@@ -1,20 +1,20 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class HypoSwordController : BaseSwordController
 {
-    // SwordPrefab은 부모에 있음
+    [Header("■ [Hypo] 발사 설정")]
+    public int SwordCountPerFire = 5;
 
-    [Header("■ 웨이브 설정")]
-    public int SwordCount = 6;
-    public int MaxWaves = 3;
+    [Header("■ 타겟팅 설정")]
+    public float MaxTargetDistance = 25f;
 
     [Header("■ Sword Stat")]
     [SerializeField] private string _swordStatId = "HYPO_SWORD";
     private SwordStat _swordStat;
     public SwordStat SwordStat => _swordStat;
 
-    private int _currentWaveIndex;
-    private int _finishedSwordsInWave;
+    private readonly List<HypoFlyingSword> _activeSwords = new List<HypoFlyingSword>();
 
     private void Awake()
     {
@@ -23,27 +23,53 @@ public class HypoSwordController : BaseSwordController
 
     private void Start()
     {
-        // 강화 이벤트 구독
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized += OnUpgradeManagerInitialized;
+
+            if (!UpgradeManager.Instance.IsReady)
+            {
+                return;
+            }
         }
     }
 
     private void OnDestroy()
     {
-        if (UpgradeManager.Instance != null)
+        if (UpgradeManager.HasInstance)
         {
             UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized -= OnUpgradeManagerInitialized;
+        }
+    }
+
+    private void OnUpgradeManagerInitialized()
+    {
+        LoadAndApplyUpgrades();
+
+        foreach (var sword in _activeSwords)
+        {
+            if (sword != null)
+            {
+                sword.InitializeStat(_swordStat);
+            }
         }
     }
 
     private void OnUpgradeChanged(string upgradeId, int newLevel)
     {
-        // 검 관련 강화 시 스탯 재적용
         if (upgradeId.StartsWith("Sword_"))
         {
             LoadAndApplyUpgrades();
+
+            foreach (var sword in _activeSwords)
+            {
+                if (sword != null)
+                {
+                    sword.InitializeStat(_swordStat);
+                }
+            }
         }
     }
 
@@ -52,7 +78,6 @@ public class HypoSwordController : BaseSwordController
         var repository = new SwordStatRepository();
         SwordStat baseStat = repository.GetById(_swordStatId);
 
-        // 강화 보너스 적용
         if (UpgradeManager.Instance != null)
         {
             _swordStat = UpgradeManager.Instance.ApplyUpgrades(baseStat);
@@ -63,50 +88,50 @@ public class HypoSwordController : BaseSwordController
         }
     }
 
-    // 부모의 추상 메서드 구현 (Update의 Space 입력 시 호출됨)
     protected override void ResetSequence()
     {
-        StopAllCoroutines(); 
-        _currentWaveIndex = 0;
-        SpawnWave();
+        SpawnSwords();
     }
 
-    private void SpawnWave()
+    private void SpawnSwords()
     {
-        if (_currentWaveIndex >= MaxWaves) 
-        {
-            Debug.Log("Hypo: All waves completed!");
-            return;
-        }
-        
-        GameObject[] enemies = FindEnemies(); // 부모 메서드
-        if (enemies.Length == 0) return;
+        GameObject[] enemies = FindEnemies();
+        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
+        if (validEnemies.Length == 0) return;
 
-        Debug.Log($"Hypo Wave Start: {_currentWaveIndex + 1} / {MaxWaves}");
-        
-        _finishedSwordsInWave = 0;
-
-        for (int i = 0; i < SwordCount; i++)
+        for (int i = 0; i < SwordCountPerFire; i++)
         {
+            Transform target = GetRandomEnemyTarget(validEnemies);
+
             GameObject obj = Instantiate(SwordPrefab, transform.position, Quaternion.identity);
             HypoFlyingSword sword = obj.GetComponent<HypoFlyingSword>();
-            
+
             if (sword)
             {
-                Transform randomTarget = GetRandomEnemyTarget(enemies); // 부모 메서드
-                sword.Init(transform, randomTarget, OnSwordFinished, _swordStat);
+                _activeSwords.Add(sword);
+                sword.Init(transform, target, () => OnSwordFinished(sword), _swordStat);
             }
         }
-        
-        _currentWaveIndex++;
     }
 
-    private void OnSwordFinished()
+    private GameObject[] FilterEnemiesByDistance(GameObject[] enemies)
     {
-        _finishedSwordsInWave++;
-        if (_finishedSwordsInWave >= SwordCount)
+        var result = new List<GameObject>();
+        Vector3 playerPos = transform.position;
+
+        foreach (var enemy in enemies)
         {
-            Invoke(nameof(SpawnWave), 1.0f);
+            if (Vector3.Distance(enemy.transform.position, playerPos) <= MaxTargetDistance)
+            {
+                result.Add(enemy);
+            }
         }
+
+        return result.ToArray();
+    }
+
+    private void OnSwordFinished(HypoFlyingSword sword)
+    {
+        _activeSwords.Remove(sword);
     }
 }

@@ -1,13 +1,9 @@
-using System.Collections.Generic;
 using UnityEngine;
-using TMPro; // UI 사용 시
+using TMPro;
 
 public class ControllerManager : DontDestroySingleton<ControllerManager>
 {
-
     [Header("Controllers Assignment")]
-    // Inspector에서 할당 (DIP 위반을 최소화하기 위해 인터페이스/추상클래스로 관리 가능하지만, 
-    // 유니티 Inspector 편의성을 위해 구체 클래스를 필드로 두고 내부에서 추상화합니다)
     [SerializeField] private AdelFlyingSwordController _adelController;
     [SerializeField] private HypoSwordController _hypoController;
     [SerializeField] private PixelSwordController _pixelController;
@@ -15,127 +11,127 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
     [Header("UI (Optional)")]
     public TextMeshProUGUI ModeText;
 
-    [Header("■ 쿨타임 설정")]
+    [Header("■ 기본 쿨타임 설정")]
     [SerializeField] private float _baseCooldown = 20f;
-    private float _cooldownTimer;
+
     private bool _autoFireEnabled = true;
 
-    private float CurrentCooldown
+    // 각 컨트롤러별 개별 쿨타임 타이머
+    private float _adelCooldownTimer;
+    private float _hypoCooldownTimer;
+    private float _pixelCooldownTimer;
+
+    private float GetCooldown(BaseSwordController controller)
     {
-        get
-        {
-            float cooldownMultiplier = 1f;
+        float cooldownMultiplier = 1f;
 
-            if (_currentController is AdelFlyingSwordController adel)
-                cooldownMultiplier = adel.SwordStat?.Cooldown ?? 1f;
-            else if (_currentController is HypoSwordController hypo)
-                cooldownMultiplier = hypo.SwordStat?.Cooldown ?? 1f;
-            else if (_currentController is PixelSwordController pixel)
-                cooldownMultiplier = pixel.SwordStat?.Cooldown ?? 1f;
+        if (controller is AdelFlyingSwordController adel)
+            cooldownMultiplier = adel.SwordStat?.Cooldown ?? 1f;
+        else if (controller is HypoSwordController hypo)
+            cooldownMultiplier = hypo.SwordStat?.Cooldown ?? 1f;
+        else if (controller is PixelSwordController pixel)
+            cooldownMultiplier = pixel.SwordStat?.Cooldown ?? 1f;
 
-            return _baseCooldown * cooldownMultiplier;
-        }
+        return _baseCooldown * cooldownMultiplier;
     }
-
-    // 내부 관리용 딕셔너리 (OCP: 새로운 검이 추가돼도 Dictionary에만 넣으면 됨)
-    private Dictionary<SwordType, BaseSwordController> _controllers;
-
-    // 현재 선택된 모드 기억
-    private BaseSwordController _currentController;
-    private SwordType _currentType;
 
     private void Update()
     {
-        // 자동 발사 시스템
-        if (_autoFireEnabled)
+        if (!_autoFireEnabled) return;
+
+        // Adel 쿨타임
+        if (_adelController != null)
         {
-            _cooldownTimer += Time.deltaTime;
-            if (_cooldownTimer >= CurrentCooldown)
+            _adelCooldownTimer += Time.deltaTime;
+            float adelCooldown = GetCooldown(_adelController);
+            if (_adelCooldownTimer >= adelCooldown)
             {
-                Debug.Log($"AutoFire!!!");
-                Fire();
-                _cooldownTimer = 0f;
+                _adelController.Fire();
+                _adelCooldownTimer = 0f;
             }
         }
 
-        // [검증용] Space 키 수동 발사 유지
+        // Hypo 쿨타임
+        if (_hypoController != null)
+        {
+            _hypoCooldownTimer += Time.deltaTime;
+            float hypoCooldown = GetCooldown(_hypoController);
+            if (_hypoCooldownTimer >= hypoCooldown)
+            {
+                _hypoController.Fire();
+                _hypoCooldownTimer = 0f;
+            }
+        }
+
+        // Pixel 쿨타임
+        if (_pixelController != null)
+        {
+            _pixelCooldownTimer += Time.deltaTime;
+            float pixelCooldown = GetCooldown(_pixelController);
+            if (_pixelCooldownTimer >= pixelCooldown)
+            {
+                _pixelController.Fire();
+                _pixelCooldownTimer = 0f;
+            }
+        }
+
+        // [검증용] Space 키 수동 발사 (모두 발사)
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            Fire();
-            _cooldownTimer = 0f;
+            FireAll();
         }
     }
 
     public void SetAutoFire(bool enabled)
     {
         _autoFireEnabled = enabled;
-        if (enabled) _cooldownTimer = 0f;
+        if (enabled)
+        {
+            _adelCooldownTimer = 0f;
+            _hypoCooldownTimer = 0f;
+            _pixelCooldownTimer = 0f;
+        }
     }
+
     protected override void Initialize()
     {
-        _controllers = new Dictionary<SwordType, BaseSwordController>
-        {
-            { SwordType.Adel, _adelController },
-            { SwordType.Hypo, _hypoController },
-            { SwordType.Pixel, _pixelController }
-        };
-
-        // 초기 상태: 모든 컨트롤러의 불필요한 연산 방지 (필요하다면)
-        // 여기서는 BaseSwordController가 입력을 안 받으므로 굳이 enabled를 끌 필요는 없으나,
-        // 확실한 상태 관리를 위해 StopSequence 호출 가능
-        SwitchMode(SwordType.Adel);
-        Fire();
-    }
-
-    // ■ 2. 외부에서 사용하는 API
-
-    /// <summary>
-    /// 특정 타입의 검을 즉시 발사합니다. 
-    /// 사용 예: ControllerManager.Instance.Fire(SwordType.Pixel);
-    /// </summary>
-    public void Fire()
-    {
-        if(_currentController)
-            _currentController.Fire();
+        // 시작 시 모두 발사
+        FireAll();
     }
 
     /// <summary>
-    /// 발사 없이 모드만 변경하고 싶을 때
+    /// 모든 검을 즉시 발사
     /// </summary>
-    public void SetMode(int type)
+    public void FireAll()
     {
-        SwitchMode((SwordType)type);
+        _adelController?.Fire();
+        _hypoController?.Fire();
+        _pixelController?.Fire();
+
+        _adelCooldownTimer = 0f;
+        _hypoCooldownTimer = 0f;
+        _pixelCooldownTimer = 0f;
     }
 
-    // ■ 3. 내부 로직
-
-    private void SwitchMode(SwordType newType)
+    /// <summary>
+    /// 특정 타입의 검만 발사
+    /// </summary>
+    public void Fire(SwordType type)
     {
-        //if (_currentType == newType) return;
-
-        // 2. 타입 변경
-        _currentType = newType;
-
-        // 3. ★ 컨트롤러 캐싱 (Dictionary 조회는 여기서만 수행)
-        if (_controllers.TryGetValue(newType, out BaseSwordController newController))
+        switch (type)
         {
-            _currentController = newController;
-        }
-        else
-        {
-            _currentController = null;
-            Debug.LogError($"[Manager] {_currentType}에 해당하는 컨트롤러가 없습니다!");
-        }
-
-        _currentType = newType;
-        UpdateUI(newType.ToString());
-    }
-
-    private void UpdateUI(string text)
-    {
-        if (ModeText != null)
-        {
-            ModeText.text = $"{text} Mode";
+            case SwordType.Adel:
+                _adelController?.Fire();
+                _adelCooldownTimer = 0f;
+                break;
+            case SwordType.Hypo:
+                _hypoController?.Fire();
+                _hypoCooldownTimer = 0f;
+                break;
+            case SwordType.Pixel:
+                _pixelController?.Fire();
+                _pixelCooldownTimer = 0f;
+                break;
         }
     }
 }
