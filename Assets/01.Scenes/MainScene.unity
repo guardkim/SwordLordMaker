@@ -36192,7 +36192,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8136648631771752194, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
   m_PrefabInstance: {fileID: 8577817846909403993}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 8577817846909403994}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d76ee2e780030f84d92ec0a18df7657e, type: 3}
@@ -42641,8 +42641,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ControllerManager
   _adelController: {fileID: 1379955552}
-  _hypoController: {fileID: 0}
-  _pixelController: {fileID: 0}
+  _hypoController: {fileID: 8577817846909403996}
+  _pixelController: {fileID: 8577817846909403995}
   ModeText: {fileID: 0}
   _baseCooldown: 20
 --- !u!1 &1645135877
@@ -87568,8 +87568,51 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3219037742895609571, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8577817846909403996}
+    - targetCorrespondingSourceObject: {fileID: 3219037742895609571, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8577817846909403995}
   m_SourcePrefab: {fileID: 100100000, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
+--- !u!1 &8577817846909403994 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3219037742895609571, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
+  m_PrefabInstance: {fileID: 8577817846909403993}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &8577817846909403995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8577817846909403994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ead1632adb1ba7d42a9fd2817d8907bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PixelSwordController
+  SwordPrefab: {fileID: 6085948305323607975, guid: b98b40e7c6da4b74dbf96b37451414c5, type: 3}
+  SwordCountPerFire: 5
+  MaxTargetDistance: 25
+  _swordStatId: PIXEL_SWORD
+--- !u!114 &8577817846909403996
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8577817846909403994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7aec24cff84cbd04ea6dfca00174e67e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HypoSwordController
+  SwordPrefab: {fileID: 6085948305323607975, guid: 1b536c9326ab2fc4fbc2e75117b8bdfd, type: 3}
+  SwordCountPerFire: 5
+  MaxTargetDistance: 25
+  _swordStatId: HYPO_SWORD
 --- !u!222 &8588450320923293826
 CanvasRenderer:
   m_ObjectHideFlags: 0
