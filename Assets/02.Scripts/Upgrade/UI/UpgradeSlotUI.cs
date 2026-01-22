@@ -31,12 +31,13 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
 
     private void OnDestroy()
     {
-        if (UpgradeManager.Instance != null)
+        if (UpgradeManager.HasInstance)
         {
             UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized -= OnUpgradeManagerInitialized;
         }
 
-        if (CurrencyManager.Instance != null)
+        if (CurrencyManager.HasInstance)
         {
             CurrencyManager.Instance.OnCurrencyChanged -= OnCurrencyChanged;
         }
@@ -62,15 +63,27 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        _upgradeData = UpgradeManager.Instance.GetUpgradeData(_upgradeKey);
-
         UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+        UpgradeManager.Instance.OnInitialized += OnUpgradeManagerInitialized;
 
         if (CurrencyManager.Instance != null)
         {
             CurrencyManager.Instance.OnCurrencyChanged += OnCurrencyChanged;
         }
 
+        // 아직 초기화 안 됐으면 이벤트로 대기
+        if (!UpgradeManager.Instance.IsReady)
+        {
+            return;
+        }
+
+        _upgradeData = UpgradeManager.Instance.GetUpgradeData(_upgradeKey);
+        Refresh();
+    }
+
+    private void OnUpgradeManagerInitialized()
+    {
+        _upgradeData = UpgradeManager.Instance.GetUpgradeData(_upgradeKey);
         Refresh();
     }
 

@@ -30,7 +30,7 @@ public class BossSpawnUI : MonoBehaviour, IPointerClickHandler
 
     private void OnDestroy()
     {
-        if (StageManager.Instance != null)
+        if (StageManager.HasInstance)
         {
             StageManager.Instance.OnBossSpawned -= OnBossSpawned;
             StageManager.Instance.OnStageStarted -= OnStageStarted;

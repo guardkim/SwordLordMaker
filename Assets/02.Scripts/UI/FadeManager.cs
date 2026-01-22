@@ -1,50 +1,89 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 using DG.Tweening;
 using System;
 
 public class FadeManager : DontDestroySingleton<FadeManager>
 {
-    [SerializeField] private Image fadeImage; 
-    [SerializeField] [Range(0.1f, 3.0f)] private float fadeDuration = 1.0f;
+    [SerializeField] [Range(0.1f, 3.0f)] private float _fadeDuration = 1.0f;
+
+    private Image _fadeImage;
+
+    protected override void Initialize()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        // 씬 로드 시 FadeUI를 찾아서 바인딩
+        FindAndBindFadeUI();
+    }
+
+    private void FindAndBindFadeUI()
+    {
+        FadeUI fadeUI = FindFirstObjectByType<FadeUI>();
+        if (fadeUI != null)
+        {
+            BindFadeUI(fadeUI);
+        }
+    }
+
+    public void BindFadeUI(FadeUI fadeUI)
+    {
+        if (fadeUI == null) return;
+
+        _fadeImage = fadeUI.Image;
+        Debug.Log($"[FadeManager] FadeUI 바인딩 완료: {fadeUI.gameObject.name}");
+    }
 
     public void FadeIn(Action onComplete = null)
     {
-        if (fadeImage == null) return;
+        if (_fadeImage == null)
+        {
+            Debug.LogWarning("[FadeManager] FadeImage가 없습니다.");
+            onComplete?.Invoke();
+            return;
+        }
 
-        fadeImage.DOKill();
+        _fadeImage.DOKill();
 
-        // Image의 투명도를 0으로 (투명해짐 = 화면 보임)
-        fadeImage.DOFade(0f, fadeDuration)
-            .OnStart(() => 
+        _fadeImage.DOFade(0f, _fadeDuration)
+            .OnStart(() =>
             {
-                // 페이드 중에는 클릭 막기
-                fadeImage.raycastTarget = true; 
+                _fadeImage.raycastTarget = true;
             })
-            .OnComplete(() => 
+            .OnComplete(() =>
             {
-                // 다 끝나면 클릭 통과시켜서 게임 할 수 있게 함
-                fadeImage.raycastTarget = false; 
+                _fadeImage.raycastTarget = false;
                 onComplete?.Invoke();
             });
     }
 
     public void FadeOut(Action onComplete = null)
     {
-        if (fadeImage == null) return;
+        if (_fadeImage == null)
+        {
+            Debug.LogWarning("[FadeManager] FadeImage가 없습니다.");
+            onComplete?.Invoke();
+            return;
+        }
 
-        fadeImage.DOKill();
+        _fadeImage.DOKill();
 
-        // Image의 투명도를 1로 (불투명해짐 = 검은 화면)
-        fadeImage.DOFade(1f, fadeDuration)
-            .OnStart(() => 
+        _fadeImage.DOFade(1f, _fadeDuration)
+            .OnStart(() =>
             {
-                // 시작하자마자 클릭 막기
-                fadeImage.raycastTarget = true; 
+                _fadeImage.raycastTarget = true;
             })
-            .OnComplete(() => 
+            .OnComplete(() =>
             {
-                // 어두워진 상태 유지 (클릭 계속 막음)
                 onComplete?.Invoke();
             });
     }

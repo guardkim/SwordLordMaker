@@ -12,7 +12,6 @@ public class UpgradeRepository : IUpgradeRepository
     private const string BaseCostField = "BaseCost";
     private const string CostMultiplierField = "CostMultiplier";
     private const string BonusPerLevelField = "BonusPerLevel";
-    private const string MaxLevelField = "MaxLevel";
 
     // PlayerProfile 필드
     private const string UpgradeLevelsField = "UpgradeLevels";
@@ -51,6 +50,15 @@ public class UpgradeRepository : IUpgradeRepository
         if (_playerProfileMeta == null) return;
 
         _playerEntity = FindEntityByName(_playerName);
+
+        if (_playerEntity != null)
+        {
+            Debug.Log($"[UpgradeRepository] PlayerEntity 찾음: {_playerName}");
+        }
+        else
+        {
+            Debug.LogWarning($"[UpgradeRepository] PlayerEntity를 찾을 수 없음: {_playerName}");
+        }
     }
 
     private BGEntity FindEntityByName(string playerName)
@@ -107,10 +115,12 @@ public class UpgradeRepository : IUpgradeRepository
     {
         if (_playerEntity == null)
         {
+            Debug.LogWarning($"[UpgradeRepository] PlayerEntity가 없어서 빈 레벨 반환 (playerName: {_playerName})");
             return new PlayerUpgradeLevels();
         }
 
         string json = _playerEntity.Get<string>(UpgradeLevelsField) ?? "";
+        Debug.Log($"[UpgradeRepository] 강화 레벨 로드: {json}");
         return PlayerUpgradeLevels.FromJson(json);
     }
 
@@ -118,13 +128,15 @@ public class UpgradeRepository : IUpgradeRepository
     {
         if (_playerEntity == null)
         {
-            Debug.LogError("[UpgradeRepository] PlayerEntity가 없습니다.");
+            Debug.LogError($"[UpgradeRepository] PlayerEntity가 없습니다. 저장 실패 (playerName: {_playerName})");
             return;
         }
 
         string json = levels.ToJson();
         _playerEntity.Set(UpgradeLevelsField, json);
         BGRepo.I.Save();
+
+        Debug.Log($"[UpgradeRepository] 강화 레벨 저장 완료: {json}");
     }
 
     private UpgradeData CreateUpgradeDataFromEntity(BGEntity entity)
@@ -134,8 +146,7 @@ public class UpgradeRepository : IUpgradeRepository
             entity.Get<string>(DisplayNameField) ?? entity.Name,
             entity.Get<string>(BaseCostField) ?? "100",
             entity.Get<float>(CostMultiplierField),
-            entity.Get<string>(BonusPerLevelField),
-            entity.Get<int>(MaxLevelField)
+            entity.Get<string>(BonusPerLevelField)
         );
     }
 }

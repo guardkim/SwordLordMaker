@@ -18,7 +18,41 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
 
     protected override void Initialize()
     {
+        UnityEngine.Debug.Log("[PlayerStatManager] Initialize() 시작");
+
+        PlayerSessionManager.Instance.OnLoginCompleted += OnLoginCompleted;
+        UnityEngine.Debug.Log($"[PlayerStatManager] OnLoginCompleted 구독 완료, IsLoggedIn: {PlayerSessionManager.Instance.IsLoggedIn}");
+
+        // 이미 로그인된 상태라면 바로 초기화
+        if (PlayerSessionManager.Instance.IsLoggedIn)
+        {
+            InitializeRepository();
+        }
+        else
+        {
+            UnityEngine.Debug.Log("[PlayerStatManager] 아직 로그인 안 됨, OnLoginCompleted 대기");
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (PlayerSessionManager.HasInstance)
+        {
+            PlayerSessionManager.Instance.OnLoginCompleted -= OnLoginCompleted;
+        }
+    }
+
+    private void OnLoginCompleted()
+    {
+        UnityEngine.Debug.Log("[PlayerStatManager] OnLoginCompleted 이벤트 수신");
+        InitializeRepository();
+    }
+
+    private void InitializeRepository()
+    {
         string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
+        UnityEngine.Debug.Log($"[PlayerStatManager] Repository 초기화: '{playerName}'");
+
         _repository = new PlayerStatRepository(playerName);
         _baseStat = _repository.Load();
     }
@@ -49,17 +83,29 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
 
         if (_baseStat.CurrentExp + ExpCompareEpsilon >= _baseStat.MaxExp)
         {
+            int newLevel = _baseStat.Level + 1;
+            double newMaxExp = CalculateMaxExp(newLevel);
+
             _baseStat = _baseStat with
             {
                 CurrentExp = _baseStat.CurrentExp - _baseStat.MaxExp,
-                Level = _baseStat.Level + 1,
-                MaxExp = CalculateMaxExp(_baseStat.Level + 1)
+                Level = newLevel,
+                MaxExp = newMaxExp
             };
+
+            UnityEngine.Debug.Log($"[PlayerStatManager] 레벨업! Level: {_baseStat.Level}, CurrentExp: {_baseStat.CurrentExp}, MaxExp: {_baseStat.MaxExp}");
 
             OnLevelUp?.Invoke(_baseStat.Level);
             OnExpChanged?.Invoke(_baseStat.CurrentExp, _baseStat.MaxExp);
 
-            _repository.Save(_baseStat);
+            if (_repository != null)
+            {
+                _repository.Save(_baseStat);
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning("[PlayerStatManager] _repository가 null이라 저장 불가");
+            }
 
             CheckLevelUp();
         }

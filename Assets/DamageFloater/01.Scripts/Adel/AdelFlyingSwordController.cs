@@ -35,18 +35,39 @@ public class AdelFlyingSwordController : BaseSwordController
 
     private void Start()
     {
-        // 강화 이벤트 구독
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized += OnUpgradeManagerInitialized;
+
+            // 아직 초기화 안 됐으면 이벤트로 대기
+            if (!UpgradeManager.Instance.IsReady)
+            {
+                return;
+            }
         }
     }
 
     private void OnDestroy()
     {
-        if (UpgradeManager.Instance != null)
+        if (UpgradeManager.HasInstance)
         {
             UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized -= OnUpgradeManagerInitialized;
+        }
+    }
+
+    private void OnUpgradeManagerInitialized()
+    {
+        LoadAndApplyUpgrades();
+
+        // 기존 활성 검들에도 새 스탯 적용
+        foreach (var sword in _activeSwords)
+        {
+            if (sword != null)
+            {
+                sword.InitializeStat(_swordStat);
+            }
         }
     }
 

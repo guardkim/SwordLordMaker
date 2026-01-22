@@ -26,12 +26,23 @@ public class UpgradeRedDotCondition : IRedDotCondition
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnUpgraded += HandleUpgraded;
+            UpgradeManager.Instance.OnInitialized += HandleInitialized;
         }
+    }
+
+    private void HandleInitialized()
+    {
+        OnConditionChanged?.Invoke();
     }
 
     public bool CheckCondition()
     {
-        if (UpgradeManager.Instance == null || CurrencyManager.Instance == null)
+        if (UpgradeManager.Instance == null || !UpgradeManager.Instance.IsReady)
+        {
+            return false;
+        }
+
+        if (CurrencyManager.Instance == null)
         {
             return false;
         }
@@ -68,6 +79,7 @@ public class UpgradeRedDotCondition : IRedDotCondition
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnUpgraded -= HandleUpgraded;
+            UpgradeManager.Instance.OnInitialized -= HandleInitialized;
         }
     }
 }

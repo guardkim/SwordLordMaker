@@ -8,26 +8,67 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
     private PlayerUpgradeLevels _playerLevels;
 
     public event Action<string, int> OnUpgraded;
+    public event Action OnInitialized;
+
+    public bool IsReady => _repository != null;
 
     protected override void Initialize()
     {
-        _repository = CreateRepository();
+        Debug.Log($"[UpgradeManager] Initialize 호출됨");
+        Debug.Log($"[UpgradeManager] PlayerSessionManager.IsLoggedIn: {PlayerSessionManager.Instance.IsLoggedIn}");
+        Debug.Log($"[UpgradeManager] CurrentPlayerName: '{PlayerSessionManager.Instance.CurrentPlayerName}'");
+
+        PlayerSessionManager.Instance.OnLoginCompleted += OnLoginCompleted;
+
+        // 이미 로그인된 상태라면 바로 초기화
+        if (PlayerSessionManager.Instance.IsLoggedIn)
+        {
+            Debug.Log("[UpgradeManager] 이미 로그인됨 → InitializeRepository 호출");
+            InitializeRepository();
+        }
+        else
+        {
+            Debug.Log("[UpgradeManager] 아직 로그인 안 됨 → OnLoginCompleted 대기");
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (PlayerSessionManager.HasInstance)
+        {
+            PlayerSessionManager.Instance.OnLoginCompleted -= OnLoginCompleted;
+        }
+    }
+
+    private void OnLoginCompleted()
+    {
+        InitializeRepository();
+    }
+
+    private void InitializeRepository()
+    {
+        string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
+        Debug.Log($"[UpgradeManager] Repository 초기화: '{playerName}'");
+
+        _repository = new UpgradeRepository(playerName);
         _playerLevels = _repository.LoadPlayerLevels();
 
         if (_playerLevels.IsEmpty())
         {
             _repository.SavePlayerLevels(_playerLevels);
         }
-    }
 
-    private IUpgradeRepository CreateRepository()
-    {
-        string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
-        return new UpgradeRepository(playerName);
+        OnInitialized?.Invoke();
     }
 
     public bool TryUpgrade(string upgradeId)
     {
+        if (_repository == null)
+        {
+            Debug.LogWarning("[UpgradeManager] 아직 초기화되지 않았습니다.");
+            return false;
+        }
+
         UpgradeData data = _repository.GetUpgradeData(upgradeId);
         if (data == null)
         {
@@ -36,13 +77,6 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         }
 
         int currentLevel = _playerLevels.GetLevel(upgradeId);
-
-        if (data.IsMaxLevel(currentLevel))
-        {
-            Debug.Log($"[UpgradeManager] 최대 레벨 도달: {upgradeId}");
-            return false;
-        }
-
         BigInteger cost = data.GetCost(currentLevel);
 
         if (CurrencyManager.Instance == null)
@@ -69,55 +103,46 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
 
     public int GetLevel(string upgradeId)
     {
+        if (_playerLevels == null) return 0;
         return _playerLevels.GetLevel(upgradeId);
     }
+
     public BigInteger GetBigIntBonus(string upgradeId)
     {
-        UpgradeData data = _repository.GetUpgradeData(upgradeId);
-        if (data == null) return BigInteger.Zero; // 0 대신 BigInteger.Zero 반환
+        if (_repository == null) return BigInteger.Zero;
 
-        int level = _playerLevels.GetLevel(upgradeId);
-    
-        // data.GetTotalBonus도 내부적으로 BigInteger를 반환하도록 수정되어야 합니다!
-        // 만약 data가 float만 뱉는다면 여기서 (BigInteger)캐스팅을 해야 하지만, 
-        // 근본적으로는 data 쪽도 BigInteger를 지원해야 합니다.
-        return data.GetTotalBigIntBonus(level); 
+        UpgradeData data = _repository.GetUpgradeData(upgradeId);
+        if (data == null) return BigInteger.Zero;
+
+        int level = _playerLevels?.GetLevel(upgradeId) ?? 0;
+        return data.GetTotalBigIntBonus(level);
     }
+
     public float GetBonus(string upgradeId)
     {
+        if (_repository == null) return 0f;
+
         UpgradeData data = _repository.GetUpgradeData(upgradeId);
         if (data == null) return 0f;
 
-        int level = _playerLevels.GetLevel(upgradeId);
+        int level = _playerLevels?.GetLevel(upgradeId) ?? 0;
         return data.GetTotalBonus(level);
     }
 
     public BigInteger GetCost(string upgradeId)
     {
+        if (_repository == null) return BigInteger.Zero;
+
         UpgradeData data = _repository.GetUpgradeData(upgradeId);
         if (data == null) return BigInteger.Zero;
 
-        int currentLevel = _playerLevels.GetLevel(upgradeId);
+        int currentLevel = _playerLevels?.GetLevel(upgradeId) ?? 0;
         return data.GetCost(currentLevel);
-    }
-
-    public int GetMaxLevel(string upgradeId)
-    {
-        UpgradeData data = _repository.GetUpgradeData(upgradeId);
-        return data?.MaxLevel ?? 0;
-    }
-
-    public bool IsMaxLevel(string upgradeId)
-    {
-        UpgradeData data = _repository.GetUpgradeData(upgradeId);
-        if (data == null) return true;
-
-        int currentLevel = _playerLevels.GetLevel(upgradeId);
-        return data.IsMaxLevel(currentLevel);
     }
 
     public UpgradeData GetUpgradeData(string upgradeId)
     {
+        if (_repository == null) return null;
         return _repository.GetUpgradeData(upgradeId);
     }
 
@@ -136,6 +161,11 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
     // 검 스탯 보너스 적용
     public SwordStat ApplyUpgrades(SwordStat baseStat)
     {
+        if (_repository == null)
+        {
+            return baseStat;
+        }
+
         return baseStat with
         {
             AttackDamage = baseStat.AttackDamage + GetBigIntBonus(UpgradeId.SwordAttackDamage.ToKey()),
