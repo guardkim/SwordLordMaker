@@ -32,8 +32,13 @@ public class PlayerStatRepository : IPlayerStatRepository
     private void InitializePlayerEntity()
     {
         _playerEntity = FindEntityByName(_playerName);
-        if (_playerEntity == null)
+        if (_playerEntity != null)
         {
+            Debug.Log($"[PlayerStatRepository] PlayerEntity 찾음: {_playerName}");
+        }
+        else
+        {
+            Debug.Log($"[PlayerStatRepository] PlayerEntity 없음, 새로 생성: {_playerName}");
             _playerEntity = CreateNewPlayerEntity();
         }
     }
@@ -42,13 +47,18 @@ public class PlayerStatRepository : IPlayerStatRepository
     {
         if (_meta == null || _meta.CountEntities == 0)
         {
+            Debug.Log($"[PlayerStatRepository] FindEntityByName - 테이블 없거나 비어있음");
             return null;
         }
 
         int count = _meta.CountEntities;
+        Debug.Log($"[PlayerStatRepository] FindEntityByName - 검색할 이름: '{playerName}', 총 엔티티 수: {count}");
+
         for (int i = 0; i < count; i++)
         {
             BGEntity entity = _meta.GetEntity(i);
+            Debug.Log($"[PlayerStatRepository] 엔티티[{i}]: Name='{entity.Name}', Level={entity.Get<int>(LevelField)}");
+
             if (entity.Name == playerName)
             {
                 return entity;
@@ -119,6 +129,8 @@ public class PlayerStatRepository : IPlayerStatRepository
             maxExp
         );
 
+        Debug.Log($"[PlayerStatRepository] 로드 완료 - Level: {level}, CurrentExp: {currentExp}, MaxExp: {maxExp}");
+
         return _cachedStat;
     }
 
@@ -130,6 +142,8 @@ public class PlayerStatRepository : IPlayerStatRepository
             return;
         }
 
+        Debug.Log($"[PlayerStatRepository] 저장 시작 - Level: {stat.Level}, CurrentExp: {stat.CurrentExp}, MaxExp: {stat.MaxExp}");
+
         _playerEntity.Set(BaseMaxHealthField, stat.BaseMaxHealth.ToString());
         _playerEntity.Set(BaseMoveSpeedField, stat.BaseMoveSpeed);
         _playerEntity.Set(LevelField, stat.Level);
@@ -137,5 +151,9 @@ public class PlayerStatRepository : IPlayerStatRepository
         _playerEntity.Set(MaxExpField, stat.MaxExp);
 
         _cachedStat = stat;
+
+        BGRepo.I.Save();
+
+        Debug.Log("[PlayerStatRepository] 저장 완료");
     }
 }

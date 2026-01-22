@@ -47,15 +47,22 @@ public class PlayerMovement : MonoBehaviour
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized += OnUpgradeManagerInitialized;
         }
     }
 
     private void OnDestroy()
     {
-        if (UpgradeManager.Instance != null)
+        if (UpgradeManager.HasInstance)
         {
             UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized -= OnUpgradeManagerInitialized;
         }
+    }
+
+    private void OnUpgradeManagerInitialized()
+    {
+        ApplyUpgradeBonus();
     }
 
     private void OnUpgradeChanged(string upgradeId, int newLevel)

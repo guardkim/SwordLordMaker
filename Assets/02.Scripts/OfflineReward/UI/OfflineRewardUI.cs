@@ -32,7 +32,7 @@ public class OfflineRewardUI : MonoBehaviour, IPointerClickHandler
 
     private void OnDestroy()
     {
-        if (OfflineRewardManager.Instance != null)
+        if (OfflineRewardManager.HasInstance)
         {
             OfflineRewardManager.Instance.OnOfflineRewardReady -= OnOfflineRewardReady;
         }

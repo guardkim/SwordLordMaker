@@ -119,7 +119,7 @@ public abstract class PopupBase : MonoBehaviour
             return;
         }
 
-        if (PopupManager.Instance != null)
+        if (PopupManager.HasInstance)
         {
             PopupManager.Instance.Unregister(_popupType);
         }

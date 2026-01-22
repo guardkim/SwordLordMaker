@@ -28,12 +28,33 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
 
     protected override void Initialize()
     {
-        _repository = CreateRepository();
+        PlayerSessionManager.Instance.OnLoginCompleted += OnLoginCompleted;
+
+        // 이미 로그인된 상태라면 바로 초기화
+        if (PlayerSessionManager.Instance.IsLoggedIn)
+        {
+            InitializeRepository();
+        }
     }
 
-    private void Start()
+    private void OnLoginCompleted()
     {
+        InitializeRepository();
+    }
+
+    private void InitializeRepository()
+    {
+        string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
+        Debug.Log($"[OfflineRewardManager] Repository 초기화: '{playerName}'");
+
+        _repository = new OfflineRewardRepository(playerName);
+
         CheckOfflineReward();
+
+        if (_autoSaveCoroutine != null)
+        {
+            StopCoroutine(_autoSaveCoroutine);
+        }
         _autoSaveCoroutine = StartCoroutine(AutoSaveRoutine());
     }
 
@@ -45,12 +66,6 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
             yield return wait;
             SaveCurrentTimeSync();
         }
-    }
-
-    private IOfflineRewardRepository CreateRepository()
-    {
-        string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
-        return new OfflineRewardRepository(playerName);
     }
 
     private void CheckOfflineReward()
@@ -203,6 +218,11 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
 
     private void OnDestroy()
     {
+        if (PlayerSessionManager.HasInstance)
+        {
+            PlayerSessionManager.Instance.OnLoginCompleted -= OnLoginCompleted;
+        }
+
         if (_autoSaveCoroutine != null)
         {
             StopCoroutine(_autoSaveCoroutine);

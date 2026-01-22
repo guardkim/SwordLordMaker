@@ -62,15 +62,31 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (UpgradeManager.Instance != null)
         {
             UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized += OnUpgradeManagerInitialized;
         }
     }
 
     private void OnDestroy()
     {
-        if (UpgradeManager.Instance != null)
+        if (UpgradeManager.HasInstance)
         {
             UpgradeManager.Instance.OnUpgraded -= OnUpgradeChanged;
+            UpgradeManager.Instance.OnInitialized -= OnUpgradeManagerInitialized;
         }
+    }
+
+    private void OnUpgradeManagerInitialized()
+    {
+        BigInteger oldMaxHealth = _maxHealth;
+        ApplyUpgradeBonus();
+
+        BigInteger healthIncrease = _maxHealth - oldMaxHealth;
+        if (healthIncrease > BigInteger.Zero)
+        {
+            _currentHealth += healthIncrease;
+        }
+
+        OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 
     private void OnUpgradeChanged(string upgradeId, int newLevel)

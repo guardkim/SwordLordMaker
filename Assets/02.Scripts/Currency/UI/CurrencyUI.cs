@@ -29,7 +29,7 @@ public class CurrencyUI : MonoBehaviour
 
     private void OnDisable()
     {
-        if (CurrencyManager.Instance != null)
+        if (CurrencyManager.HasInstance)
         {
             CurrencyManager.Instance.OnCurrencyChanged -= HandleCurrencyChanged;
         }

@@ -115,12 +115,12 @@ public class PlayerProfileUI : MonoBehaviour
 
     private void OnDisable()
     {
-        if (UpgradeManager.Instance != null)
+        if (UpgradeManager.HasInstance)
         {
             UpgradeManager.Instance.OnUpgraded -= HandleUpgraded;
         }
 
-        if (PlayerStatManager.Instance != null)
+        if (PlayerStatManager.HasInstance)
         {
             PlayerStatManager.Instance.OnLevelUp -= HandleLevelUp;
             PlayerStatManager.Instance.OnExpChanged -= HandleExpChanged;

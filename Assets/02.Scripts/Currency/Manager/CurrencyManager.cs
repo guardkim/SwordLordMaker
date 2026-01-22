@@ -20,15 +20,37 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     protected override void Initialize()
     {
-        _repository = CreateRepository();
+        Debug.Log($"[CurrencyManager] Initialize 호출됨");
+        Debug.Log($"[CurrencyManager] PlayerSessionManager.IsLoggedIn: {PlayerSessionManager.Instance.IsLoggedIn}");
+
         _autoSaveWait = new WaitForSeconds(GoldAutoSaveInterval);
-        LoadCurrency();
+
+        PlayerSessionManager.Instance.OnLoginCompleted += OnLoginCompleted;
+
+        // 이미 로그인된 상태라면 바로 초기화
+        if (PlayerSessionManager.Instance.IsLoggedIn)
+        {
+            Debug.Log("[CurrencyManager] 이미 로그인됨 → InitializeRepository 호출");
+            InitializeRepository();
+        }
+        else
+        {
+            Debug.Log("[CurrencyManager] 아직 로그인 안 됨 → OnLoginCompleted 대기");
+        }
     }
 
-    private ICurrencyRepository CreateRepository()
+    private void OnLoginCompleted()
+    {
+        InitializeRepository();
+    }
+
+    private void InitializeRepository()
     {
         string playerName = PlayerSessionManager.Instance.CurrentPlayerName;
-        return new CurrencyRepository(playerName);
+        Debug.Log($"[CurrencyManager] Repository 초기화: '{playerName}'");
+
+        _repository = new CurrencyRepository(playerName);
+        LoadCurrency();
     }
 
     private void LoadCurrency()
@@ -176,6 +198,11 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     private void OnDestroy()
     {
+        if (PlayerSessionManager.HasInstance)
+        {
+            PlayerSessionManager.Instance.OnLoginCompleted -= OnLoginCompleted;
+        }
+
         if (_autoSaveCoroutine != null)
         {
             StopCoroutine(_autoSaveCoroutine);

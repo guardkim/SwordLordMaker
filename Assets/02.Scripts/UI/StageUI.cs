@@ -21,7 +21,7 @@ public class StageUI : MonoBehaviour
 
     private void OnDestroy()
     {
-        if (StageManager.Instance != null)
+        if (StageManager.HasInstance)
         {
             StageManager.Instance.OnStageStarted -= UpdateStageText;
         }

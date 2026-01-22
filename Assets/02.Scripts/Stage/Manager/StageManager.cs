@@ -69,7 +69,7 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     private void UnsubscribeFromGameManager()
     {
-        if (GameManager.Instance != null)
+        if (GameManager.HasInstance)
         {
             GameManager.Instance.OnRequestStageRestart -= HandleStageRestartRequest;
         }
