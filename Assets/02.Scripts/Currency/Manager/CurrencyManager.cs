@@ -84,6 +84,7 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         {
             SaveRubyImmediate(newValue);
         }
+        
     }
 
     private void SaveRubyImmediate(BigInteger ruby)
@@ -143,7 +144,10 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     public bool TrySpendGold(BigInteger amount)
     {
-        return _currency?.TrySpend(CurrencyType.Gold, amount) ?? false;
+        if (!_currency.TrySpend(CurrencyType.Gold, amount)) return false;
+        SaveGold();
+        return true;
+
     }
 
     public bool TrySpendRuby(BigInteger amount)
@@ -190,8 +194,8 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
     {
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            AddGold(new BigInteger(100000));
-            Debug.Log("[CurrencyManager] 테스트: 10만 골드 추가");
+            AddGold(new BigInteger(1000000000));
+            Debug.Log("[CurrencyManager] 테스트: 10억 골드 추가");
         }
     }
 #endif

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Numerics;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
 {
@@ -28,12 +29,21 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
 
     protected override void Initialize()
     {
+        SceneManager.sceneLoaded += OnSceneLoaded;
         PlayerSessionManager.Instance.OnLoginCompleted += OnLoginCompleted;
 
-        // 이미 로그인된 상태라면 바로 초기화
         if (PlayerSessionManager.Instance.IsLoggedIn)
         {
             InitializeRepository();
+        }
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "MainScene" && HasPendingReward && PendingReward != null)
+        {
+            Debug.Log("[OfflineReward] MainScene 로드 완료 - 보상 이벤트 재발생");
+            OnOfflineRewardReady?.Invoke(PendingReward);
         }
     }
 
@@ -82,23 +92,32 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
         {
             long lastLoginTime = await _repository.LoadLastLoginTimeAsync();
             long currentTime = GetCurrentUnixTimestamp();
+            long offlineSeconds = currentTime - lastLoginTime;
+
+            Debug.Log($"[OfflineReward] LastLogin: {lastLoginTime}, Current: {currentTime}, Diff: {offlineSeconds}초");
 
             if (lastLoginTime <= 0)
             {
+                Debug.Log("[OfflineReward] 첫 로그인 - 현재 시간 저장");
                 await SaveCurrentTimeAsync();
                 return;
             }
 
-            long offlineSeconds = currentTime - lastLoginTime;
-
             if (offlineSeconds < _minOfflineSecondsForReward)
             {
+                Debug.Log($"[OfflineReward] 최소 시간 미달: {offlineSeconds}초 < {_minOfflineSecondsForReward}초");
                 await SaveCurrentTimeAsync();
                 return;
             }
 
             long clampedSeconds = Math.Min(offlineSeconds, MaxOfflineSeconds);
             OfflineRewardResult reward = CalculateReward(clampedSeconds);
+
+            Debug.Log($"[OfflineReward] 보상 준비: {clampedSeconds}초, Gold: {reward.GoldReward}");
+
+            // 보상 계산 후 즉시 시간 저장 (중복 수령 방지)
+            await SaveCurrentTimeAsync();
+            Debug.Log("[OfflineReward] 현재 시간 저장 완료 (중복 수령 방지)");
 
             HasPendingReward = true;
             PendingReward = reward;
@@ -218,6 +237,8 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
 
     private void OnDestroy()
     {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
         if (PlayerSessionManager.HasInstance)
         {
             PlayerSessionManager.Instance.OnLoginCompleted -= OnLoginCompleted;

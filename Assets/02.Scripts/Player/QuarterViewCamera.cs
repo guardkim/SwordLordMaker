@@ -13,6 +13,12 @@ public class QuarterViewCamera : MonoBehaviour
     [SerializeField] private Vector3 _rotation = new Vector3(30f, 45f, 0f);
     [SerializeField] private float _smoothSpeed = 10f;
 
+    [Header("▼ 줌 설정")]
+    [SerializeField] private float _zoomSpeed = 5f;
+    [SerializeField] private float _minZoom = 0.5f;
+    [SerializeField] private float _maxZoom = 2.0f;
+    [SerializeField] private float _zoomSmoothSpeed = 10f;
+
     [Header("▼ 카메라 쉐이크 (모바일용)")]
     [SerializeField] private float _shakeDuration = 0.1f;
     [SerializeField] private float _shakeStrength = 0.08f;
@@ -20,6 +26,9 @@ public class QuarterViewCamera : MonoBehaviour
 
     private Vector3 _shakeOffset;
     private Tweener _shakeTweener;
+    private float _currentZoom = 1.0f;
+    private float _targetZoom = 1.0f;
+    private Vector3 _baseOffset;
 
     private void Awake()
     {
@@ -29,6 +38,25 @@ public class QuarterViewCamera : MonoBehaviour
     private void Start()
     {
         transform.rotation = Quaternion.Euler(_rotation);
+        _baseOffset = _positionOffset;
+    }
+
+    private void Update()
+    {
+        HandleZoomInput();
+    }
+
+    private void HandleZoomInput()
+    {
+        float scrollInput = Input.GetAxis("Mouse ScrollWheel");
+        if (Mathf.Abs(scrollInput) > 0.01f)
+        {
+            _targetZoom -= scrollInput * _zoomSpeed;
+            _targetZoom = Mathf.Clamp(_targetZoom, _minZoom, _maxZoom);
+        }
+
+        _currentZoom = Mathf.Lerp(_currentZoom, _targetZoom, _zoomSmoothSpeed * Time.deltaTime);
+        _positionOffset = _baseOffset * _currentZoom;
     }
 
     private void LateUpdate()

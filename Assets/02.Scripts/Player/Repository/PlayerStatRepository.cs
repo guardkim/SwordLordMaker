@@ -154,6 +154,10 @@ public class PlayerStatRepository : IPlayerStatRepository
 
         BGRepo.I.Save();
 
+#if UNITY_EDITOR
+        UnityEditor.AssetDatabase.SaveAssets();
+#endif
+
         Debug.Log("[PlayerStatRepository] 저장 완료");
     }
 }

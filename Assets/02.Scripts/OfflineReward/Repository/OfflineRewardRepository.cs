@@ -74,11 +74,16 @@ public class OfflineRewardRepository : IOfflineRewardRepository
         }
 
         _playerEntity.Set(LastLoginTimeField, unixTimestamp.ToString());
+        ForceSaveToDisk();
         return Task.CompletedTask;
     }
 
     public void ForceSaveToDisk()
     {
         BGRepo.I.Save();
+
+#if UNITY_EDITOR
+        UnityEditor.AssetDatabase.SaveAssets();
+#endif
     }
 }

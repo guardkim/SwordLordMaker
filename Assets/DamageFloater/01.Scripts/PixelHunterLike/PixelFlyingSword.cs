@@ -23,7 +23,8 @@ public class PixelFlyingSword : BaseFlyingSword
     public float DeploySpeed = 40f;
     public int MaxAttackCount = 4;
     public float FlyAwaySpeed = 20f;
-
+    public TrailRenderer Trail;
+    
     // 내부 동작용 변수 (첫 번째 코드의 로직 복원)
     private Action _onDepartureCallback;
     private float _currentPhase;       // 0 ~ 360 진행도
@@ -58,6 +59,10 @@ public class PixelFlyingSword : BaseFlyingSword
         _rotateDir = 1.0f;     // 반시계 시작
         _currentAxisAngle = 0f; // 적의 오른쪽부터 시작
         _accumulatedPrecession = Random.Range(0f, 360f); // 전체 각도는 랜덤
+        if (!Trail) return;
+        Trail.Clear();
+        Trail.emitting = true;
+        
     }
 
     private void Update()

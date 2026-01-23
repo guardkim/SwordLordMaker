@@ -20,7 +20,9 @@ public class HypoFlyingSword : BaseFlyingSword
     [Header("■ [3] 기타 설정")]
     public float DeploySpeed = 40f;        
     public int MaxAttackCount = 4;         
-    public float FlyAwaySpeed = 20f;       
+    public float FlyAwaySpeed = 20f;
+    public TrailRenderer Trail;
+    
 
     private Action _onDepartureCallback;
     
@@ -57,6 +59,9 @@ public class HypoFlyingSword : BaseFlyingSword
 
         // k = 1 - N (Hypocycloid 공식)
         _kRatio = 1.0f - PetalCount;
+        if (!Trail) return;
+        Trail.Clear();
+        Trail.emitting = true;
     }
 
     private void Update()
