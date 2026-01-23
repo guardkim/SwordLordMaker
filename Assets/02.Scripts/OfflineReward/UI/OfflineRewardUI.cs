@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -14,6 +15,8 @@ public class OfflineRewardUI : MonoBehaviour, IPointerClickHandler
 
     private void Start()
     {
+        Debug.Log($"[OfflineRewardUI] Start() 호출됨, _popupPanel: {(_popupPanel != null ? "있음" : "NULL")}");
+
         if (_popupPanel != null)
         {
             _popupPanel.SetActive(false);
@@ -21,12 +24,33 @@ public class OfflineRewardUI : MonoBehaviour, IPointerClickHandler
 
         if (OfflineRewardManager.Instance != null)
         {
+            Debug.Log($"[OfflineRewardUI] 이벤트 구독, HasPendingReward: {OfflineRewardManager.Instance.HasPendingReward}");
             OfflineRewardManager.Instance.OnOfflineRewardReady += OnOfflineRewardReady;
 
             if (OfflineRewardManager.Instance.HasPendingReward)
             {
+                Debug.Log("[OfflineRewardUI] Start에서 즉시 팝업 표시 시도");
                 OnOfflineRewardReady(OfflineRewardManager.Instance.PendingReward);
             }
+        }
+        else
+        {
+            Debug.LogWarning("[OfflineRewardUI] OfflineRewardManager.Instance가 NULL!");
+        }
+
+        StartCoroutine(DelayedPendingCheck());
+    }
+
+    private IEnumerator DelayedPendingCheck()
+    {
+        yield return new WaitForSeconds(0.5f);
+
+        if (OfflineRewardManager.Instance != null &&
+            OfflineRewardManager.Instance.HasPendingReward &&
+            _popupPanel != null && !_popupPanel.activeSelf)
+        {
+            Debug.Log("[OfflineRewardUI] 지연 체크로 팝업 표시");
+            OnOfflineRewardReady(OfflineRewardManager.Instance.PendingReward);
         }
     }
 
@@ -50,6 +74,8 @@ public class OfflineRewardUI : MonoBehaviour, IPointerClickHandler
 
     private void OnOfflineRewardReady(OfflineRewardResult reward)
     {
+        Debug.Log($"[OfflineRewardUI] OnOfflineRewardReady 호출됨, reward: {(reward != null ? "있음" : "NULL")}");
+
         if (reward == null) return;
 
         UpdateUI(reward);
@@ -60,7 +86,7 @@ public class OfflineRewardUI : MonoBehaviour, IPointerClickHandler
     {
         if (_offlineTimeText != null)
         {
-            _offlineTimeText.text = $"오프라인 시간: {reward.GetFormattedDuration()}";
+            _offlineTimeText.text = $"오프라인 시간 \n {reward.GetFormattedDuration()}";
         }
 
         if (_goldRewardText != null)
@@ -118,9 +144,16 @@ public class OfflineRewardUI : MonoBehaviour, IPointerClickHandler
 
     private void ShowPopup()
     {
+        Debug.Log($"[OfflineRewardUI] ShowPopup() 호출됨, _popupPanel: {(_popupPanel != null ? _popupPanel.name : "NULL")}");
+
         if (_popupPanel != null)
         {
             _popupPanel.SetActive(true);
+            Debug.Log($"[OfflineRewardUI] 팝업 활성화 완료, activeSelf: {_popupPanel.activeSelf}");
+        }
+        else
+        {
+            Debug.LogError("[OfflineRewardUI] _popupPanel이 NULL이라 팝업을 표시할 수 없음!");
         }
     }
 

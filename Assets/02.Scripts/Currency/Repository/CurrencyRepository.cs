@@ -89,6 +89,13 @@ public class CurrencyRepository : ICurrencyRepository
 
         _playerEntity.Set(GoldField, currency.Gold.ToString());
         _playerEntity.Set(RubyField, currency.Ruby.ToString());
+
+        BGRepo.I.Save();
+
+#if UNITY_EDITOR
+        UnityEditor.AssetDatabase.SaveAssets();
+#endif
+
         return Task.CompletedTask;
     }
 
@@ -100,6 +107,7 @@ public class CurrencyRepository : ICurrencyRepository
         }
 
         _playerEntity.Set(GoldField, gold.ToString());
+        ForceSaveToDisk();
         return Task.CompletedTask;
     }
 
@@ -118,5 +126,9 @@ public class CurrencyRepository : ICurrencyRepository
     public void ForceSaveToDisk()
     {
         BGRepo.I.Save();
+
+#if UNITY_EDITOR
+        UnityEditor.AssetDatabase.SaveAssets();
+#endif
     }
 }

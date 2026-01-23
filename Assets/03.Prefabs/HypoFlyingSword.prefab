@@ -90,7 +90,7 @@ TrailRenderer:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0.039402008
+        time: 0
         value: 0
         inSlope: 0
         outSlope: 0
@@ -99,8 +99,8 @@ TrailRenderer:
         inWeight: 0
         outWeight: 0
       - serializedVersion: 3
-        time: 0.14266339
-        value: 0.10671958
+        time: 0.08846444
+        value: 0.13449994
         inSlope: 0.93872315
         outSlope: 0.93872315
         tangentMode: 0
@@ -108,8 +108,8 @@ TrailRenderer:
         inWeight: 0.33333334
         outWeight: 0.51133204
       - serializedVersion: 3
-        time: 0.2834995
-        value: 0.1094107
+        time: 0.2374319
+        value: 0.15107569
         inSlope: -0.15466654
         outSlope: -0.15466654
         tangentMode: 0
@@ -117,7 +117,7 @@ TrailRenderer:
         inWeight: 0.46258053
         outWeight: 0.33333334
       - serializedVersion: 3
-        time: 0.4157576
+        time: 0.3967874
         value: 0
         inSlope: 0
         outSlope: 0
@@ -160,7 +160,7 @@ TrailRenderer:
       m_NumAlphaKeys: 2
     numCornerVertices: 0
     numCapVertices: 0
-    alignment: 1
+    alignment: 0
     textureMode: 0
     textureScale: {x: 1, y: 1}
     shadowBias: 3.31
@@ -225,6 +225,7 @@ MonoBehaviour:
   DeploySpeed: 40
   MaxAttackCount: 4
   FlyAwaySpeed: 20
+  Trail: {fileID: 0}
 --- !u!54 &4112402253928747369
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -247,7 +248,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
@@ -267,7 +268,7 @@ BoxCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
@@ -283,15 +284,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.3
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -307,7 +308,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalRotation.x
@@ -315,11 +316,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -331,7 +332,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
+      value: 180
       objectReference: {fileID: 0}
     - target: {fileID: 8414799470984261028, guid: aaa9abc278c41e84d9f8b4848879395f, type: 3}
       propertyPath: m_ConstrainProportionsScale

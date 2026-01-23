@@ -14,18 +14,23 @@ public class PlayerAutoMovement : MonoBehaviour
 
     [Header("▼ 이동 설정")]
     [SerializeField] private float _rotationSpeed = 10f;
-    [SerializeField] private float _wanderRadius = 10f;
+    [SerializeField] private float _wanderRadius = 5f;
     [SerializeField] private float _arrivalThreshold = 0.5f;
 
     [Header("▼ 몬스터 회피")]
-    [SerializeField] private float _enemyDetectionRadius = 8f;
-    [SerializeField] private float _fleeDistance = 12f;
+    [SerializeField] private float _enemyDetectionRadius = 5f;
+    [SerializeField] private float _fleeDistance = 6f;
     [SerializeField] private float _pathUpdateInterval = 0.3f;
     [SerializeField] private LayerMask _enemyLayer;
 
     [Header("▼ 영역 제한")]
     [SerializeField] private Transform _areaCenter;
-    [SerializeField] private float _areaRadius = 20f;
+    [SerializeField] private float _areaRadius = 12f;
+
+    [Header("▼ 상태 전환")]
+    [SerializeField] private float _idleDuration = 2f;
+    [SerializeField] private float _runDuration = 3f;
+    [SerializeField] private float _chaseChance = 0.3f;
 
     private NavMeshAgent _agent;
     private PlayerState _currentState = PlayerState.Idle;
@@ -33,6 +38,8 @@ public class PlayerAutoMovement : MonoBehaviour
     private float _moveSpeed;
     private bool _isEnabled = true;
     private float _lastPathUpdateTime;
+    private float _stateTimer;
+    private bool _isChasing;
 
     public PlayerState CurrentState => _currentState;
     public bool IsMoving => _currentState == PlayerState.Run && _agent != null && _agent.velocity.magnitude > MOVING_THRESHOLD;
@@ -79,6 +86,7 @@ public class PlayerAutoMovement : MonoBehaviour
             _areaCenter = transform;
         }
 
+        _stateTimer = _runDuration;
         TransitionTo(PlayerState.Run);
     }
 
@@ -147,13 +155,26 @@ public class PlayerAutoMovement : MonoBehaviour
 
     private void ExecuteState()
     {
+        _stateTimer -= Time.deltaTime;
+
         switch (_currentState)
         {
             case PlayerState.Idle:
-                TransitionTo(PlayerState.Run);
+                if (_stateTimer <= 0f)
+                {
+                    _stateTimer = _runDuration;
+                    _isChasing = Random.value < _chaseChance;
+                    TransitionTo(PlayerState.Run);
+                }
                 break;
             case PlayerState.Run:
                 ExecuteRun();
+                if (_stateTimer <= 0f)
+                {
+                    _stateTimer = _idleDuration;
+                    _isChasing = false;
+                    TransitionTo(PlayerState.Idle);
+                }
                 break;
             case PlayerState.Die:
                 ExecuteDie();
@@ -170,15 +191,60 @@ public class PlayerAutoMovement : MonoBehaviour
 
         _lastPathUpdateTime = Time.time;
 
-        Vector3 fleeDirection = CalculateFleeDirection();
-
-        if (fleeDirection != Vector3.zero)
+        if (_isChasing)
         {
-            SetFleeDestination(fleeDirection);
+            SetChaseDestination();
         }
         else
         {
+            Vector3 fleeDirection = CalculateFleeDirection();
+
+            if (fleeDirection != Vector3.zero)
+            {
+                SetFleeDestination(fleeDirection);
+            }
+            else
+            {
+                SetRandomDestination();
+            }
+        }
+    }
+
+    private void SetChaseDestination()
+    {
+        if (_agent == null || !_agent.isOnNavMesh) return;
+
+        Collider[] enemies = Physics.OverlapSphere(transform.position, _enemyDetectionRadius * 2f, _enemyLayer);
+
+        if (enemies.Length == 0)
+        {
             SetRandomDestination();
+            return;
+        }
+
+        Transform nearestEnemy = null;
+        float nearestDist = float.MaxValue;
+
+        foreach (var enemy in enemies)
+        {
+            float dist = Vector3.Distance(transform.position, enemy.transform.position);
+            if (dist < nearestDist)
+            {
+                nearestDist = dist;
+                nearestEnemy = enemy.transform;
+            }
+        }
+
+        if (nearestEnemy != null)
+        {
+            Vector3 dirToEnemy = (nearestEnemy.position - transform.position).normalized;
+            Vector3 targetPos = transform.position + dirToEnemy * (_fleeDistance * 0.5f);
+
+            if (NavMesh.SamplePosition(targetPos, out NavMeshHit hit, _fleeDistance, NavMesh.AllAreas))
+            {
+                _agent.SetDestination(hit.position);
+                _agent.isStopped = false;
+            }
         }
     }
 

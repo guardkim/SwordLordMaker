@@ -136,6 +136,10 @@ public class UpgradeRepository : IUpgradeRepository
         _playerEntity.Set(UpgradeLevelsField, json);
         BGRepo.I.Save();
 
+#if UNITY_EDITOR
+        UnityEditor.AssetDatabase.SaveAssets();
+#endif
+
         Debug.Log($"[UpgradeRepository] 강화 레벨 저장 완료: {json}");
     }
 

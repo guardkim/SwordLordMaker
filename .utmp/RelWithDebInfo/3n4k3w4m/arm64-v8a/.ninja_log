@@ -1,0 +1,10 @@
+# ninja log v5
+60	1953	7908548669227421	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	3a69ac42e998b512
+48	1962	7908548669247512	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	3544bc8ead515592
+82	2041	7908548669749725	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	85bee53190a5c96a
+12	2043	7908548669774472	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	6cb80c73128eee3b
+24	2087	7908548670529205	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	994b4ad4355af36a
+71	2317	7908548672760307	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	98fecc528bb111c8
+36	2349	7908548673143732	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	c8816a993535a219
+1	2487	7908548674548694	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	fdbcf378428ec9b
+2488	2665	7908548676280753	C:/Users/rlaru/OneDrive/Desktop/SwordLordMaker/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/3n4k3w4m/obj/arm64-v8a/libgame.so	44e7bc47a7fc2649

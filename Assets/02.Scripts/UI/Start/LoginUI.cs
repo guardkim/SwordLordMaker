@@ -26,6 +26,11 @@ public class LoginUI : MonoBehaviour
         Hide();
     }
 
+    private void Start()
+    {
+        SoundManager.Instance.PlayBGM(BgmId.Title);
+    }
+
     private void SetupLoginButton()
     {
         if (_loginButton != null)

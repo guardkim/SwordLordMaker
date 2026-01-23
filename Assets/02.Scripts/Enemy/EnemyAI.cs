@@ -448,13 +448,9 @@ public class EnemyAI : MonoBehaviour, IDamageable
         {
             newState = State.Attack;
         }
-        else if (distanceToTarget <= _chaseRange)
-        {
-            newState = State.Chase;
-        }
         else
         {
-            newState = State.Idle;
+            newState = State.Chase;
         }
 
         if (newState != _currentState)
