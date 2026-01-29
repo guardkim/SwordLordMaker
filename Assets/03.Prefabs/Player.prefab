@@ -643,6 +643,8 @@ GameObject:
   m_Component:
   - component: {fileID: 3146074261312467646}
   - component: {fileID: 8136648631771752194}
+  - component: {fileID: 6765030389481840615}
+  - component: {fileID: 8264719908829898393}
   m_Layer: 0
   m_Name: SwordController
   m_TagString: Untagged
@@ -683,6 +685,38 @@ MonoBehaviour:
   AttackDelay: 0.2
   MaxTargetDistance: 25
   _swordStatId: ADEL_SWORD
+--- !u!114 &6765030389481840615
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3219037742895609571}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7aec24cff84cbd04ea6dfca00174e67e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HypoSwordController
+  SwordPrefab: {fileID: 6085948305323607975, guid: 1b536c9326ab2fc4fbc2e75117b8bdfd, type: 3}
+  SwordCountPerFire: 5
+  MaxTargetDistance: 25
+  _swordStatId: HYPO_SWORD
+--- !u!114 &8264719908829898393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3219037742895609571}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ead1632adb1ba7d42a9fd2817d8907bd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PixelSwordController
+  SwordPrefab: {fileID: 6085948305323607975, guid: b98b40e7c6da4b74dbf96b37451414c5, type: 3}
+  SwordCountPerFire: 5
+  MaxTargetDistance: 25
+  _swordStatId: PIXEL_SWORD
 --- !u!1 &3256665525036343223
 GameObject:
   m_ObjectHideFlags: 0
@@ -1502,7 +1536,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6769898982090396653}
   - component: {fileID: 3582437523302032706}
-  - component: {fileID: 2835802420805451259}
   - component: {fileID: 7101798309784012361}
   - component: {fileID: 8633566489585942855}
   - component: {fileID: 6326294289792045513}
@@ -1554,20 +1587,6 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!114 &2835802420805451259
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7198260444562534120}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 17de037f73f8fff4792ed7f763911c0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
-  _rotationSpeed: 10
-  _quarterViewYaw: 45
 --- !u!114 &7101798309784012361
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1633,11 +1652,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAutoMovement
   _rotationSpeed: 10
-  _idleDuration: 0.5
   _wanderRadius: 10
   _arrivalThreshold: 0.5
+  _enemyDetectionRadius: 5
+  _fleeDistance: 6
+  _pathUpdateInterval: 0.3
+  _enemyLayer:
+    serializedVersion: 2
+    m_Bits: 8
   _areaCenter: {fileID: 0}
-  _areaRadius: 20
+  _areaRadius: 10
+  _idleDuration: 1
+  _runDuration: 1
+  _chaseChance: 0.5
 --- !u!1 &7396179343911698863
 GameObject:
   m_ObjectHideFlags: 0
