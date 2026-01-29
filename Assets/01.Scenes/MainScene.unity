@@ -1995,7 +1995,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7956425432892092377, guid: fd417224da1571b4ebd05ad934428cdf, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: -0.0000076293945
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7956425432892092377, guid: fd417224da1571b4ebd05ad934428cdf, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -28082,7 +28082,7 @@ MonoBehaviour:
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 1080, y: 2340}
+  m_ReferenceResolution: {x: 2340, y: 1080}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -36196,7 +36196,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 8136648631771752194, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
   m_PrefabInstance: {fileID: 8577817846909403993}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8577817846909403994}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d76ee2e780030f84d92ec0a18df7657e, type: 3}
@@ -48433,7 +48433,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7956425432892092377, guid: fd417224da1571b4ebd05ad934428cdf, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0.0000076293945
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7956425432892092377, guid: fd417224da1571b4ebd05ad934428cdf, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -49567,7 +49567,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6314e05170485344fa7a982b7fc04191, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DamageFloaterManager
-  DamageFloaterPrefab: {fileID: 6349936038727535309, guid: 3bcb34df28d1a0c4f893a5e6d78eee67, type: 3}
+  DamageFloaterPrefab: {fileID: 6349936038727535309, guid: 254f697e798da3043b5b5fca1d396fb2, type: 3}
   SingleFloaterOption:
     numberFormat: 0
     damageStyle: 0
@@ -87387,26 +87387,6 @@ PrefabInstance:
       propertyPath: _areaCenter
       value: 
       objectReference: {fileID: 736174461}
-    - target: {fileID: 1934177854760721050, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
-      propertyPath: _areaRadius
-      value: 10
-      objectReference: {fileID: 0}
-    - target: {fileID: 1934177854760721050, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
-      propertyPath: _chaseChance
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 1934177854760721050, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
-      propertyPath: _runDuration
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1934177854760721050, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
-      propertyPath: _idleDuration
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1934177854760721050, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
-      propertyPath: _enemyLayer.m_Bits
-      value: 8
-      objectReference: {fileID: 0}
     - target: {fileID: 6769898982090396653, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -87454,51 +87434,30 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 3219037742895609571, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8577817846909403996}
-    - targetCorrespondingSourceObject: {fileID: 3219037742895609571, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8577817846909403995}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
---- !u!1 &8577817846909403994 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3219037742895609571, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
+--- !u!114 &8577817846909403995 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8264719908829898393, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
   m_PrefabInstance: {fileID: 8577817846909403993}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &8577817846909403995
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8577817846909403994}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ead1632adb1ba7d42a9fd2817d8907bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PixelSwordController
-  SwordPrefab: {fileID: 6085948305323607975, guid: b98b40e7c6da4b74dbf96b37451414c5, type: 3}
-  SwordCountPerFire: 5
-  MaxTargetDistance: 25
-  _swordStatId: PIXEL_SWORD
---- !u!114 &8577817846909403996
+--- !u!114 &8577817846909403996 stripped
 MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 6765030389481840615, guid: 0daaf64018d30fb4d986022afb829f26, type: 3}
+  m_PrefabInstance: {fileID: 8577817846909403993}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8577817846909403994}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7aec24cff84cbd04ea6dfca00174e67e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HypoSwordController
-  SwordPrefab: {fileID: 6085948305323607975, guid: 1b536c9326ab2fc4fbc2e75117b8bdfd, type: 3}
-  SwordCountPerFire: 5
-  MaxTargetDistance: 25
-  _swordStatId: HYPO_SWORD
 --- !u!222 &8588450320923293826
 CanvasRenderer:
   m_ObjectHideFlags: 0
