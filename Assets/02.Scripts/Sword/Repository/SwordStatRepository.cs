@@ -1,28 +1,17 @@
 using System.Collections.Generic;
-using System.Numerics;
-using BansheeGz.BGDatabase;
 using UnityEngine;
 
 public class SwordStatRepository : ISwordStatRepository
 {
-    private const string TableName = "SwordStat";
-    private const string AttackDamageField = "AttackDamage";
-    private const string CooldownField = "Cooldown";
-    private const string MoveSpeedField = "MoveSpeed";
-    private const string CritDamageField = "CritDamage";
-    private const string CritChanceField = "CritChance";
-
-    private readonly BGMetaEntity _meta;
     private readonly Dictionary<string, SwordStat> _cache;
 
     public SwordStatRepository()
     {
         _cache = new Dictionary<string, SwordStat>();
-        _meta = BGRepo.I[TableName];
 
-        if (_meta == null)
+        if (DB_SwordStat.CountEntities == 0)
         {
-            Debug.LogError($"[SwordStatRepository] 테이블을 찾을 수 없습니다: {TableName}");
+            Debug.LogError("[SwordStatRepository] SwordStat 테이블이 비어있습니다.");
             return;
         }
 
@@ -34,13 +23,11 @@ public class SwordStatRepository : ISwordStatRepository
         var result = new List<SwordStat>();
         _cache.Clear();
 
-        if (_meta == null) return result;
-
-        int count = _meta.CountEntities;
+        int count = DB_SwordStat.CountEntities;
         for (int i = 0; i < count; i++)
         {
-            BGEntity entity = _meta.GetEntity(i);
-            SwordStat stat = CreateStatFromEntity(entity);
+            DB_SwordStat dbEntity = DB_SwordStat.GetEntity(i);
+            SwordStat stat = CreateStatFromEntity(dbEntity);
             _cache[stat.Id] = stat;
             result.Add(stat);
         }
@@ -59,25 +46,18 @@ public class SwordStatRepository : ISwordStatRepository
         return null;
     }
 
-    private SwordStat CreateStatFromEntity(BGEntity entity)
+    private SwordStat CreateStatFromEntity(DB_SwordStat dbEntity)
     {
-        string attackDamageStr = entity.Get<string>(AttackDamageField);
-
-        BigInteger attackDamage = string.IsNullOrEmpty(attackDamageStr)
-            ? BigInteger.Zero
-            : BigInteger.Parse(attackDamageStr);
-
-        // CritDamage는 배율 (float, 기본 2.0 = 2배)
-        float critDamageMultiplier = entity.Get<float>(CritDamageField);
+        float critDamageMultiplier = dbEntity.F_CritDamage;
         if (critDamageMultiplier <= 0f) critDamageMultiplier = 2.0f;
 
         return new SwordStat(
-            entity.Name,
-            attackDamage,
-            entity.Get<float>(CooldownField),
-            entity.Get<float>(MoveSpeedField),
+            dbEntity.F_name,
+            dbEntity.F_AttackDamage,
+            dbEntity.F_Cooldown,
+            dbEntity.F_MoveSpeed,
             critDamageMultiplier,
-            entity.Get<float>(CritChanceField)
+            dbEntity.F_CritChance
         );
     }
 }

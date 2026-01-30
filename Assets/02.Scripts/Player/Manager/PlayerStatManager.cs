@@ -7,7 +7,7 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
     private IPlayerStatRepository _repository;
     private PlayerStat _baseStat;
 
-    public BigInteger BaseMaxHealth => _baseStat?.BaseMaxHealth ?? new BigInteger(100);
+    public double BaseMaxHealth => _baseStat?.BaseMaxHealth ?? 100;
     public float BaseMoveSpeed => _baseStat?.BaseMoveSpeed ?? 5f;
     public int Level => _baseStat?.Level ?? 1;
     public double CurrentExp => _baseStat?.CurrentExp ?? 0.0;

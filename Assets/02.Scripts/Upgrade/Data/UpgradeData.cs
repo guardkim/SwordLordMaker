@@ -1,38 +1,26 @@
 using System;
-using System.Numerics;
 
 public record UpgradeData(
     string Id,
     string DisplayName,
-    string BaseCost,
+    double BaseCost,
     float CostMultiplier,
-    string BonusPerLevel
+    double BonusPerLevel
 )
 {
-    public BigInteger GetCost(int currentLevel)
+    public double GetCost(int currentLevel)
     {
-        BigInteger baseCost = BigInteger.Parse(BaseCost);
         double multiplier = Math.Pow(CostMultiplier, currentLevel);
-        return new BigInteger(multiplier) * baseCost;
+        return BaseCost * multiplier;
     }
 
     public float GetTotalBonus(int level)
     {
-        return float.Parse(BonusPerLevel) * level;
+        return (float)BonusPerLevel * level;
     }
 
-    public BigInteger GetTotalBigIntBonus(int level)
+    public double GetTotalDoubleBonus(int level)
     {
-        if (BigInteger.TryParse(BonusPerLevel, out BigInteger intBonus))
-        {
-            return intBonus * level;
-        }
-
-        if (double.TryParse(BonusPerLevel, out double floatBonus))
-        {
-            return new BigInteger(floatBonus * level);
-        }
-
-        return BigInteger.Zero;
+        return BonusPerLevel * level;
     }
 }

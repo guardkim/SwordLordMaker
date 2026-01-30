@@ -1,4 +1,4 @@
-using System.Numerics;
+using System;
 using System.Text;
 
 public static class CurrencyFormatter
@@ -39,16 +39,16 @@ public static class CurrencyFormatter
         return sb.ToString();
     }
 
-    public static string FormatAbbreviated(BigInteger value)
+    public static string FormatAbbreviated(double value)
     {
         if (value < 1000)
         {
-            return value.ToString();
+            return ((long)value).ToString();
         }
 
         int unitIndex = 0;
-        BigInteger divisor = BigInteger.One;
-        BigInteger thousand = 1000;
+        double divisor = 1;
+        double thousand = 1000;
 
         while (value >= divisor * thousand && unitIndex < s_unitCache.Length - 1)
         {
@@ -56,30 +56,30 @@ public static class CurrencyFormatter
             unitIndex++;
         }
 
-        BigInteger wholePart = value / divisor;
-        BigInteger remainder = value % divisor;
-        BigInteger decimalPart = (remainder * 100) / divisor;
+        double wholePart = Math.Floor(value / divisor);
+        double remainder = value % divisor;
+        double decimalPart = Math.Floor((remainder * 100) / divisor);
 
         string unit = s_unitCache[unitIndex];
 
         if (decimalPart > 0)
         {
-            string decimalStr = decimalPart.ToString().PadLeft(2, '0').TrimEnd('0');
+            string decimalStr = ((int)decimalPart).ToString().PadLeft(2, '0').TrimEnd('0');
             if (!string.IsNullOrEmpty(decimalStr))
             {
-                return $"{wholePart}.{decimalStr}{unit}";
+                return $"{(long)wholePart}.{decimalStr}{unit}";
             }
         }
 
-        return $"{wholePart}{unit}";
+        return $"{(long)wholePart}{unit}";
     }
 
-    public static string FormatWithComma(BigInteger value)
+    public static string FormatWithComma(double value)
     {
-        return value.ToString("N0");
+        return ((long)value).ToString("N0");
     }
 
-    public static string FormatKorean(BigInteger value)
+    public static string FormatKorean(double value)
     {
         if (value == 0)
         {
@@ -89,16 +89,17 @@ public static class CurrencyFormatter
         string[] units = { "", "만", "억", "조", "경", "해" };
         var sb = new StringBuilder();
         int unitIndex = 0;
-        BigInteger tenThousand = 10000;
+        long remaining = (long)value;
+        long tenThousand = 10000;
 
-        while (value > 0 && unitIndex < units.Length)
+        while (remaining > 0 && unitIndex < units.Length)
         {
-            BigInteger part = value % tenThousand;
+            long part = remaining % tenThousand;
             if (part > 0)
             {
                 sb.Insert(0, part.ToString() + units[unitIndex]);
             }
-            value /= tenThousand;
+            remaining /= tenThousand;
             unitIndex++;
         }
 

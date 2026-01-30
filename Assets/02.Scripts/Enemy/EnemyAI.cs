@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Numerics;
 using UnityEngine;
 using UnityEngine.AI;
 using Quaternion = UnityEngine.Quaternion;
@@ -54,7 +53,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     // DB에서 로드한 스탯
     private EnemyStat _stat;
-    private BigInteger _currentHealth;
+    private double _currentHealth;
     private bool _isBoss;
 
     // 보스 스킬 상태
@@ -97,7 +96,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         if (_agent != null && _agent.isOnNavMesh)
         {
             _agent.isStopped = true;
-            _agent.velocity = Vector3.zero; 
+            _agent.velocity = Vector3.zero;
         }
     }
     // 풀에서 가져올 때 호출 (스탯 초기화)
@@ -150,7 +149,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         _currentState = State.Idle;
         _previousState = State.Idle;
         _stat = null;
-        _currentHealth = BigInteger.Zero;
+        _currentHealth = 0;
         _lastUpdateTime = 0f;
         _lastAttackTime = 0f;
         _isBoss = false;
@@ -220,20 +219,20 @@ public class EnemyAI : MonoBehaviour, IDamageable
         ExecuteState(distanceToTarget);
     }
 
-    public void TakeDamage(BigInteger damage, bool isCrit)
+    public void TakeDamage(double damage, bool isCrit)
     {
         if (_currentState == State.Dead) return;
 
         _currentHealth -= damage;
-        if (_currentHealth < BigInteger.Zero)
+        if (_currentHealth < 0)
         {
-            _currentHealth = BigInteger.Zero;
+            _currentHealth = 0;
         }
 
         ShowDamageEffects(damage, isCrit);
         UpdateHealthBar();
 
-        if (_currentHealth <= BigInteger.Zero)
+        if (_currentHealth <= 0)
         {
             Die();
         }
@@ -327,11 +326,10 @@ public class EnemyAI : MonoBehaviour, IDamageable
         }
     }
 
-    private void ShowDamageEffects(BigInteger damage, bool isCrit)
+    private void ShowDamageEffects(double damage, bool isCrit)
     {
         if (DamageFloaterManager.Instance != null)
         {
-            // BigInteger 오버로드 사용 (축약 표기 자동 지원)
             DamageFloaterManager.Instance.ShowDamage(
                 DamageStyle.Basic, damage, GetDamageFloaterPosition(), isCrit);
         }
@@ -610,7 +608,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
                 IDamageable target = hit.GetComponent<IDamageable>();
                 if (target != null)
                 {
-                    BigInteger skillDamage = MultiplyBigInteger(_stat.AttackDamage, _skillDamageMultiplier);
+                    double skillDamage = _stat.AttackDamage * _skillDamageMultiplier;
                     target.TakeDamage(skillDamage, false);
                 }
             }
@@ -618,15 +616,5 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         // 스킬 VFX 재생
         EffectManager.Instance?.PlaySkillVfx(transform.position);
-    }
-
-    // BigInteger에 float 배율 적용
-    private BigInteger MultiplyBigInteger(BigInteger value, float multiplier)
-    {
-        if (multiplier <= 0f) return value;
-        if (multiplier == 1f) return value;
-
-        int scaledMultiplier = (int)(multiplier * 1000);
-        return value * scaledMultiplier / 1000;
     }
 }

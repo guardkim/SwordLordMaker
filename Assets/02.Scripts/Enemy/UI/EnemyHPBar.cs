@@ -1,4 +1,3 @@
-using System.Numerics;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
 
@@ -6,7 +5,7 @@ public class EnemyHPBar : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer _hpBarSprite;
 
-    private BigInteger _maxHP;
+    private double _maxHP;
     private Vector3 _originalScale;
 
     private void Awake()
@@ -17,7 +16,7 @@ public class EnemyHPBar : MonoBehaviour
         }
     }
 
-    public void Initialize(BigInteger maxHP)
+    public void Initialize(double maxHP)
     {
         _maxHP = maxHP;
 
@@ -27,15 +26,14 @@ public class EnemyHPBar : MonoBehaviour
         }
     }
 
-    public void UpdateHP(BigInteger currentHP)
+    public void UpdateHP(double currentHP)
     {
-        if (_maxHP <= BigInteger.Zero || !_hpBarSprite)
+        if (_maxHP <= 0 || !_hpBarSprite)
         {
             return;
         }
 
-        // BigInteger 비율 계산 (float 변환)
-        float ratio = CalculateRatio(currentHP, _maxHP);
+        float ratio = Mathf.Clamp01((float)(currentHP / _maxHP));
 
         _hpBarSprite.transform.localScale = new Vector3(
             _originalScale.x * ratio,
@@ -44,18 +42,9 @@ public class EnemyHPBar : MonoBehaviour
         );
     }
 
-    private float CalculateRatio(BigInteger current, BigInteger max)
-    {
-        if (max == BigInteger.Zero) return 0f;
-
-        // 큰 숫자도 정확한 비율 계산을 위해 double 사용
-        double ratio = (double)current / (double)max;
-        return Mathf.Clamp01((float)ratio);
-    }
-
     public void Reset()
     {
-        _maxHP = BigInteger.Zero;
+        _maxHP = 0;
 
         if (_hpBarSprite)
         {

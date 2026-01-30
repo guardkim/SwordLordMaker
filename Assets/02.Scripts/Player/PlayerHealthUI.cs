@@ -31,7 +31,7 @@ public class PlayerHealthUI : MonoBehaviour
         }
     }
 
-    private void UpdateHealthUI(BigInteger current, BigInteger max)
+    private void UpdateHealthUI(double current, double max)
     {
         if (max <= 0)
         {
