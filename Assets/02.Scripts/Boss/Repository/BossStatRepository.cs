@@ -1,28 +1,17 @@
 using System.Collections.Generic;
-using System.Numerics;
-using BansheeGz.BGDatabase;
 using UnityEngine;
 
 public class BossStatRepository : IBossStatRepository
 {
-    private const string TableName = "BossStat";
-    private const string MaxHPField = "MaxHP";
-    private const string AttackDamageField = "AttackDamage";
-    private const string MoveSpeedField = "MoveSpeed";
-    private const string GoldRewardField = "GoldReward";
-
-    private readonly BGMetaEntity _meta;
     private readonly Dictionary<string, BossStat> _cache;
-    private const string ExpField = "Exp";
 
     public BossStatRepository()
     {
         _cache = new Dictionary<string, BossStat>();
-        _meta = BGRepo.I[TableName];
 
-        if (_meta == null)
+        if (DB_BossStat.CountEntities == 0)
         {
-            Debug.LogWarning($"[BossStatRepository] 테이블을 찾을 수 없습니다: {TableName}");
+            Debug.LogWarning("[BossStatRepository] BossStat 테이블이 비어있습니다.");
             return;
         }
 
@@ -34,13 +23,11 @@ public class BossStatRepository : IBossStatRepository
         var result = new List<BossStat>();
         _cache.Clear();
 
-        if (_meta == null) return result;
-
-        int count = _meta.CountEntities;
+        int count = DB_BossStat.CountEntities;
         for (int i = 0; i < count; i++)
         {
-            BGEntity entity = _meta.GetEntity(i);
-            BossStat stat = CreateStatFromEntity(entity);
+            DB_BossStat dbEntity = DB_BossStat.GetEntity(i);
+            BossStat stat = CreateStatFromEntity(dbEntity);
             _cache[stat.Id] = stat;
             result.Add(stat);
         }
@@ -59,24 +46,15 @@ public class BossStatRepository : IBossStatRepository
         return null;
     }
 
-    private BossStat CreateStatFromEntity(BGEntity entity)
+    private BossStat CreateStatFromEntity(DB_BossStat dbEntity)
     {
-        string maxHpStr = entity.Get<string>(MaxHPField);
-        string atkStr = entity.Get<string>(AttackDamageField);
-        string goldStr = entity.Get<string>(GoldRewardField);
-        double exp = entity.Get<double>(ExpField);
-
-        BigInteger maxHP = string.IsNullOrEmpty(maxHpStr) ? BigInteger.Zero : BigInteger.Parse(maxHpStr);
-        BigInteger attackDamage = string.IsNullOrEmpty(atkStr) ? BigInteger.Zero : BigInteger.Parse(atkStr);
-        BigInteger goldReward = string.IsNullOrEmpty(goldStr) ? BigInteger.Zero : BigInteger.Parse(goldStr);
-
         return new BossStat(
-            entity.Name,
-            maxHP,
-            attackDamage,
-            entity.Get<float>(MoveSpeedField),
-            goldReward,
-            exp
+            dbEntity.F_name,
+            dbEntity.F_MaxHP,
+            dbEntity.F_AttackDamage,
+            dbEntity.F_MoveSpeed,
+            dbEntity.F_GoldReward,
+            dbEntity.F_Exp
         );
     }
 }

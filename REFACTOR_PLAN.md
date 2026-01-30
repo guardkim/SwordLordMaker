@@ -3,6 +3,7 @@
 ## A. 목표/비목표 (Do/Don't)
 
 ### ✅ 목표 (Do)
+
 1. **내가 통제 가능한 손코딩 스타일**로 단순화
 2. 과도한 추상화/복잡성 제거 및 코드 가독성 향상
 3. 프로젝트 동작 변경 금지 (기능 보존)
@@ -10,26 +11,15 @@
 5. 유지보수 용이한 구조로 단순화
 
 ### ❌ 비목표 (Don't)
+
 1. 기능 추가 (새로운 기능 구현 금지)
 2. 임의의 확장 (미래 확장성 과도 고려 금지)
 3. 불필요한 DDD/클린아키텍처 엄격 적용
 
 ---
 
-## B. 현재 코드 냄새 목록 (구체적 사례)
+## B. 현재 코드 문제 목록 (구체적 사례)
 
-### 1. 과도한 추상화 (Over-Abstraction)
-**분석 결과**: 단일 구현체만 존재하나, **레포지토리 패턴 일관성 유지를 위해 인터페이스 유지 결정**
-
-| 파일/라인 | 상태 | 위험도 |
-|:---|:---|:---:|
-| `IPlayerStatRepository.cs` (5줄) | 단일 구현체(`PlayerStatRepository`)만 존재 → 유지 결정 | 낮음 |
-| `IUpgradeRepository.cs` (7줄) | 단일 구현체(`UpgradeRepository`)만 존재 → 유지 결정 | 낮음 |
-| `IBossStatRepository.cs` (7줄) | 단일 구현체(`BossStatRepository`)만 존재 → 유지 결정 | 낮음 |
-| `IEnemyStatRepository.cs` (7줄) | 단일 구현체(`EnemyStatRepository`)만 존재 → 유지 결정 | 낮음 |
-| `ISwordStatRepository.cs` (7줄) | 단일 구현체(`SwordStatRepository`)만 존재 → 유지 결정 | 낮음 |
-| `IStageRepository.cs` (8줄) | 단일 구현체(`StageRepository`)만 존재 → 유지 결정 | 낮음 |
-| `ICurrencyRepository.cs` (11줄) | 단일 구현체(`CurrencyRepository`)만 존재 → 유지 결정 | 낮음 |
 
 ### 2. record/init-only 남용 (Immutability Overuse)
 | 파일/라인 | 문제 | 위험도 |
@@ -73,13 +63,6 @@
 | `StageManager.ClearAllEnemies()` | `GameObject.FindGameObjectsWithTag("Enemy")` 사용 | 낮음 |
 | `PlayerSessionManager.cs` | 세션 관리 + DB 생성 로직 병합 (SRP 위반) | 중간 |
 
-### 8. 싱글톤/DDOL 오용
-| 파일/라인 | 문제 | 위험도 |
-|:---|:---|:---:|
-| `EnemySpawner.cs` | DDOL로 관리되나 씬 종속적 `_spawnPoints` 필드 가짐 | **높음** (참조 유실) |
-| `ControllerManager.cs` | DDOL로 관리되나 플레이어 오브젝트 참조 | **중간** (참조 유실) |
-| `DamageFloaterManager.cs` | 씬마다 독립적이어도 충분한데 전역 유지 | 낮음 |
-
 ### 9. 이벤트 시스템 복잡성
 | 파일/라인 | 문제 | 위험도 |
 |:---|:---|:---:|
@@ -95,61 +78,21 @@
 ## C. 리팩토링 원칙 (코딩 규칙, 금지/권장)
 
 ### 🚫 금지 (Don't)
-1. **record 남용**: 동적 데이터에는 `class` 사용 (with 키워드로 인한 GC 부하 방지)
+1. **record 남용**: 동적 데이터에는 `class` 사용 (with 키워드로 인한 GC 부하 방지), record는 아예 사용 금지.
 2. **float/double 캐스팅**: BigInteger 연산 중간에 float/double 변환 금지 (정밀도 손실 방지)
 3. **LINQ in Update 루프**: 성능 민감한 부분에서는 `foreach`/`if` 사용
-4. **직접 매니저 호출**: 도메인 레이어(`EnemyAI`, `PlayerHealth`)에서 매니저 직접 호출 금지
-5. **이벤트 분산**: Action/Action<T> 기반 이벤트 개별 정의 금지 (EventManager 사용)
+4. **이벤트 분산**: Action/Action<T> 기반 이벤트 개별 정의 금지 (EventManager 사용)
 
 ### ✅ 권장 (Do)
 1. **명시적 for/foreach**: LINQ 대신 명시적 루프 사용
 2. **단순 POCO/class**: record 대신 단순 class 사용
 3. **인터페이스 유지**: 레포지토리 패턴 일관성 유지를 위해 단일 구현체여도 인터페이스 유지
 4. **직접 메서드 호출**: 단일 구독자 이벤트는 직접 호출로 단순화
-5. **BigInteger 전용**: 수치 관련 타입은 BigInteger 사용 (정밀도 문제 해결)
+5. **BigInteger 대신 double 사용** 모든 BigInteger 사용중인 변수를 double로 변환, Parsing 관련도 제거
 6. **struct 활용**: 자주 생성되는 소규모 데이터는 struct 사용 (GC 회피)
 
 ---
 
-## D. 목표 아키텍처/폴더 구조
-
-### 현재 구조
-```
-Assets/
-├── 02.Scripts/
-│   ├── [Module]/
-│   │   ├── Data/           # POCO, record, Enum
-│   │   ├── Manager/         # Singleton 유스케이스
-│   │   ├── Repository/      # BGDatabase 래퍼
-│   │   └── UI/             # Unity UI
-│   └── Util/               # 유틸리티
-└── DamageFloater/
-    └── 01.Scripts/
-        ├── Manager/
-        └── Base Classes/
-```
-
-### 목표 구조 (하이브리드)
-```
-Assets/
-├── 02.Scripts/
-│   ├── Core/               # 핵심 시스템 (EventManager, GameManager 등)
-│   │
-│   ├── [DDD 구조 유지 모듈]/
-│   │   ├── Data/           # POCO, class, Enum
-│   │   ├── Manager/         # Singleton 유스케이스
-│   │   ├── Repository/      # BGDatabase 래퍼 + 인터페이스 유지
-│   │   └── UI/             # Unity UI
-│   │
-│   ├── [단순 구조 모듈]/
-│   │   ├── [ModuleName].cs  # 단일 파일로 통합된 클래스
-│   │   └── UI/
-│   │       └── [ModuleName]UI.cs
-│   │
-│   └── Util/               # 유틸리티 (최소화)
-│
-└── Prefabs/                # 프리팹
-```
 
 ### 모듈별 구조 분류
 
@@ -159,9 +102,6 @@ Assets/
 | **PlayerStat** | DDD 4계층 유지 | 복잡한 스탯 계산, 레벨업 로직, 영속성 필요 |
 | **Upgrade** | DDD 4계층 유지 | 강화 보너스 계산, 비용 로직, 영속성 필요 |
 | **Stage** | 단순 구조 | 스테이지 데이터는 정적, Manager만 유지 |
-| **Enemy** | 단순 구조 | EnemyAI, EnemyStat, EnemyUI 통합 관리 |
-| **Boss** | 단순 구조 | Boss 스탯, 행동, UI 통합 관리 |
-| **Combat** | 단순 구조 | DamageFloater, 검 시스템 통합 관리 |
 | **Sound** | 단순 구조 | 사운드 관리는 단순 매니저로 충분 |
 | **Effect** | 단순 구조 | VFX 관리는 단순 매니저로 충분 |
 
@@ -177,6 +117,7 @@ Assets/
 1. `CritDamageMultiplier`를 **struct CritDamage**로 변경 (스택 할당, GC 회피)
 2. `UpgradeManager.ApplyUpgrades()`에서 CritDamage 계산 로직 수정
 3. 테스트: 큰 수치에서 데미지 계산 정밀도 검증
+4. 위 버그는 double로 모든 수치들을 변경하면 해결될 것으로 보임.(10^16 이상 차이나는 손실은 감수예정)
 
 ---
 
@@ -207,11 +148,10 @@ Assets/
 **범위**: `Enemy`, `Boss`, `Combat`, `Sound`, `Effect` 모듈  
 **위험도**: 낮음  
 **작업:**
-1. 20줄 미만 Enum 파일들을 해당 모듈의 핵심 파일로 병합
-2. `DontDestroyOnLoadObject.cs`를 관련 유틸리티에 통합 또는 삭제
+1. Enum파일들은 앞에 (E)(클래스명)으로 통일 ex.ESwordType
+2. `DontDestroyOnLoadObject.cs`를 삭제
 3. `FirstScript.cs` 삭제
-4. **단순 구조 모듈의 Data, Manager, Repository 폴더 제거하고 단일 파일로 통합**
-5. 테스트: 빌드 확인
+4. 테스트: 빌드 확인
 
 ---
 
@@ -259,6 +199,7 @@ Assets/
 1. `GetCost` 메서드를 BigInteger 전용 연산으로 변경
 2. `Math.Pow` 사용 제거
 3. 테스트: 높은 레벨에서 비용 계산 정밀도 검증
+4. 위 작업도 또한 모든 BigInteger를 double로 변환하면서 해결될 예정
 
 ---
 
@@ -270,6 +211,7 @@ Assets/
 1. `MultiplyBigInteger`를 `BigIntMath.cs` 유틸리티로 추출
 2. `int` 기반 레거시 메서드 `[Obsolete]` 처리
 3. 테스트: 빌드 확인
+4. BigInteger를 제거함으로, BigInteger관련 코드는 제거
 
 ---
 
@@ -342,13 +284,6 @@ public class EventManager : DontDestroySingleton<EventManager>
 
 ---
 
-## 승인 요청 질문
-
-**위 REFACTOR_PLAN.md 수정안을 검토하시고, 다음 중 하나로 응답해 주세요:**
-
-1. **"OK"** - 수정된 계획대로 진행 (Phase 1부터 순차적 진행)
-2. **"수정 요청"** - 수정이 필요한 부분 명시
-3. **"다시 작성"** - 전체적으로 다시 작성 필요
 
 수정사항 반영:
 - ✅ 아웃게임 요소는 DDD 구조 유지, 이외는 단순 구조로 변경

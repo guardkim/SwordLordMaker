@@ -1,5 +1,4 @@
 using System;
-using System.Numerics;
 using UnityEngine;
 
 public class UpgradeManager : DontDestroySingleton<UpgradeManager>
@@ -20,7 +19,6 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
 
         PlayerSessionManager.Instance.OnLoginCompleted += OnLoginCompleted;
 
-        // 이미 로그인된 상태라면 바로 초기화
         if (PlayerSessionManager.Instance.IsLoggedIn)
         {
             Debug.Log("[UpgradeManager] 이미 로그인됨 → InitializeRepository 호출");
@@ -77,7 +75,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         }
 
         int currentLevel = _playerLevels.GetLevel(upgradeId);
-        BigInteger cost = data.GetCost(currentLevel);
+        double cost = data.GetCost(currentLevel);
 
         if (CurrencyManager.Instance == null)
         {
@@ -107,15 +105,15 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         return _playerLevels.GetLevel(upgradeId);
     }
 
-    public BigInteger GetBigIntBonus(string upgradeId)
+    public double GetDoubleBonus(string upgradeId)
     {
-        if (_repository == null) return BigInteger.Zero;
+        if (_repository == null) return 0;
 
         UpgradeData data = _repository.GetUpgradeData(upgradeId);
-        if (data == null) return BigInteger.Zero;
+        if (data == null) return 0;
 
         int level = _playerLevels?.GetLevel(upgradeId) ?? 0;
-        return data.GetTotalBigIntBonus(level);
+        return data.GetTotalDoubleBonus(level);
     }
 
     public float GetBonus(string upgradeId)
@@ -129,12 +127,12 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         return data.GetTotalBonus(level);
     }
 
-    public BigInteger GetCost(string upgradeId)
+    public double GetCost(string upgradeId)
     {
-        if (_repository == null) return BigInteger.Zero;
+        if (_repository == null) return 0;
 
         UpgradeData data = _repository.GetUpgradeData(upgradeId);
-        if (data == null) return BigInteger.Zero;
+        if (data == null) return 0;
 
         int currentLevel = _playerLevels?.GetLevel(upgradeId) ?? 0;
         return data.GetCost(currentLevel);
@@ -146,11 +144,10 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         return _repository.GetUpgradeData(upgradeId);
     }
 
-
     // 플레이어 스탯 보너스 조회
-    public BigInteger GetPlayerHealthBonus()
+    public double GetPlayerHealthBonus()
     {
-        return GetBigIntBonus(UpgradeId.PlayerHealth.ToKey());
+        return GetDoubleBonus(UpgradeId.PlayerHealth.ToKey());
     }
 
     public float GetPlayerMoveSpeedBonus()
@@ -168,7 +165,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
 
         return baseStat with
         {
-            AttackDamage = baseStat.AttackDamage + GetBigIntBonus(UpgradeId.SwordAttackDamage.ToKey()),
+            AttackDamage = baseStat.AttackDamage + GetDoubleBonus(UpgradeId.SwordAttackDamage.ToKey()),
             Cooldown = Mathf.Max(0.1f, baseStat.Cooldown - GetBonus(UpgradeId.SwordCooldown.ToKey())),
             MoveSpeed = baseStat.MoveSpeed + GetBonus(UpgradeId.SwordMoveSpeed.ToKey()),
             CritDamageMultiplier = baseStat.CritDamageMultiplier + GetBonus(UpgradeId.SwordCritDamage.ToKey()),

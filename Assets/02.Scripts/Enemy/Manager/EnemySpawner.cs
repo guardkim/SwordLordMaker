@@ -231,9 +231,9 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
     private EnemyStat ApplyMultiplier(EnemyStat baseStat, StageStat stageStat)
     {
         // BigInteger에 float 배율 적용
-        BigInteger multipliedHP = MultiplyBigInteger(baseStat.MaxHP, stageStat.HpMultiplier);
-        BigInteger multipliedAttack = MultiplyBigInteger(baseStat.AttackDamage, stageStat.AttackMultiplier);
-        BigInteger multipliedGold = MultiplyBigInteger(baseStat.GoldReward, stageStat.GoldMultiplier);
+        double multipliedHP = MultiplyBigInteger(baseStat.MaxHP, stageStat.HpMultiplier);
+        double multipliedAttack = MultiplyBigInteger(baseStat.AttackDamage, stageStat.AttackMultiplier);
+        double multipliedGold = MultiplyBigInteger(baseStat.GoldReward, stageStat.GoldMultiplier);
         float multipliedSpeed = baseStat.MoveSpeed * stageStat.SpeedMultiplier;
         double multipliedExp = baseStat.Exp * stageStat.ExpMultiplier;
 
@@ -247,7 +247,7 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         );
     }
 
-    private BigInteger MultiplyBigInteger(BigInteger value, float multiplier)
+    private double MultiplyBigInteger(double value, float multiplier)
     {
         if (multiplier <= 0f) return value;
         if (multiplier == 1f) return value;

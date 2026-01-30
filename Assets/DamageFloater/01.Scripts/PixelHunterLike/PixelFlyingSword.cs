@@ -207,7 +207,7 @@ public class PixelFlyingSword : BaseFlyingSword
         if (target != null)
         {
             bool isCritical = Random.value < (_stat?.CritChance ?? 0.5f);
-            BigInteger finalDamage = _stat?.CalculateDamage(isCritical) ?? new BigInteger(10);
+            double finalDamage = _stat?.CalculateDamage(isCritical) ?? 10;
             target.TakeDamage(finalDamage, isCritical);
             hasHit = true;
         }

@@ -81,7 +81,7 @@ public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
     // -----------------------------------------------------------
     // 4. BigInteger 데미지 (무한 스케일링 지원)
     // -----------------------------------------------------------
-    public void ShowDamage(DamageStyle style, BigInteger damage, Vector3 spawnPoint, bool isCrit)
+    public void ShowDamage(DamageStyle style, double damage, Vector3 spawnPoint, bool isCrit)
     {
         if (DamageFloaterPrefab == null) return;
 

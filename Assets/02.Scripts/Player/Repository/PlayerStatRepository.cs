@@ -1,37 +1,22 @@
-using System.Numerics;
 using BansheeGz.BGDatabase;
 using UnityEngine;
 
 public class PlayerStatRepository : IPlayerStatRepository
 {
-    private const string TableName = "PlayerStat";
-    private const string BaseMaxHealthField = "BaseMaxHealth";
-    private const string BaseMoveSpeedField = "BaseMoveSpeed";
-    private const string LevelField = "Level";
-    private const string CurrentExpField = "CurrentExp";
-    private const string MaxExpField = "MaxExp";
-
     private readonly string _playerName;
-    private readonly BGMetaEntity _meta;
-    private BGEntity _playerEntity;
+    private DB_PlayerStat _playerEntity;
     private PlayerStat _cachedStat;
 
     public PlayerStatRepository(string playerName)
     {
         _playerName = playerName;
-        _meta = BGRepo.I[TableName];
-
-        if (_meta == null)
-        {
-            Debug.LogWarning($"[PlayerStatRepository] 테이블을 찾을 수 없습니다: {TableName}. 기본값 사용.");
-        }
-
         InitializePlayerEntity();
     }
 
     private void InitializePlayerEntity()
     {
-        _playerEntity = FindEntityByName(_playerName);
+        _playerEntity = DB_PlayerStat.GetEntity(_playerName);
+
         if (_playerEntity != null)
         {
             Debug.Log($"[PlayerStatRepository] PlayerEntity 찾음: {_playerName}");
@@ -43,45 +28,17 @@ public class PlayerStatRepository : IPlayerStatRepository
         }
     }
 
-    private BGEntity FindEntityByName(string playerName)
+    private DB_PlayerStat CreateNewPlayerEntity()
     {
-        if (_meta == null || _meta.CountEntities == 0)
+        DB_PlayerStat entity = DB_PlayerStat.NewEntity(e =>
         {
-            Debug.Log($"[PlayerStatRepository] FindEntityByName - 테이블 없거나 비어있음");
-            return null;
-        }
-
-        int count = _meta.CountEntities;
-        Debug.Log($"[PlayerStatRepository] FindEntityByName - 검색할 이름: '{playerName}', 총 엔티티 수: {count}");
-
-        for (int i = 0; i < count; i++)
-        {
-            BGEntity entity = _meta.GetEntity(i);
-            Debug.Log($"[PlayerStatRepository] 엔티티[{i}]: Name='{entity.Name}', Level={entity.Get<int>(LevelField)}");
-
-            if (entity.Name == playerName)
-            {
-                return entity;
-            }
-        }
-
-        return null;
-    }
-
-    private BGEntity CreateNewPlayerEntity()
-    {
-        if (_meta == null)
-        {
-            return null;
-        }
-
-        BGEntity entity = _meta.NewEntity();
-        entity.Name = _playerName;
-        entity.Set(BaseMaxHealthField, "100");
-        entity.Set(BaseMoveSpeedField, 5f);
-        entity.Set(LevelField, 1);
-        entity.Set(CurrentExpField, 0.0);
-        entity.Set(MaxExpField, 10.0);
+            e.F_name = _playerName;
+            e.F_BaseMaxHealth = 100;
+            e.F_BaseMoveSpeed = 5f;
+            e.F_Level = 1;
+            e.F_CurrentExp = 0;
+            e.F_MaxExp = 10;
+        });
         return entity;
     }
 
@@ -89,47 +46,32 @@ public class PlayerStatRepository : IPlayerStatRepository
     {
         if (_playerEntity == null)
         {
-            _cachedStat = new PlayerStat(_playerName, new BigInteger(100), 5f, 1, 0.0, 10.0);
+            _cachedStat = new PlayerStat(_playerName, 100, 5f, 1, 0, 10);
             return _cachedStat;
         }
 
-        string healthStr = _playerEntity.Get<string>(BaseMaxHealthField);
+        double baseMaxHealth = _playerEntity.F_BaseMaxHealth;
+        if (baseMaxHealth <= 0) baseMaxHealth = 100;
 
-        BigInteger baseMaxHealth = string.IsNullOrEmpty(healthStr)
-            ? new BigInteger(100)
-            : BigInteger.Parse(healthStr);
+        float baseMoveSpeed = _playerEntity.F_BaseMoveSpeed;
+        if (baseMoveSpeed <= 0f) baseMoveSpeed = 5f;
 
-        float baseMoveSpeed = _playerEntity.Get<float>(BaseMoveSpeedField);
-        if (baseMoveSpeed <= 0f)
-        {
-            baseMoveSpeed = 5f;
-        }
+        int level = _playerEntity.F_Level;
+        if (level < 1) level = 1;
 
-        int level = _playerEntity.Get<int>(LevelField);
-        double currentExp = _playerEntity.Get<double>(CurrentExpField);
-        double maxExp = _playerEntity.Get<double>(MaxExpField);
-
-        // 기본값 검증: Level은 최소 1, MaxExp는 최소 10.0
-        if (level < 1)
-        {
-            level = 1;
-        }
-
-        if (maxExp <= 0.0)
-        {
-            maxExp = 10.0 * System.Math.Pow(2, level - 1);
-        }
+        double maxExp = _playerEntity.F_MaxExp;
+        if (maxExp <= 0) maxExp = 10.0 * System.Math.Pow(2, level - 1);
 
         _cachedStat = new PlayerStat(
-            _playerEntity.Name,
+            _playerEntity.F_name,
             baseMaxHealth,
             baseMoveSpeed,
             level,
-            currentExp,
+            _playerEntity.F_CurrentExp,
             maxExp
         );
 
-        Debug.Log($"[PlayerStatRepository] 로드 완료 - Level: {level}, CurrentExp: {currentExp}, MaxExp: {maxExp}");
+        Debug.Log($"[PlayerStatRepository] 로드 완료 - Level: {level}, CurrentExp: {_cachedStat.CurrentExp}, MaxExp: {maxExp}");
 
         return _cachedStat;
     }
@@ -144,11 +86,11 @@ public class PlayerStatRepository : IPlayerStatRepository
 
         Debug.Log($"[PlayerStatRepository] 저장 시작 - Level: {stat.Level}, CurrentExp: {stat.CurrentExp}, MaxExp: {stat.MaxExp}");
 
-        _playerEntity.Set(BaseMaxHealthField, stat.BaseMaxHealth.ToString());
-        _playerEntity.Set(BaseMoveSpeedField, stat.BaseMoveSpeed);
-        _playerEntity.Set(LevelField, stat.Level);
-        _playerEntity.Set(CurrentExpField, stat.CurrentExp);
-        _playerEntity.Set(MaxExpField, stat.MaxExp);
+        _playerEntity.F_BaseMaxHealth = stat.BaseMaxHealth;
+        _playerEntity.F_BaseMoveSpeed = stat.BaseMoveSpeed;
+        _playerEntity.F_Level = stat.Level;
+        _playerEntity.F_CurrentExp = stat.CurrentExp;
+        _playerEntity.F_MaxExp = stat.MaxExp;
 
         _cachedStat = stat;
 

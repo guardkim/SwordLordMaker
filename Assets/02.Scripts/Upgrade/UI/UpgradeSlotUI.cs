@@ -95,7 +95,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    private void OnCurrencyChanged(CurrencyType type, BigInteger amount)
+    private void OnCurrencyChanged(CurrencyType type, double amount)
     {
         if (type == CurrencyType.Gold)
         {
@@ -111,9 +111,9 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
         }
 
         int currentLevel = UpgradeManager.Instance.GetLevel(_upgradeKey);
-        BigInteger cost = _upgradeData.GetCost(currentLevel);
-        BigInteger totalBonus = _upgradeData.GetTotalBigIntBonus(currentLevel);
-        BigInteger nextBonus = ParseBonusPerLevel(_upgradeData.BonusPerLevel);
+        double cost = _upgradeData.GetCost(currentLevel);
+        double totalBonus = _upgradeData.GetTotalBonus(currentLevel);
+        double nextBonus = _upgradeData.BonusPerLevel;
 
         if (_nameText != null)
         {
@@ -133,7 +133,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
         if (_bonusText != null)
         {
             float totalBonusFloat = _upgradeData.GetTotalBonus(currentLevel);
-            float nextBonusFloat = ParseBonusPerLevelFloat(_upgradeData.BonusPerLevel);
+            float nextBonusFloat = (float)_upgradeData.BonusPerLevel;
 
             string totalBonusStr = FormatBonus(_upgradeId, totalBonusFloat, totalBonus);
             string nextBonusStr = FormatBonus(_upgradeId, nextBonusFloat, nextBonus);
@@ -151,7 +151,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
             return;
         }
 
-        BigInteger cost = UpgradeManager.Instance.GetCost(_upgradeKey);
+        double cost = UpgradeManager.Instance.GetCost(_upgradeKey);
         bool canAfford = CurrencyManager.Instance != null &&
                          CurrencyManager.Instance.Gold >= cost;
 
@@ -173,31 +173,11 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
         UpgradeManager.Instance.TryUpgrade(_upgradeKey);
     }
 
-    private BigInteger ParseBonusPerLevel(string value)
-    {
-        if (BigInteger.TryParse(value, out BigInteger intBonus))
-        {
-            return intBonus;
-        }
+ 
 
-        if (double.TryParse(value, out double floatBonus))
-        {
-            return new BigInteger(floatBonus);
-        }
+ 
 
-        return BigInteger.Zero;
-    }
-
-    private float ParseBonusPerLevelFloat(string value)
-    {
-        if (float.TryParse(value, out float result))
-        {
-            return result;
-        }
-        return 0f;
-    }
-
-    private string FormatBonus(UpgradeId upgradeId, float floatValue, BigInteger bigIntValue)
+    private string FormatBonus(UpgradeId upgradeId, float floatValue, double bigIntValue)
     {
         switch (upgradeId)
         {

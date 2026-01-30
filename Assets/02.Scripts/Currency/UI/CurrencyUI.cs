@@ -11,8 +11,8 @@ public class CurrencyUI : MonoBehaviour
     private bool _isGoldDirty;
     private bool _isRubyDirty;
 
-    private BigInteger _cachedGold;
-    private BigInteger _cachedRuby;
+    private double _cachedGold;
+    private double _cachedRuby;
 
     private void OnEnable()
     {
@@ -35,7 +35,7 @@ public class CurrencyUI : MonoBehaviour
         }
     }
 
-    private void HandleCurrencyChanged(CurrencyType type, BigInteger newValue)
+    private void HandleCurrencyChanged(CurrencyType type, double newValue)
     {
         switch (type)
         {

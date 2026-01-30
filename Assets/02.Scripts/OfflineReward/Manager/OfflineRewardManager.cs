@@ -15,7 +15,7 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
     [SerializeField] private int _minOfflineSecondsForReward = 1;
 
     [Header("▼ 오프라인 보상 설정")]
-    [SerializeField] private BigInteger _goldPerMinute = new BigInteger(100);
+    [SerializeField] private double _goldPerMinute = 100;
     [SerializeField] private double _expPerMinute = 10.0;
 
     private IOfflineRewardRepository _repository;
@@ -134,7 +134,7 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
     {
         long offlineMinutes = offlineSeconds / 60;
 
-        BigInteger goldReward = _goldPerMinute * (int)offlineMinutes;
+        double goldReward = _goldPerMinute * (int)offlineMinutes;
         double expReward = _expPerMinute * offlineMinutes;
 
         TimeSpan offlineDuration = TimeSpan.FromSeconds(offlineSeconds);
@@ -224,7 +224,7 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
         }
     }
 
-    public void SetRewardRates(BigInteger goldPerMinute, double expPerMinute)
+    public void SetRewardRates(double goldPerMinute, double expPerMinute)
     {
         _goldPerMinute = goldPerMinute;
         _expPerMinute = expPerMinute;
@@ -254,10 +254,10 @@ public class OfflineRewardManager : DontDestroySingleton<OfflineRewardManager>
 public class OfflineRewardResult
 {
     public TimeSpan OfflineDuration { get; }
-    public BigInteger GoldReward { get; }
+    public double GoldReward { get; }
     public double ExpReward { get; }
 
-    public OfflineRewardResult(TimeSpan offlineDuration, BigInteger goldReward, double expReward)
+    public OfflineRewardResult(TimeSpan offlineDuration, double goldReward, double expReward)
     {
         OfflineDuration = offlineDuration;
         GoldReward = goldReward;

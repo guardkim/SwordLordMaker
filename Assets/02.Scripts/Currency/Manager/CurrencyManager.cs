@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Numerics;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -13,10 +12,10 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     private const float GoldAutoSaveInterval = 60f;
 
-    public event Action<CurrencyType, BigInteger> OnCurrencyChanged;
+    public event Action<CurrencyType, double> OnCurrencyChanged;
 
-    public BigInteger Gold => _currency?.Gold ?? BigInteger.Zero;
-    public BigInteger Ruby => _currency?.Ruby ?? BigInteger.Zero;
+    public double Gold => _currency?.Gold ?? 0;
+    public double Ruby => _currency?.Ruby ?? 0;
 
     protected override void Initialize()
     {
@@ -27,7 +26,6 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
         PlayerSessionManager.Instance.OnLoginCompleted += OnLoginCompleted;
 
-        // 이미 로그인된 상태라면 바로 초기화
         if (PlayerSessionManager.Instance.IsLoggedIn)
         {
             Debug.Log("[CurrencyManager] 이미 로그인됨 → InitializeRepository 호출");
@@ -76,7 +74,7 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         }
     }
 
-    private void HandleCurrencyChanged(CurrencyType type, BigInteger newValue)
+    private void HandleCurrencyChanged(CurrencyType type, double newValue)
     {
         OnCurrencyChanged?.Invoke(type, newValue);
 
@@ -84,15 +82,14 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         {
             SaveRubyImmediate(newValue);
         }
-        
     }
 
-    private void SaveRubyImmediate(BigInteger ruby)
+    private void SaveRubyImmediate(double ruby)
     {
         _ = SaveRubyInternalAsync(ruby);
     }
 
-    private async Task SaveRubyInternalAsync(BigInteger ruby)
+    private async Task SaveRubyInternalAsync(double ruby)
     {
         try
         {
@@ -132,32 +129,31 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         }
     }
 
-    public void AddGold(BigInteger amount)
+    public void AddGold(double amount)
     {
         _currency?.Add(CurrencyType.Gold, amount);
     }
 
-    public void AddRuby(BigInteger amount)
+    public void AddRuby(double amount)
     {
         _currency?.Add(CurrencyType.Ruby, amount);
     }
 
-    public bool TrySpendGold(BigInteger amount)
+    public bool TrySpendGold(double amount)
     {
         if (!_currency.TrySpend(CurrencyType.Gold, amount)) return false;
         SaveGold();
         return true;
-
     }
 
-    public bool TrySpendRuby(BigInteger amount)
+    public bool TrySpendRuby(double amount)
     {
         return _currency?.TrySpend(CurrencyType.Ruby, amount) ?? false;
     }
 
-    public BigInteger GetCurrency(CurrencyType type)
+    public double GetCurrency(CurrencyType type)
     {
-        return _currency?.Get(type) ?? BigInteger.Zero;
+        return _currency?.Get(type) ?? 0;
     }
 
     private void OnApplicationPause(bool pauseStatus)
@@ -179,7 +175,6 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
         try
         {
-            // 동기식으로 저장 (앱 종료 시 비동기 완료 보장 불가)
             _repository.SaveAsync(_currency).Wait();
             _repository.ForceSaveToDisk();
         }
@@ -194,7 +189,7 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
     {
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            AddGold(new BigInteger(1000000000));
+            AddGold(1000000000);
             Debug.Log("[CurrencyManager] 테스트: 10억 골드 추가");
         }
     }

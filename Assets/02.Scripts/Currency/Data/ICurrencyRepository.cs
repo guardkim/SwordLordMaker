@@ -1,11 +1,10 @@
-using System.Numerics;
 using System.Threading.Tasks;
 
 public interface ICurrencyRepository
 {
     Task<Currency> LoadAsync();
     Task SaveAsync(Currency currency);
-    Task SaveGoldAsync(BigInteger gold);
-    Task SaveRubyAsync(BigInteger ruby);
+    Task SaveGoldAsync(double gold);
+    Task SaveRubyAsync(double ruby);
     void ForceSaveToDisk();
 }

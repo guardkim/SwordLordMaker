@@ -1,6 +1,4 @@
-using System.Numerics;
-
 public interface IDamageable
 {
-    void TakeDamage(BigInteger damage, bool isCrit);
+    void TakeDamage(double damage, bool isCrit);
 }

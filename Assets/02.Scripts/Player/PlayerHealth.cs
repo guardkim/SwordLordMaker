@@ -8,16 +8,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private PlayerAnimation _playerAnimation;
     [SerializeField] private PlayerAutoMovement _playerMovement;
 
-    private BigInteger _baseMaxHealth;
-    private BigInteger _maxHealth;
-    private BigInteger _currentHealth;
+    private double _baseMaxHealth;
+    private double _maxHealth;
+    private double _currentHealth;
     private bool _isDead;
 
-    public BigInteger MaxHealth => _maxHealth;
-    public BigInteger CurrentHealth => _currentHealth;
+    public double MaxHealth => _maxHealth;
+    public double CurrentHealth => _currentHealth;
     public bool IsDead => _isDead;
 
-    public event Action<BigInteger, BigInteger> OnHealthChanged;  // (current, max)
+    public event Action<double, double> OnHealthChanged;  // (current, max)
     public event Action OnDeath;
 
     private void Awake()
@@ -30,7 +30,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         else
         {
             // 폴백: Manager가 없으면 기본값 사용
-            _baseMaxHealth = new BigInteger(100);
+            _baseMaxHealth = 100;
             UnityEngine.Debug.LogWarning("[PlayerHealth] PlayerStatManager가 없어 기본값 사용");
         }
 
@@ -77,11 +77,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void OnUpgradeManagerInitialized()
     {
-        BigInteger oldMaxHealth = _maxHealth;
+        double oldMaxHealth = _maxHealth;
         ApplyUpgradeBonus();
 
-        BigInteger healthIncrease = _maxHealth - oldMaxHealth;
-        if (healthIncrease > BigInteger.Zero)
+        double healthIncrease = _maxHealth - oldMaxHealth;
+        if (healthIncrease > 0)
         {
             _currentHealth += healthIncrease;
         }
@@ -93,12 +93,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (upgradeId == UpgradeId.PlayerHealth.ToKey())
         {
-            BigInteger oldMaxHealth = _maxHealth;
+            double oldMaxHealth = _maxHealth;
             ApplyUpgradeBonus();
 
             // 증가한 만큼 현재 체력도 증가
-            BigInteger healthIncrease = _maxHealth - oldMaxHealth;
-            if (healthIncrease > BigInteger.Zero)
+            double healthIncrease = _maxHealth - oldMaxHealth;
+            if (healthIncrease > 0)
             {
                 _currentHealth += healthIncrease;
             }
@@ -109,7 +109,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void ApplyUpgradeBonus()
     {
-        BigInteger bonus = BigInteger.Zero;
+        double bonus = 0;
         if (UpgradeManager.Instance != null)
         {
             bonus = UpgradeManager.Instance.GetPlayerHealthBonus();
@@ -117,7 +117,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         _maxHealth = _baseMaxHealth + bonus;
     }
 
-    public void TakeDamage(BigInteger damage, bool isCrit)
+    public void TakeDamage(double damage, bool isCrit)
     {
         if (IsDead)
         {
@@ -125,14 +125,14 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
 
         _currentHealth -= damage;
-        if (_currentHealth < BigInteger.Zero)
+        if (_currentHealth < 0)
         {
-            _currentHealth = BigInteger.Zero;
+            _currentHealth = 0;
         }
 
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
 
-        if (_currentHealth <= BigInteger.Zero)
+        if (_currentHealth <= 0)
         {
             Die();
         }
@@ -182,7 +182,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 
-    public void Heal(BigInteger amount)
+    public void Heal(double amount)
     {
         if (IsDead)
         {
@@ -198,7 +198,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         OnHealthChanged?.Invoke(_currentHealth, _maxHealth);
     }
 
-    public void SetMaxHealth(BigInteger maxHealth, bool healToFull = false)
+    public void SetMaxHealth(double maxHealth, bool healToFull = false)
     {
         _maxHealth = maxHealth;
 
