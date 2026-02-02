@@ -1,31 +1,18 @@
 using System.Collections.Generic;
-using BansheeGz.BGDatabase;
 using UnityEngine;
 
 public class StageRepository : IStageRepository
 {
-    private const string TableName = "StageStat";
-    private const string StageIdField = "StageId";
-    private const string EnemyStatIdField = "EnemyStatId";
-    private const string BossStatIdField = "BossStatId";
-    private const string HpMultiplierField = "HpMultiplier";
-    private const string AttackMultiplierField = "AttackMultiplier";
-    private const string SpeedMultiplierField = "SpeedMultiplier";
-    private const string GoldMultiplierField = "GoldMultiplier";
-    private const string ExpMultiplierField = "ExpMultiplier";
-
-    private readonly BGMetaEntity _meta;
     private readonly Dictionary<int, StageStat> _cache;
     private int _maxStageId;
 
     public StageRepository()
     {
         _cache = new Dictionary<int, StageStat>();
-        _meta = BGRepo.I[TableName];
 
-        if (_meta == null)
+        if (DB_StageStat.CountEntities == 0)
         {
-            Debug.LogError($"[StageRepository] 테이블을 찾을 수 없습니다: {TableName}");
+            Debug.LogError("[StageRepository] StageStat 테이블이 비어있습니다.");
             return;
         }
 
@@ -38,13 +25,11 @@ public class StageRepository : IStageRepository
         _cache.Clear();
         _maxStageId = 0;
 
-        if (_meta == null) return result;
-
-        int count = _meta.CountEntities;
+        int count = DB_StageStat.CountEntities;
         for (int i = 0; i < count; i++)
         {
-            BGEntity entity = _meta.GetEntity(i);
-            StageStat stat = CreateStatFromEntity(entity);
+            DB_StageStat dbEntity = DB_StageStat.GetEntity(i);
+            StageStat stat = CreateStatFromEntity(dbEntity);
             _cache[stat.StageId] = stat;
             result.Add(stat);
 
@@ -73,19 +58,19 @@ public class StageRepository : IStageRepository
         return _maxStageId;
     }
 
-    private StageStat CreateStatFromEntity(BGEntity entity)
+    private StageStat CreateStatFromEntity(DB_StageStat dbEntity)
     {
-        float hpMult = entity.Get<float>(HpMultiplierField);
-        float atkMult = entity.Get<float>(AttackMultiplierField);
-        float spdMult = entity.Get<float>(SpeedMultiplierField);
-        float goldMult = entity.Get<float>(GoldMultiplierField);
-        float expMult = entity.Get<float>(ExpMultiplierField);
+        float hpMult = dbEntity.F_HpMultiplier;
+        float atkMult = dbEntity.F_AttackMultiplier;
+        float spdMult = dbEntity.F_SpeedMultiplier;
+        float goldMult = dbEntity.F_GoldMultiplier;
+        float expMult = dbEntity.F_ExpMultiplier;
 
         return new StageStat(
-            entity.Get<int>(StageIdField),
-            entity.Name,
-            entity.Get<string>(EnemyStatIdField),
-            entity.Get<string>(BossStatIdField) ?? "",
+            dbEntity.F_StageId,
+            dbEntity.F_name,
+            dbEntity.F_EnemyStatId,
+            dbEntity.F_BossStatId ?? "",
             hpMult <= 0 ? 1f : hpMult,
             atkMult <= 0 ? 1f : atkMult,
             spdMult <= 0 ? 1f : spdMult,

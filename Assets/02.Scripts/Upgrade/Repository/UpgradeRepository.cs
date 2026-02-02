@@ -4,23 +4,8 @@ using UnityEngine;
 
 public class UpgradeRepository : IUpgradeRepository
 {
-    private const string UpgradeDataTableName = "UpgradeData";
-    private const string PlayerProfileTableName = "PlayerProfile";
-
-    // UpgradeData 필드
-    private const string DisplayNameField = "DisplayName";
-    private const string BaseCostField = "BaseCost";
-    private const string CostMultiplierField = "CostMultiplier";
-    private const string BonusPerLevelField = "BonusPerLevel";
-
-    // PlayerProfile 필드
-    private const string UpgradeLevelsField = "UpgradeLevels";
-
     private readonly string _playerName;
-    private readonly BGMetaEntity _upgradeDataMeta;
-    private readonly BGMetaEntity _playerProfileMeta;
-    private BGEntity _playerEntity;
-
+    private DB_PlayerProfile _playerEntity;
     private readonly Dictionary<string, UpgradeData> _upgradeDataCache;
 
     public UpgradeRepository(string playerName)
@@ -28,17 +13,9 @@ public class UpgradeRepository : IUpgradeRepository
         _playerName = playerName;
         _upgradeDataCache = new Dictionary<string, UpgradeData>();
 
-        _upgradeDataMeta = BGRepo.I[UpgradeDataTableName];
-        _playerProfileMeta = BGRepo.I[PlayerProfileTableName];
-
-        if (_upgradeDataMeta == null)
+        if (DB_UpgradeData.CountEntities == 0)
         {
-            Debug.LogError($"[UpgradeRepository] 테이블을 찾을 수 없습니다: {UpgradeDataTableName}");
-        }
-
-        if (_playerProfileMeta == null)
-        {
-            Debug.LogError($"[UpgradeRepository] 테이블을 찾을 수 없습니다: {PlayerProfileTableName}");
+            Debug.LogError("[UpgradeRepository] UpgradeData 테이블이 비어있습니다.");
         }
 
         InitializePlayerEntity();
@@ -47,9 +24,7 @@ public class UpgradeRepository : IUpgradeRepository
 
     private void InitializePlayerEntity()
     {
-        if (_playerProfileMeta == null) return;
-
-        _playerEntity = FindEntityByName(_playerName);
+        _playerEntity = DB_PlayerProfile.GetEntity(_playerName);
 
         if (_playerEntity != null)
         {
@@ -61,38 +36,16 @@ public class UpgradeRepository : IUpgradeRepository
         }
     }
 
-    private BGEntity FindEntityByName(string playerName)
-    {
-        if (_playerProfileMeta == null || _playerProfileMeta.CountEntities == 0)
-        {
-            return null;
-        }
-
-        int count = _playerProfileMeta.CountEntities;
-        for (int i = 0; i < count; i++)
-        {
-            BGEntity entity = _playerProfileMeta.GetEntity(i);
-            if (entity.Name == playerName)
-            {
-                return entity;
-            }
-        }
-
-        return null;
-    }
-
     public List<UpgradeData> LoadAllUpgradeData()
     {
         var result = new List<UpgradeData>();
         _upgradeDataCache.Clear();
 
-        if (_upgradeDataMeta == null) return result;
-
-        int count = _upgradeDataMeta.CountEntities;
+        int count = DB_UpgradeData.CountEntities;
         for (int i = 0; i < count; i++)
         {
-            BGEntity entity = _upgradeDataMeta.GetEntity(i);
-            UpgradeData data = CreateUpgradeDataFromEntity(entity);
+            DB_UpgradeData dbEntity = DB_UpgradeData.GetEntity(i);
+            UpgradeData data = CreateUpgradeDataFromEntity(dbEntity);
             _upgradeDataCache[data.Id] = data;
             result.Add(data);
         }
@@ -119,7 +72,7 @@ public class UpgradeRepository : IUpgradeRepository
             return new PlayerUpgradeLevels();
         }
 
-        string json = _playerEntity.Get<string>(UpgradeLevelsField) ?? "";
+        string json = _playerEntity.F_UpgradeLevels ?? "";
         Debug.Log($"[UpgradeRepository] 강화 레벨 로드: {json}");
         return PlayerUpgradeLevels.FromJson(json);
     }
@@ -133,7 +86,7 @@ public class UpgradeRepository : IUpgradeRepository
         }
 
         string json = levels.ToJson();
-        _playerEntity.Set(UpgradeLevelsField, json);
+        _playerEntity.F_UpgradeLevels = json;
         BGRepo.I.Save();
 
 #if UNITY_EDITOR
@@ -143,14 +96,14 @@ public class UpgradeRepository : IUpgradeRepository
         Debug.Log($"[UpgradeRepository] 강화 레벨 저장 완료: {json}");
     }
 
-    private UpgradeData CreateUpgradeDataFromEntity(BGEntity entity)
+    private UpgradeData CreateUpgradeDataFromEntity(DB_UpgradeData dbEntity)
     {
         return new UpgradeData(
-            entity.Name,
-            entity.Get<string>(DisplayNameField) ?? entity.Name,
-            entity.Get<double>(BaseCostField),
-            entity.Get<float>(CostMultiplierField),
-            entity.Get<double>(BonusPerLevelField)
+            dbEntity.F_name,
+            dbEntity.F_DisplayName ?? dbEntity.F_name,
+            dbEntity.F_BaseCost,
+            dbEntity.F_CostMultiplier,
+            dbEntity.F_BonusPerLevel
         );
     }
 }
