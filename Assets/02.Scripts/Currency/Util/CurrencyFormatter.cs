@@ -43,7 +43,7 @@ public static class CurrencyFormatter
     {
         if (value < 1000)
         {
-            return value.ToString("FO");
+            return value.ToString("F0");
         }
 
         int unitIndex = 0;
@@ -67,16 +67,16 @@ public static class CurrencyFormatter
             string decimalStr = ((int)decimalPart).ToString().PadLeft(2, '0').TrimEnd('0');
             if (!string.IsNullOrEmpty(decimalStr))
             {
-                return $"{wholePart}.{decimalStr}{unit}";
+                return $"{(long)wholePart}.{decimalStr}{unit}";
             }
         }
 
-        return $"{wholePart}{unit}";
+        return $"{(long)wholePart}{unit}";
     }
 
     public static string FormatWithComma(double value)
     {
-        return value.ToString("FO");
+        return value.ToString("N0");
     }
 
     public static string FormatKorean(double value)
@@ -97,7 +97,7 @@ public static class CurrencyFormatter
             double part = remaining % tenThousand;
             if (part > 0)
             {
-                sb.Insert(0, part.ToString() + units[unitIndex]);
+                sb.Insert(0, ((long)part).ToString() + units[unitIndex]);
             }
             remaining /= tenThousand;
             unitIndex++;

@@ -1,10 +1,25 @@
-public record SfxData(
-    string Id,
-    float Volume,
-    bool UseRandomPitch
-);
+public class SfxData
+{
+    public string Id { get; private set; }
+    public float Volume { get; private set; }
+    public bool UseRandomPitch { get; private set; }
 
-public record BgmData(
-    string Id,
-    float Volume
-);
+    public SfxData(string id, float volume, bool useRandomPitch)
+    {
+        Id = id;
+        Volume = volume;
+        UseRandomPitch = useRandomPitch;
+    }
+}
+
+public class BgmData
+{
+    public string Id { get; private set; }
+    public float Volume { get; private set; }
+
+    public BgmData(string id, float volume)
+    {
+        Id = id;
+        Volume = volume;
+    }
+}

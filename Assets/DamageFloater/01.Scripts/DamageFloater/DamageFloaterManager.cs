@@ -88,7 +88,7 @@ public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
         if (floater != null)
         {
             floater.ApplyOption(SingleFloaterOption);
-            string formattedDamage = CurrencyFormatter.FormatKorean(damage);
+            string formattedDamage = CurrencyFormatter.FormatAbbreviated(damage);
             floater.ShowFormattedDamage(formattedDamage, style, isCrit);
         }
     }

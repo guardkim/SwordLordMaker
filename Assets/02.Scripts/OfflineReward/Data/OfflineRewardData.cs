@@ -1,7 +1,13 @@
-using System.Numerics;
+public class OfflineRewardData
+{
+    public long LastLoginTime { get; set; }
+    public double GoldPerMinute { get; set; }
+    public double ExpPerMinute { get; set; }
 
-public record OfflineRewardData(
-    long LastLoginTime,
-    BigInteger GoldPerMinute,
-    double ExpPerMinute
-);
+    public OfflineRewardData(long lastLoginTime, double goldPerMinute, double expPerMinute)
+    {
+        LastLoginTime = lastLoginTime;
+        GoldPerMinute = goldPerMinute;
+        ExpPerMinute = expPerMinute;
+    }
+}

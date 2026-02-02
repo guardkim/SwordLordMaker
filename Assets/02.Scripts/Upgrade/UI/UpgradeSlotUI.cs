@@ -126,7 +126,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
 
         if (_costText != null)
         {
-            _costText.text = $"{CurrencyFormatter.FormatKorean(cost)} G";
+            _costText.text = $"{CurrencyFormatter.FormatAbbreviated(cost)} G";
         }
 
         if (_bonusText != null)
@@ -196,7 +196,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
             case UpgradeId.PlayerHealth:
             case UpgradeId.SwordAttackDamage:
             default:
-                return CurrencyFormatter.FormatKorean(bigIntValue);
+                return CurrencyFormatter.FormatAbbreviated(bigIntValue);
         }
     }
 }

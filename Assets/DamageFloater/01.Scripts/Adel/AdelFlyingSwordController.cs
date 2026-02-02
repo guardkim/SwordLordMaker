@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class AdelFlyingSwordController : BaseSwordController
 {
-    // SwordPrefab은 부모에 있음
-
     [Header("■ [Adel] 사출 설정")]
     public float SpawnForce = 10f;
     public int MaxSwordCount = 6;
@@ -16,21 +14,25 @@ public class AdelFlyingSwordController : BaseSwordController
 
     [Header("■ Sword Stat")]
     [SerializeField] private string _swordStatId = "ADEL_SWORD";
+
+    private SwordStat _baseStat;
     private SwordStat _swordStat;
+    private bool _isInitialized;
+
     public SwordStat SwordStat => _swordStat;
 
     private readonly List<AdelFlyingSword> _activeSwords = new List<AdelFlyingSword>();
-    private int _currentAttackerOrderIndex; 
+    private int _currentAttackerOrderIndex;
     private int _spawnTotalCount;
     private float _delayTimer;
 
-    // [최적화용 변수 추가]
     private float _searchTimer;
-    private const float SearchInterval = 0.2f; // 0.2초마다 탐색
+    private const float SearchInterval = 0.2f;
 
     private void Awake()
     {
-        LoadAndApplyUpgrades();
+        LoadBaseStat();
+        ApplyUpgrades();
     }
 
     private void Start()
@@ -40,7 +42,6 @@ public class AdelFlyingSwordController : BaseSwordController
             UpgradeManager.Instance.OnUpgraded += OnUpgradeChanged;
             UpgradeManager.Instance.OnInitialized += OnUpgradeManagerInitialized;
 
-            // 아직 초기화 안 됐으면 이벤트로 대기
             if (!UpgradeManager.Instance.IsReady)
             {
                 return;
@@ -57,11 +58,48 @@ public class AdelFlyingSwordController : BaseSwordController
         }
     }
 
+    private void LoadBaseStat()
+    {
+        if (_isInitialized) return;
+
+        var repository = new SwordStatRepository();
+        _baseStat = repository.GetById(_swordStatId);
+        _swordStat = new SwordStat(_baseStat);
+
+        _isInitialized = true;
+    }
+
+    private void ApplyUpgrades()
+    {
+        if (_baseStat == null || _swordStat == null) return;
+
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.ApplyUpgrades(_baseStat, _swordStat);
+        }
+        else
+        {
+            _swordStat.CopyFrom(_baseStat);
+        }
+    }
+
     private void OnUpgradeManagerInitialized()
     {
-        LoadAndApplyUpgrades();
+        ApplyUpgrades();
+        UpdateActiveSwords();
+    }
 
-        // 기존 활성 검들에도 새 스탯 적용
+    private void OnUpgradeChanged(string upgradeId, int newLevel)
+    {
+        if (upgradeId.StartsWith("Sword_"))
+        {
+            ApplyUpgrades();
+            UpdateActiveSwords();
+        }
+    }
+
+    private void UpdateActiveSwords()
+    {
         foreach (var sword in _activeSwords)
         {
             if (sword != null)
@@ -71,41 +109,6 @@ public class AdelFlyingSwordController : BaseSwordController
         }
     }
 
-    private void OnUpgradeChanged(string upgradeId, int newLevel)
-    {
-        // 검 관련 강화 시 스탯 재적용
-        if (upgradeId.StartsWith("Sword_"))
-        {
-            LoadAndApplyUpgrades();
-
-            // 기존 활성 검들에도 새 스탯 즉시 적용
-            foreach (var sword in _activeSwords)
-            {
-                if (sword != null)
-                {
-                    sword.InitializeStat(_swordStat);
-                }
-            }
-        }
-    }
-
-    private void LoadAndApplyUpgrades()
-    {
-        var repository = new SwordStatRepository();
-        SwordStat baseStat = repository.GetById(_swordStatId);
-
-        // 강화 보너스 적용
-        if (UpgradeManager.Instance != null)
-        {
-            _swordStat = UpgradeManager.Instance.ApplyUpgrades(baseStat);
-        }
-        else
-        {
-            _swordStat = baseStat;
-        }
-    }
-
-    // 부모 추상 메서드 구현
     protected override void ResetSequence()
     {
         SpawnDualSwords();
@@ -115,7 +118,6 @@ public class AdelFlyingSwordController : BaseSwordController
     {
         if (_delayTimer > 0) _delayTimer -= Time.deltaTime;
 
-        // [수정됨] 매 프레임 실행하지 않고 0.2초마다 실행
         _searchTimer += Time.deltaTime;
         if (_searchTimer >= SearchInterval)
         {
@@ -196,7 +198,7 @@ public class AdelFlyingSwordController : BaseSwordController
 
     public void NextTurn()
     {
-        _delayTimer = AttackDelay; 
+        _delayTimer = AttackDelay;
         IncrementTurnIndex();
     }
 
@@ -206,7 +208,7 @@ public class AdelFlyingSwordController : BaseSwordController
 
         _activeSwords.Sort((a, b) => a.OrderIndex.CompareTo(b.OrderIndex));
         AdelFlyingSword nextSword = _activeSwords.FirstOrDefault(s => s.OrderIndex > _currentAttackerOrderIndex);
-        
+
         if (!nextSword)
             nextSword = _activeSwords[0];
 
