@@ -561,10 +561,10 @@ public sealed partial class DB_PlayerProfile : BGEntity
 		get => _F_Ruby[Index];
 		set => _F_Ruby.SetValue(this, value);
 	}
-	public System.Double F_UpgradeLevels
+	public System.String F_UpgradeLevels
 	{
 		get => _F_UpgradeLevels[Index];
-		set => _F_UpgradeLevels.SetValue(this, value);
+		set => _F_UpgradeLevels[Index] = value;
 	}
 	public System.String F_LastLoginTime
 	{
@@ -577,8 +577,8 @@ public sealed partial class DB_PlayerProfile : BGEntity
 	public static BansheeGz.BGDatabase.BGFieldDouble _F_Gold => _ufle12jhs77_F_Gold ??= BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldDouble>(MetaDefault, new BGId(5756689803566048807UL, 2847865984195918240UL), () => _ufle12jhs77_F_Gold = null);
 	private static BansheeGz.BGDatabase.BGFieldDouble _ufle12jhs77_F_Ruby;
 	public static BansheeGz.BGDatabase.BGFieldDouble _F_Ruby => _ufle12jhs77_F_Ruby ??= BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldDouble>(MetaDefault, new BGId(5565493530474271284UL, 2806272043107077512UL), () => _ufle12jhs77_F_Ruby = null);
-	private static BansheeGz.BGDatabase.BGFieldDouble _ufle12jhs77_F_UpgradeLevels;
-	public static BansheeGz.BGDatabase.BGFieldDouble _F_UpgradeLevels => _ufle12jhs77_F_UpgradeLevels ??= BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldDouble>(MetaDefault, new BGId(4654063876295627449UL, 5081672488624153999UL), () => _ufle12jhs77_F_UpgradeLevels = null);
+	private static BansheeGz.BGDatabase.BGFieldString _ufle12jhs77_F_UpgradeLevels;
+	public static BansheeGz.BGDatabase.BGFieldString _F_UpgradeLevels => _ufle12jhs77_F_UpgradeLevels ??= BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldString>(MetaDefault, new BGId(4654063876295627449UL, 5081672488624153999UL), () => _ufle12jhs77_F_UpgradeLevels = null);
 	private static BansheeGz.BGDatabase.BGFieldString _ufle12jhs77_F_LastLoginTime;
 	public static BansheeGz.BGDatabase.BGFieldString _F_LastLoginTime => _ufle12jhs77_F_LastLoginTime ??= BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldString>(MetaDefault, new BGId(5524188386132115016UL, 2659897881835505309UL), () => _ufle12jhs77_F_LastLoginTime = null);
 	private DB_PlayerProfile() : base(MetaDefault) {}
@@ -600,7 +600,7 @@ public sealed partial class DB_PlayerProfile : BGEntity
 		_ufle12jhs77_F_name = BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldEntityName>(_metaDefault, new BGId(4642974237642687383UL, 13473156798194563002UL));
 		_ufle12jhs77_F_Gold = BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldDouble>(_metaDefault, new BGId(5756689803566048807UL, 2847865984195918240UL));
 		_ufle12jhs77_F_Ruby = BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldDouble>(_metaDefault, new BGId(5565493530474271284UL, 2806272043107077512UL));
-		_ufle12jhs77_F_UpgradeLevels = BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldDouble>(_metaDefault, new BGId(4654063876295627449UL, 5081672488624153999UL));
+		_ufle12jhs77_F_UpgradeLevels = BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldString>(_metaDefault, new BGId(4654063876295627449UL, 5081672488624153999UL));
 		_ufle12jhs77_F_LastLoginTime = BGCodeGenUtils.GetField<BansheeGz.BGDatabase.BGFieldString>(_metaDefault, new BGId(5524188386132115016UL, 2659897881835505309UL));
 	}
 	public static void ReleaseCodeGenRuntime()

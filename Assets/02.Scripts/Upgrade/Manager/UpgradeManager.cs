@@ -85,7 +85,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
 
         if (!CurrencyManager.Instance.TrySpendGold(cost))
         {
-            Debug.Log($"[UpgradeManager] 골드 부족: 필요 {CurrencyFormatter.FormatAbbreviated(cost)}");
+            Debug.Log($"[UpgradeManager] 골드 부족: 필요 {CurrencyFormatter.FormatKorean(cost)}");
             return false;
         }
 

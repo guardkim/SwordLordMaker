@@ -54,13 +54,13 @@ public class CurrencyUI : MonoBehaviour
     {
         if (_isGoldDirty && _goldText != null)
         {
-            _goldText.text = CurrencyFormatter.FormatAbbreviated(_cachedGold);
+            _goldText.text = CurrencyFormatter.FormatKorean(_cachedGold);
             _isGoldDirty = false;
         }
 
         if (_isRubyDirty && _rubyText != null)
         {
-            _rubyText.text = CurrencyFormatter.FormatAbbreviated(_cachedRuby);
+            _rubyText.text = CurrencyFormatter.FormatKorean(_cachedRuby);
             _isRubyDirty = false;
         }
     }

@@ -1,9 +1,6 @@
-using System;
-using System.Numerics;
 using UnityEngine;
 using System.Collections.Generic;
 using Quaternion = UnityEngine.Quaternion;
-using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
@@ -91,7 +88,7 @@ public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
         if (floater != null)
         {
             floater.ApplyOption(SingleFloaterOption);
-            string formattedDamage = CurrencyFormatter.FormatAbbreviated(damage);
+            string formattedDamage = CurrencyFormatter.FormatKorean(damage);
             floater.ShowFormattedDamage(formattedDamage, style, isCrit);
         }
     }
