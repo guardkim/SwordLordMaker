@@ -155,16 +155,11 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         return GetBonus(UpgradeId.PlayerMoveSpeed.ToKey());
     }
 
-    // 검 스탯 보너스 적용 (기존 객체 수정 - GC 없음)
     public void ApplyUpgrades(SwordStat baseStat, SwordStat targetStat)
     {
         if (_repository == null)
         {
-            targetStat.AttackDamage = baseStat.AttackDamage;
-            targetStat.Cooldown = baseStat.Cooldown;
-            targetStat.MoveSpeed = baseStat.MoveSpeed;
-            targetStat.CritDamageMultiplier = baseStat.CritDamageMultiplier;
-            targetStat.CritChance = baseStat.CritChance;
+            targetStat.CopyFrom(baseStat);
             return;
         }
 

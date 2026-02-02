@@ -64,15 +64,7 @@ public class AdelFlyingSwordController : BaseSwordController
 
         var repository = new SwordStatRepository();
         _baseStat = repository.GetById(_swordStatId);
-
-        _swordStat = new SwordStat(
-            _baseStat.Id,
-            _baseStat.AttackDamage,
-            _baseStat.Cooldown,
-            _baseStat.MoveSpeed,
-            _baseStat.CritDamageMultiplier,
-            _baseStat.CritChance
-        );
+        _swordStat = new SwordStat(_baseStat);
 
         _isInitialized = true;
     }
@@ -87,11 +79,7 @@ public class AdelFlyingSwordController : BaseSwordController
         }
         else
         {
-            _swordStat.AttackDamage = _baseStat.AttackDamage;
-            _swordStat.Cooldown = _baseStat.Cooldown;
-            _swordStat.MoveSpeed = _baseStat.MoveSpeed;
-            _swordStat.CritDamageMultiplier = _baseStat.CritDamageMultiplier;
-            _swordStat.CritChance = _baseStat.CritChance;
+            _swordStat.CopyFrom(_baseStat);
         }
     }
 

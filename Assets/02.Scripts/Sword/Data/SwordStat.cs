@@ -23,6 +23,25 @@ public class SwordStat
         CritChance = critChance;
     }
 
+    public SwordStat(SwordStat other)
+    {
+        Id = other.Id;
+        AttackDamage = other.AttackDamage;
+        Cooldown = other.Cooldown;
+        MoveSpeed = other.MoveSpeed;
+        CritDamageMultiplier = other.CritDamageMultiplier;
+        CritChance = other.CritChance;
+    }
+
+    public void CopyFrom(SwordStat source)
+    {
+        AttackDamage = source.AttackDamage;
+        Cooldown = source.Cooldown;
+        MoveSpeed = source.MoveSpeed;
+        CritDamageMultiplier = source.CritDamageMultiplier;
+        CritChance = source.CritChance;
+    }
+
     public double CalculateDamage(bool isCrit)
     {
         if (!isCrit) return AttackDamage;
