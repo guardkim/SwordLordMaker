@@ -21,6 +21,9 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
     private IBossStatRepository _bossRepository;
     private ObjectPool<EnemyAI> _pool;
 
+    private readonly List<EnemyAI> _aliveEnemies = new();
+    public IReadOnlyList<EnemyAI> AliveEnemies => _aliveEnemies;
+
     protected override void Initialize()
     {
         _repository = CreateRepository();
@@ -61,10 +64,12 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
     private void OnTakeFromPool(EnemyAI enemy)
     {
         enemy.gameObject.SetActive(true);
+        _aliveEnemies.Add(enemy);
     }
 
     private void OnReturnedToPool(EnemyAI enemy)
     {
+        _aliveEnemies.Remove(enemy);
         enemy.ResetForPool();
         enemy.gameObject.SetActive(false);
     }
@@ -127,6 +132,7 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         // 보스는 풀에 반환하지 않고 Destroy
         if (enemy.IsBoss)
         {
+            _aliveEnemies.Remove(enemy);
             enemy.ResetForPool();
             Destroy(enemy.gameObject);
             return;
@@ -134,12 +140,25 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
 
         if (_pool == null)
         {
+            _aliveEnemies.Remove(enemy);
             enemy.ResetForPool();
             Destroy(enemy.gameObject);
             return;
         }
 
         _pool.Release(enemy);
+    }
+
+
+    public void ReturnAll()
+    {
+        for (int i = _aliveEnemies.Count - 1; i >= 0; i--)
+        {
+            if (_aliveEnemies[i] != null)
+            {
+                Return(_aliveEnemies[i]);
+            }
+        }
     }
 
     public int SpawnPointCount => _spawnPoints?.Length ?? 0;
@@ -223,6 +242,8 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
 
         boss.transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
         boss.InitializeAsBoss(multipliedStat);
+
+        _aliveEnemies.Add(boss);
 
         return boss;
     }

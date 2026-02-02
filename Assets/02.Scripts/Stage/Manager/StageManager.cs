@@ -14,7 +14,6 @@ public class StageManager : DontDestroySingleton<StageManager>
     private int _currentStageId = 1;
     private int _maxStageId;
 
-    private List<EnemyAI> _aliveEnemies = new List<EnemyAI>();
     private EnemyAI _currentBoss;
     private bool _isSpawning;
     private bool _bossSpawned;
@@ -24,7 +23,7 @@ public class StageManager : DontDestroySingleton<StageManager>
     public int CurrentStageId => _currentStageId;
     public string CurrentStageName => _currentStageStat?.StageName ?? "";
     public StageStat CurrentStageStat => _currentStageStat;
-    public int AliveEnemyCount => _aliveEnemies.Count;
+    public int AliveEnemyCount => EnemySpawner.Instance?.AliveEnemies.Count ?? 0;
     public bool IsBossSpawned => _bossSpawned;
     public bool IsBossAlive => _currentBoss != null && !_currentBoss.IsDead;
 
@@ -102,7 +101,6 @@ public class StageManager : DontDestroySingleton<StageManager>
 
         _currentStageId = stageId;
         _currentStageStat = stage;
-        _aliveEnemies.Clear();
         _currentBoss = null;
         _bossSpawned = false;
         _isSpawning = true;
@@ -132,12 +130,8 @@ public class StageManager : DontDestroySingleton<StageManager>
             return;
         }
 
-        // 배율 적용된 Enemy 스폰
-        EnemyAI enemy = EnemySpawner.Instance.SpawnWithMultiplier(stage.EnemyStatId, stage);
-        if (enemy != null)
-        {
-            _aliveEnemies.Add(enemy);
-        }
+        // 배율 적용된 Enemy 스폰 (EnemySpawner가 AliveEnemies 자동 관리)
+        EnemySpawner.Instance.SpawnWithMultiplier(stage.EnemyStatId, stage);
     }
 
     // 외부에서 호출하여 보스 스폰 (UI 버튼 등)
@@ -177,7 +171,7 @@ public class StageManager : DontDestroySingleton<StageManager>
     // 일반 Enemy 사망 처리
     public void OnEnemyDied(EnemyAI enemy)
     {
-        _aliveEnemies.Remove(enemy);
+        // EnemySpawner.Return() 호출 시 AliveEnemies에서 자동 제거됨
     }
 
     // 보스 사망 처리 -> 스테이지 클리어
@@ -251,33 +245,13 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     private void ClearAllEnemies()
     {
-        foreach (var enemy in _aliveEnemies.ToArray())
-        {
-            if (enemy != null)
-            {
-                EnemySpawner.Instance?.Return(enemy);
-            }
-        }
-        _aliveEnemies.Clear();
-
-        // 태그로 남은 모든 Enemy 제거 (누락 방지)
-        GameObject[] remainingEnemies = GameObject.FindGameObjectsWithTag("Enemy");
-        foreach (var enemyObj in remainingEnemies)
-        {
-            if (enemyObj != null)
-            {
-                EnemyAI enemyAI = enemyObj.GetComponent<EnemyAI>();
-                if (enemyAI != null && enemyAI != _currentBoss)
-                {
-                    EnemySpawner.Instance?.Return(enemyAI);
-                }
-            }
-        }
+        // EnemySpawner에게 모든 적 반환 위임
+        EnemySpawner.Instance?.ReturnAll();
 
         // 보스도 제거
         if (_currentBoss != null)
         {
-            Destroy(_currentBoss.gameObject);
+            EnemySpawner.Instance?.Return(_currentBoss);
             _currentBoss = null;
         }
 
