@@ -62,6 +62,13 @@ public class PlayerUpgradeLevels
             return result;
         }
 
+        string trimmed = json.Trim();
+        if (!trimmed.StartsWith("{"))
+        {
+            UnityEngine.Debug.LogWarning($"[PlayerUpgradeLevels] JSON 객체 형식이 아닙니다. 빈 레벨로 초기화합니다. (값: {json})");
+            return result;
+        }
+
         try
         {
             var wrapper = UnityEngine.JsonUtility.FromJson<SerializableWrapper>(json);
@@ -73,9 +80,8 @@ public class PlayerUpgradeLevels
                 }
             }
         }
-        catch (ArgumentException  e)
+        catch (ArgumentException e)
         {
-            // JSON 파싱 실패 시 빈 레벨 반환
             UnityEngine.Debug.LogError($"[PlayerUpgradeLevels] JSON 파싱에 실패했습니다. 오류: {e.Message}");
         }
 

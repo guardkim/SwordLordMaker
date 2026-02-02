@@ -1,11 +1,25 @@
-// Player 스탯 데이터 (불변 Value Object)
-// BGDatabase CodeGen 사용: Type-Safe 데이터 접근
+public class PlayerStat
+{
+    public string Id { get; private set; }
+    public double BaseMaxHealth { get; set; }
+    public float BaseMoveSpeed { get; set; }
+    public int Level { get; set; }
+    public double CurrentExp { get; set; }
+    public double MaxExp { get; set; }
 
-public record PlayerStat(
-    string Id,
-    double BaseMaxHealth,   // 기본 최대 체력 (double)
-    float BaseMoveSpeed,    // 기본 이동 속도 (float)
-    int Level,              // 현재 레벨
-    double CurrentExp,      // 현재 경험치
-    double MaxExp           // 레벨업 필요 경험치
-);
+    public PlayerStat(
+        string id,
+        double baseMaxHealth,
+        float baseMoveSpeed,
+        int level,
+        double currentExp,
+        double maxExp)
+    {
+        Id = id;
+        BaseMaxHealth = baseMaxHealth;
+        BaseMoveSpeed = baseMoveSpeed;
+        Level = level;
+        CurrentExp = currentExp;
+        MaxExp = maxExp;
+    }
+}

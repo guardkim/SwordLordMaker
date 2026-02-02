@@ -85,7 +85,7 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
 
         if (!CurrencyManager.Instance.TrySpendGold(cost))
         {
-            Debug.Log($"[UpgradeManager] 골드 부족: 필요 {CurrencyFormatter.FormatKorean(cost)}");
+            Debug.Log($"[UpgradeManager] 골드 부족: 필요 {CurrencyFormatter.FormatAbbreviated(cost)}");
             return false;
         }
 
@@ -155,21 +155,23 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
         return GetBonus(UpgradeId.PlayerMoveSpeed.ToKey());
     }
 
-    // 검 스탯 보너스 적용
-    public SwordStat ApplyUpgrades(SwordStat baseStat)
+    // 검 스탯 보너스 적용 (기존 객체 수정 - GC 없음)
+    public void ApplyUpgrades(SwordStat baseStat, SwordStat targetStat)
     {
         if (_repository == null)
         {
-            return baseStat;
+            targetStat.AttackDamage = baseStat.AttackDamage;
+            targetStat.Cooldown = baseStat.Cooldown;
+            targetStat.MoveSpeed = baseStat.MoveSpeed;
+            targetStat.CritDamageMultiplier = baseStat.CritDamageMultiplier;
+            targetStat.CritChance = baseStat.CritChance;
+            return;
         }
 
-        return baseStat with
-        {
-            AttackDamage = baseStat.AttackDamage + GetDoubleBonus(UpgradeId.SwordAttackDamage.ToKey()),
-            Cooldown = Mathf.Max(0.1f, baseStat.Cooldown - GetBonus(UpgradeId.SwordCooldown.ToKey())),
-            MoveSpeed = baseStat.MoveSpeed + GetBonus(UpgradeId.SwordMoveSpeed.ToKey()),
-            CritDamageMultiplier = baseStat.CritDamageMultiplier + GetBonus(UpgradeId.SwordCritDamage.ToKey()),
-            CritChance = Mathf.Min(1f, baseStat.CritChance + GetBonus(UpgradeId.SwordCritChance.ToKey()))
-        };
+        targetStat.AttackDamage = baseStat.AttackDamage + GetDoubleBonus(UpgradeId.SwordAttackDamage.ToKey());
+        targetStat.Cooldown = Mathf.Max(0.1f, baseStat.Cooldown - GetBonus(UpgradeId.SwordCooldown.ToKey()));
+        targetStat.MoveSpeed = baseStat.MoveSpeed + GetBonus(UpgradeId.SwordMoveSpeed.ToKey());
+        targetStat.CritDamageMultiplier = baseStat.CritDamageMultiplier + GetBonus(UpgradeId.SwordCritDamage.ToKey());
+        targetStat.CritChance = Mathf.Min(1f, baseStat.CritChance + GetBonus(UpgradeId.SwordCritChance.ToKey()));
     }
 }

@@ -1,9 +1,8 @@
 using System;
-using System.Numerics;
 
 public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
 {
-    private const double ExpCompareEpsilon = 0.0001;    
+    private const double ExpCompareEpsilon = 0.0001;
     private IPlayerStatRepository _repository;
     private PlayerStat _baseStat;
 
@@ -64,13 +63,8 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
             return;
         }
 
-        _baseStat = _baseStat with
-        {
-            CurrentExp = _baseStat.CurrentExp + exp
-        };
-
+        _baseStat.CurrentExp += exp;
         OnExpChanged?.Invoke(_baseStat.CurrentExp, _baseStat.MaxExp);
-
         CheckLevelUp();
     }
 
@@ -86,12 +80,9 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
             int newLevel = _baseStat.Level + 1;
             double newMaxExp = CalculateMaxExp(newLevel);
 
-            _baseStat = _baseStat with
-            {
-                CurrentExp = _baseStat.CurrentExp - _baseStat.MaxExp,
-                Level = newLevel,
-                MaxExp = newMaxExp
-            };
+            _baseStat.CurrentExp -= _baseStat.MaxExp;
+            _baseStat.Level = newLevel;
+            _baseStat.MaxExp = newMaxExp;
 
             UnityEngine.Debug.Log($"[PlayerStatManager] 레벨업! Level: {_baseStat.Level}, CurrentExp: {_baseStat.CurrentExp}, MaxExp: {_baseStat.MaxExp}");
 
@@ -120,12 +111,9 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
     {
         if (_baseStat != null)
         {
-            _baseStat = _baseStat with
-            {
-                Level = level,
-                CurrentExp = currentExp,
-                MaxExp = maxExp
-            };
+            _baseStat.Level = level;
+            _baseStat.CurrentExp = currentExp;
+            _baseStat.MaxExp = maxExp;
             _repository.Save(_baseStat);
         }
     }

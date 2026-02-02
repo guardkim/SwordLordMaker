@@ -11,14 +11,19 @@ public class HypoSwordController : BaseSwordController
 
     [Header("■ Sword Stat")]
     [SerializeField] private string _swordStatId = "HYPO_SWORD";
+
+    private SwordStat _baseStat;
     private SwordStat _swordStat;
+    private bool _isInitialized;
+
     public SwordStat SwordStat => _swordStat;
 
     private readonly List<HypoFlyingSword> _activeSwords = new List<HypoFlyingSword>();
 
     private void Awake()
     {
-        LoadAndApplyUpgrades();
+        LoadBaseStat();
+        ApplyUpgrades();
     }
 
     private void Start()
@@ -44,47 +49,66 @@ public class HypoSwordController : BaseSwordController
         }
     }
 
+    private void LoadBaseStat()
+    {
+        if (_isInitialized) return;
+
+        var repository = new SwordStatRepository();
+        _baseStat = repository.GetById(_swordStatId);
+
+        _swordStat = new SwordStat(
+            _baseStat.Id,
+            _baseStat.AttackDamage,
+            _baseStat.Cooldown,
+            _baseStat.MoveSpeed,
+            _baseStat.CritDamageMultiplier,
+            _baseStat.CritChance
+        );
+
+        _isInitialized = true;
+    }
+
+    private void ApplyUpgrades()
+    {
+        if (_baseStat == null || _swordStat == null) return;
+
+        if (UpgradeManager.Instance != null)
+        {
+            UpgradeManager.Instance.ApplyUpgrades(_baseStat, _swordStat);
+        }
+        else
+        {
+            _swordStat.AttackDamage = _baseStat.AttackDamage;
+            _swordStat.Cooldown = _baseStat.Cooldown;
+            _swordStat.MoveSpeed = _baseStat.MoveSpeed;
+            _swordStat.CritDamageMultiplier = _baseStat.CritDamageMultiplier;
+            _swordStat.CritChance = _baseStat.CritChance;
+        }
+    }
+
     private void OnUpgradeManagerInitialized()
     {
-        LoadAndApplyUpgrades();
-
-        foreach (var sword in _activeSwords)
-        {
-            if (sword != null)
-            {
-                sword.InitializeStat(_swordStat);
-            }
-        }
+        ApplyUpgrades();
+        UpdateActiveSwords();
     }
 
     private void OnUpgradeChanged(string upgradeId, int newLevel)
     {
         if (upgradeId.StartsWith("Sword_"))
         {
-            LoadAndApplyUpgrades();
-
-            foreach (var sword in _activeSwords)
-            {
-                if (sword != null)
-                {
-                    sword.InitializeStat(_swordStat);
-                }
-            }
+            ApplyUpgrades();
+            UpdateActiveSwords();
         }
     }
 
-    private void LoadAndApplyUpgrades()
+    private void UpdateActiveSwords()
     {
-        var repository = new SwordStatRepository();
-        SwordStat baseStat = repository.GetById(_swordStatId);
-
-        if (UpgradeManager.Instance != null)
+        foreach (var sword in _activeSwords)
         {
-            _swordStat = UpgradeManager.Instance.ApplyUpgrades(baseStat);
-        }
-        else
-        {
-            _swordStat = baseStat;
+            if (sword != null)
+            {
+                sword.InitializeStat(_swordStat);
+            }
         }
     }
 
