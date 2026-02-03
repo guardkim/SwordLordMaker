@@ -255,7 +255,7 @@ public class StageManager : DontDestroySingleton<StageManager>
         // 보스도 제거
         if (_currentBoss != null)
         {
-            EnemySpawner.Instance?.Return(_currentBoss);
+            //EnemySpawner.Instance?.Return(_currentBoss);
             _currentBoss = null;
         }
 
