@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public class AdelFlyingSwordController : BaseSwordController
@@ -22,6 +21,7 @@ public class AdelFlyingSwordController : BaseSwordController
     public SwordStat SwordStat => _swordStat;
 
     private readonly List<AdelFlyingSword> _activeSwords = new List<AdelFlyingSword>();
+    private readonly List<EnemyAI> _filteredEnemyBuffer = new List<EnemyAI>();
     private int _currentAttackerOrderIndex;
     private int _spawnTotalCount;
     private float _delayTimer;
@@ -100,7 +100,7 @@ public class AdelFlyingSwordController : BaseSwordController
 
     private void UpdateActiveSwords()
     {
-        foreach (var sword in _activeSwords)
+        foreach (AdelFlyingSword sword in _activeSwords)
         {
             if (sword != null)
             {
@@ -130,9 +130,9 @@ public class AdelFlyingSwordController : BaseSwordController
     {
         if (_activeSwords.Count >= MaxSwordCount) return;
 
-        GameObject[] enemies = FindEnemies();
-        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
-        if (validEnemies.Length == 0) return;
+        IReadOnlyList<EnemyAI> enemies = FindEnemies();
+        IReadOnlyList<EnemyAI> validEnemies = FilterEnemiesByDistance(enemies);
+        if (validEnemies == null || validEnemies.Count == 0) return;
 
         Transform target = GetRandomEnemyTarget(validEnemies);
 
@@ -157,22 +157,36 @@ public class AdelFlyingSwordController : BaseSwordController
         }
     }
 
-    private GameObject[] FilterEnemiesByDistance(GameObject[] enemies)
+    // 버퍼 재사용 + sqrMagnitude 최적화
+    private IReadOnlyList<EnemyAI> FilterEnemiesByDistance(IReadOnlyList<EnemyAI> enemies)
     {
+        _filteredEnemyBuffer.Clear();
+        if (enemies == null) return _filteredEnemyBuffer;
+
         Vector3 playerPos = transform.position;
-        return enemies
-            .Where(e => Vector3.Distance(e.transform.position, playerPos) <= MaxTargetDistance)
-            .ToArray();
+        float maxDistSqr = MaxTargetDistance * MaxTargetDistance;
+
+        foreach (EnemyAI enemy in enemies)
+        {
+            if (enemy == null) continue;
+            float distSqr = (enemy.transform.position - playerPos).sqrMagnitude;
+            if (distSqr <= maxDistSqr)
+            {
+                _filteredEnemyBuffer.Add(enemy);
+            }
+        }
+
+        return _filteredEnemyBuffer;
     }
 
     public void RequestNewTarget(AdelFlyingSword sword)
     {
-        GameObject[] enemies = FindEnemies();
-        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
+        IReadOnlyList<EnemyAI> enemies = FindEnemies();
+        IReadOnlyList<EnemyAI> validEnemies = FilterEnemiesByDistance(enemies);
 
-        if (validEnemies.Length > 0)
+        if (validEnemies != null && validEnemies.Count > 0)
         {
-            sword.SetTarget(validEnemies[Random.Range(0, validEnemies.Length)].transform);
+            sword.SetTarget(validEnemies[Random.Range(0, validEnemies.Count)].transform);
         }
         else
         {
@@ -191,7 +205,8 @@ public class AdelFlyingSwordController : BaseSwordController
 
     public bool IsMyTurn(int swordOrderIndex)
     {
-        if (FindEnemies().Length == 0) return false;
+        IReadOnlyList<EnemyAI> enemies = FindEnemies();
+        if (enemies == null || enemies.Count == 0) return false;
         if (_delayTimer > 0) return false;
         return swordOrderIndex == _currentAttackerOrderIndex;
     }
@@ -202,38 +217,59 @@ public class AdelFlyingSwordController : BaseSwordController
         IncrementTurnIndex();
     }
 
+    // FirstOrDefault() 대체 - foreach 루프 사용
     private void IncrementTurnIndex()
     {
         if (_activeSwords.Count == 0) return;
 
         _activeSwords.Sort((a, b) => a.OrderIndex.CompareTo(b.OrderIndex));
-        AdelFlyingSword nextSword = _activeSwords.FirstOrDefault(s => s.OrderIndex > _currentAttackerOrderIndex);
 
-        if (!nextSword)
+        AdelFlyingSword nextSword = null;
+        foreach (AdelFlyingSword sword in _activeSwords)
+        {
+            if (sword.OrderIndex > _currentAttackerOrderIndex)
+            {
+                nextSword = sword;
+                break;
+            }
+        }
+
+        if (nextSword == null)
             nextSword = _activeSwords[0];
 
         _currentAttackerOrderIndex = nextSword.OrderIndex;
     }
 
+    // All() 대체 - foreach 루프 사용
     private void RetargetSwords()
     {
         if (_activeSwords.Count == 0) return;
-        if (_activeSwords.All(s => s.HasTarget())) return;
 
-        GameObject[] enemies = FindEnemies();
-        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
-
-        if (validEnemies.Length == 0)
+        bool allHaveTargets = true;
+        foreach (AdelFlyingSword sword in _activeSwords)
         {
-            foreach (var s in _activeSwords) s.SetTarget(null);
+            if (!sword.HasTarget())
+            {
+                allHaveTargets = false;
+                break;
+            }
+        }
+        if (allHaveTargets) return;
+
+        IReadOnlyList<EnemyAI> enemies = FindEnemies();
+        IReadOnlyList<EnemyAI> validEnemies = FilterEnemiesByDistance(enemies);
+
+        if (validEnemies == null || validEnemies.Count == 0)
+        {
+            foreach (AdelFlyingSword sword in _activeSwords) sword.SetTarget(null);
             return;
         }
 
-        foreach (var s in _activeSwords)
+        foreach (AdelFlyingSword sword in _activeSwords)
         {
-            if (!s.HasTarget())
+            if (!sword.HasTarget())
             {
-                s.SetTarget(validEnemies[Random.Range(0, validEnemies.Length)].transform);
+                sword.SetTarget(validEnemies[Random.Range(0, validEnemies.Count)].transform);
             }
         }
     }

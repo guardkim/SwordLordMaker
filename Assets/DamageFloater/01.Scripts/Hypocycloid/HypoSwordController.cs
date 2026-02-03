@@ -19,6 +19,7 @@ public class HypoSwordController : BaseSwordController
     public SwordStat SwordStat => _swordStat;
 
     private readonly List<HypoFlyingSword> _activeSwords = new List<HypoFlyingSword>();
+    private readonly List<EnemyAI> _filteredEnemyBuffer = new List<EnemyAI>();
 
     private void Awake()
     {
@@ -91,7 +92,7 @@ public class HypoSwordController : BaseSwordController
 
     private void UpdateActiveSwords()
     {
-        foreach (var sword in _activeSwords)
+        foreach (HypoFlyingSword sword in _activeSwords)
         {
             if (sword != null)
             {
@@ -107,9 +108,9 @@ public class HypoSwordController : BaseSwordController
 
     private void SpawnSwords()
     {
-        GameObject[] enemies = FindEnemies();
-        GameObject[] validEnemies = FilterEnemiesByDistance(enemies);
-        if (validEnemies.Length == 0) return;
+        IReadOnlyList<EnemyAI> enemies = FindEnemies();
+        IReadOnlyList<EnemyAI> validEnemies = FilterEnemiesByDistance(enemies);
+        if (validEnemies == null || validEnemies.Count == 0) return;
 
         for (int i = 0; i < SwordCountPerFire; i++)
         {
@@ -126,20 +127,26 @@ public class HypoSwordController : BaseSwordController
         }
     }
 
-    private GameObject[] FilterEnemiesByDistance(GameObject[] enemies)
+    // 버퍼 재사용 + sqrMagnitude 최적화
+    private IReadOnlyList<EnemyAI> FilterEnemiesByDistance(IReadOnlyList<EnemyAI> enemies)
     {
-        var result = new List<GameObject>();
-        Vector3 playerPos = transform.position;
+        _filteredEnemyBuffer.Clear();
+        if (enemies == null) return _filteredEnemyBuffer;
 
-        foreach (var enemy in enemies)
+        Vector3 playerPos = transform.position;
+        float maxDistSqr = MaxTargetDistance * MaxTargetDistance;
+
+        foreach (EnemyAI enemy in enemies)
         {
-            if (Vector3.Distance(enemy.transform.position, playerPos) <= MaxTargetDistance)
+            if (enemy == null) continue;
+            float distSqr = (enemy.transform.position - playerPos).sqrMagnitude;
+            if (distSqr <= maxDistSqr)
             {
-                result.Add(enemy);
+                _filteredEnemyBuffer.Add(enemy);
             }
         }
 
-        return result.ToArray();
+        return _filteredEnemyBuffer;
     }
 
     private void OnSwordFinished(HypoFlyingSword sword)

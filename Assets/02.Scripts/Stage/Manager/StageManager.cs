@@ -86,7 +86,7 @@ public class StageManager : DontDestroySingleton<StageManager>
 
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlayBGM(BgmId.Main);
+            SoundManager.Instance.PlayBGM(EBgmId.Main);
         }
     }
 

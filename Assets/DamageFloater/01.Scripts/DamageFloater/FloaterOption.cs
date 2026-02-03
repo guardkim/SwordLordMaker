@@ -12,7 +12,7 @@ public struct FloaterOption
     public NumberFormat numberFormat;
 
     [Header("데미지 표시타입 Basic,Blade,Volcano,Blade2,Volcano2,Volcano3 ")]
-    public DamageStyle damageStyle;
+    public EDamageStyle DamageStyle;
 
     [Header("지속 시간 (숫자가 화면에 떠있는 총 시간)")]
     public float singleNumberDuration; 

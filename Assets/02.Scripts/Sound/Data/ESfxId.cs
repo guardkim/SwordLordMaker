@@ -1,4 +1,4 @@
-public enum SfxId
+public enum ESfxId
 {
     None = 0,
 
@@ -38,7 +38,7 @@ public enum SfxId
 
 public static class SfxIdExtensions
 {
-    public static string ToKey(this SfxId id)
+    public static string ToKey(this ESfxId id)
     {
         return id.ToString();
     }

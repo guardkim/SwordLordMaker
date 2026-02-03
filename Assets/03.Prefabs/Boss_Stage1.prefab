@@ -121,6 +121,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be3776e9bd6e31341b3490a035f6ea50, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1438588547591121481}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: be3776e9bd6e31341b3490a035f6ea50, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8375817990943311185}
   m_SourcePrefab: {fileID: 100100000, guid: be3776e9bd6e31341b3490a035f6ea50, type: 3}
 --- !u!1 &1571042049591659991 stripped
 GameObject:
@@ -149,10 +152,7 @@ MonoBehaviour:
   _updateIntervalNear: 0.2
   _updateIntervalFar: 0.5
   _farDistanceThreshold: 10
-  _skillCooldown: 5
-  _skillRadius: 3
-  _skillChargeTime: 1
-  _skillDamageMultiplier: 2
+  _skillHandler: {fileID: 0}
 --- !u!114 &-3875441144922189804
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -244,6 +244,22 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyHPBar
   _hpBarSprite: {fileID: 0}
+--- !u!114 &8375817990943311185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1571042049591659991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3a0f15ac6351224dabee92985e67abe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySkillHandler
+  _skillCooldown: 5
+  _skillRadius: 3
+  _skillChargeTime: 1
+  _skillDamageMultiplier: 2
 --- !u!4 &4674488975978317807 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6472518530401777513, guid: be3776e9bd6e31341b3490a035f6ea50, type: 3}

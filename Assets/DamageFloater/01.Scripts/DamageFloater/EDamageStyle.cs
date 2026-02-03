@@ -1,4 +1,4 @@
-public enum DamageStyle
+public enum EDamageStyle
 {
     Basic,
     Blade,

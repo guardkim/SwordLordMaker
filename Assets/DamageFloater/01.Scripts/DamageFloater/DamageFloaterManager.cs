@@ -35,14 +35,14 @@ public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
     }
 
     // 기존 함수 (하위 호환성을 위해 유지하거나 isCrit=false로 연결)
-    public void ShowDamage(DamageStyle style, int damage, Vector3 spawnPoint)
+    public void ShowDamage(EDamageStyle style, int damage, Vector3 spawnPoint)
     {
         ShowDamage(style, damage, spawnPoint, false);
     }
     // -----------------------------------------------------------
     // 2. 단일 데미지 (Single Hit) -> singleFloaterOption 사용
     // -----------------------------------------------------------
-    public void ShowDamage(DamageStyle style, int damage, Vector3 spawnPoint, bool isCrit)
+    public void ShowDamage(EDamageStyle style, int damage, Vector3 spawnPoint, bool isCrit)
     {
         if (DamageFloaterPrefab == null) return;
 
@@ -60,7 +60,7 @@ public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
     // -----------------------------------------------------------
     // 3. 연타 데미지 (Multi Hit) -> multiFloaterOption 사용
     // -----------------------------------------------------------
-    public void ShowDamage(DamageStyle style, List<int> damages, Vector3 spawnPoint, bool isCrit = false)
+    public void ShowDamage(EDamageStyle style, List<int> damages, Vector3 spawnPoint, bool isCrit = false)
     {
         if (DamageFloaterPrefab == null) return;
         if (damages == null || damages.Count == 0) return;
@@ -78,7 +78,7 @@ public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
     // -----------------------------------------------------------
     // 4. BigInteger 데미지 (무한 스케일링 지원)
     // -----------------------------------------------------------
-    public void ShowDamage(DamageStyle style, double damage, Vector3 spawnPoint, bool isCrit)
+    public void ShowDamage(EDamageStyle style, double damage, Vector3 spawnPoint, bool isCrit)
     {
         if (DamageFloaterPrefab == null) return;
 

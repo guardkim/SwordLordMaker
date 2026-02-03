@@ -1,4 +1,4 @@
-public enum PopupPriority
+public enum EPopupPriority
 {
     Low = 0,
     Normal = 100,

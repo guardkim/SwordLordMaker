@@ -69,7 +69,7 @@ public class DamageFloater : MonoBehaviour
     }
 
     // [수정됨] isCrit 매개변수 추가 (기본값 false)
-    public void ShowDamage(string damageString, DamageStyle style, bool isCrit = false)
+    public void ShowDamage(string damageString, EDamageStyle style, bool isCrit = false)
     {
         if (string.IsNullOrEmpty(damageString)) return;
 
@@ -88,7 +88,7 @@ public class DamageFloater : MonoBehaviour
     }
 
     // [수정됨] 배열 버전도 isCrit 추가
-    public void ShowDamage(int[] damages, DamageStyle style, bool isCrit = false)
+    public void ShowDamage(int[] damages, EDamageStyle style, bool isCrit = false)
     {
         _currentDamages = damages;
         InitTexts(damages, style, isCrit); // InitTexts로 전달
@@ -96,7 +96,7 @@ public class DamageFloater : MonoBehaviour
     }
 
     // BigInteger용 이미 포맷된 문자열 표시 (축약 표기: 1.5A, 999B 등)
-    public void ShowFormattedDamage(string formattedText, DamageStyle style, bool isCrit = false)
+    public void ShowFormattedDamage(string formattedText, EDamageStyle style, bool isCrit = false)
     {
         _currentDamages = new[] { 0 };
         InitFormattedText(formattedText, style, isCrit);
@@ -108,7 +108,7 @@ public class DamageFloater : MonoBehaviour
     // ----------------------------------------------------------------
 
     // BigInteger 포맷된 문자열용 초기화
-    private void InitFormattedText(string formattedText, DamageStyle style, bool isCrit)
+    private void InitFormattedText(string formattedText, EDamageStyle style, bool isCrit)
     {
         ClearTexts();
 
@@ -148,14 +148,14 @@ public class DamageFloater : MonoBehaviour
     }
 
     // [수정됨] 폰트 적용 로직 추가
-    private void InitTexts(int[] damages, DamageStyle style, bool isCrit)
+    private void InitTexts(int[] damages, EDamageStyle style, bool isCrit)
     {
         ClearTexts();
 
         _globalSortingOrder += 20; 
         int currentBaseOrder = _globalSortingOrder;
 
-        int spawnCount = (style == DamageStyle.Volcano2) ? 1 : damages.Length;
+        int spawnCount = (style == EDamageStyle.Volcano2) ? 1 : damages.Length;
 
         // 사용할 폰트와 접두어 결정
         TMP_SpriteAsset targetFont = isCrit ? CritFont : NonCritFont;
@@ -237,20 +237,20 @@ public class DamageFloater : MonoBehaviour
     // ----------------------------------------------------------------
     // 애니메이션 재생
     // ----------------------------------------------------------------
-    private void PlayAnimation(DamageStyle style)
+    private void PlayAnimation(EDamageStyle style)
     {
         _mySequence?.Kill();
         _mySequence = DOTween.Sequence();
 
         switch (style)
         {
-            case DamageStyle.Basic: AnimateBasic(); break;
-            case DamageStyle.Blade: AnimateBlade(); break; 
-            case DamageStyle.Volcano: AnimateVolcano(); break;
-            case DamageStyle.Blade2: AnimateBlade(); break; // Blade1과 동일 로직
-            case DamageStyle.Volcano2: AnimateVolcano2(); break;
-            case DamageStyle.Volcano3: AnimateVolcano3(); break;
-            case DamageStyle.Volcano4: AnimateVolcano4(); break;
+            case EDamageStyle.Basic: AnimateBasic(); break;
+            case EDamageStyle.Blade: AnimateBlade(); break; 
+            case EDamageStyle.Volcano: AnimateVolcano(); break;
+            case EDamageStyle.Blade2: AnimateBlade(); break; // Blade1과 동일 로직
+            case EDamageStyle.Volcano2: AnimateVolcano2(); break;
+            case EDamageStyle.Volcano3: AnimateVolcano3(); break;
+            case EDamageStyle.Volcano4: AnimateVolcano4(); break;
         }
 
         if (Application.isPlaying)

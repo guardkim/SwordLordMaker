@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("▼ 강화 ID")]
-    [SerializeField] private UpgradeId _upgradeId;
+    [SerializeField] private EUpgradeId _upgradeId;
 
     [Header("▼ UI 요소")]
     [SerializeField] private TextMeshProUGUI _nameText;
@@ -21,7 +21,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
     private UpgradeData _upgradeData;
     private string _upgradeKey;
 
-    public UpgradeId UpgradeId => _upgradeId;
+    public EUpgradeId UpgradeId => _upgradeId;
 
     private void Start()
     {
@@ -52,7 +52,7 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
         OnUpgradeClicked();
     }
 
-    public void Initialize(UpgradeId upgradeId)
+    public void Initialize(EUpgradeId upgradeId)
     {
         _upgradeId = upgradeId;
         _upgradeKey = upgradeId.ToKey();
@@ -94,9 +94,9 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
         }
     }
 
-    private void OnCurrencyChanged(CurrencyType type, double amount)
+    private void OnCurrencyChanged(ECurrencyType type, double amount)
     {
-        if (type == CurrencyType.Gold)
+        if (type == ECurrencyType.Gold)
         {
             RefreshButtonState();
         }
@@ -176,25 +176,25 @@ public class UpgradeSlotUI : MonoBehaviour, IPointerClickHandler
 
  
 
-    private string FormatBonus(UpgradeId upgradeId, float floatValue, double bigIntValue)
+    private string FormatBonus(EUpgradeId upgradeId, float floatValue, double bigIntValue)
     {
         switch (upgradeId)
         {
-            case UpgradeId.SwordCritChance:
+            case EUpgradeId.SwordCritChance:
                 return $"{floatValue * 100f:F1}%";
 
-            case UpgradeId.SwordCritDamage:
+            case EUpgradeId.SwordCritDamage:
                 return $"{floatValue:F1}배";
 
-            case UpgradeId.SwordCooldown:
+            case EUpgradeId.SwordCooldown:
                 return $"{floatValue:F2}초";
 
-            case UpgradeId.SwordMoveSpeed:
-            case UpgradeId.PlayerMoveSpeed:
+            case EUpgradeId.SwordMoveSpeed:
+            case EUpgradeId.PlayerMoveSpeed:
                 return $"{floatValue:F1}배";
 
-            case UpgradeId.PlayerHealth:
-            case UpgradeId.SwordAttackDamage:
+            case EUpgradeId.PlayerHealth:
+            case EUpgradeId.SwordAttackDamage:
             default:
                 return CurrencyFormatter.FormatAbbreviated(bigIntValue);
         }

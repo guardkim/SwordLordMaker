@@ -116,19 +116,19 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
     /// <summary>
     /// 특정 타입의 검만 발사
     /// </summary>
-    public void Fire(SwordType type)
+    public void Fire(ESwordType type)
     {
         switch (type)
         {
-            case SwordType.Adel:
+            case ESwordType.Adel:
                 _adelController?.Fire();
                 _adelCooldownTimer = 0f;
                 break;
-            case SwordType.Hypo:
+            case ESwordType.Hypo:
                 _hypoController?.Fire();
                 _hypoCooldownTimer = 0f;
                 break;
-            case SwordType.Pixel:
+            case ESwordType.Pixel:
                 _pixelController?.Fire();
                 _pixelCooldownTimer = 0f;
                 break;

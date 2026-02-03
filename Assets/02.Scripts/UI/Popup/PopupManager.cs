@@ -9,17 +9,17 @@ public class PopupManager : DontDestroySingleton<PopupManager>
     [SerializeField] private int _sortingOrderStep = 10;
     [SerializeField] private PopupBlocker _blockerPrefab;
 
-    private readonly SortedDictionary<PopupPriority, List<PopupBase>> _popupStacks
-        = new SortedDictionary<PopupPriority, List<PopupBase>>(
-            Comparer<PopupPriority>.Create((a, b) => b.CompareTo(a)));
+    private readonly SortedDictionary<EPopupPriority, List<PopupBase>> _popupStacks
+        = new SortedDictionary<EPopupPriority, List<PopupBase>>(
+            Comparer<EPopupPriority>.Create((a, b) => b.CompareTo(a)));
 
     private readonly Dictionary<PopupBase, PopupBlocker> _popupBlockers
         = new Dictionary<PopupBase, PopupBlocker>();
 
     private readonly Stack<PopupBlocker> _blockerPool = new Stack<PopupBlocker>();
 
-    private readonly Dictionary<PopupType, PopupBase> _registeredPopups
-        = new Dictionary<PopupType, PopupBase>();
+    private readonly Dictionary<EPopupType, PopupBase> _registeredPopups
+        = new Dictionary<EPopupType, PopupBase>();
 
     private int _totalPopupCount;
 
@@ -37,7 +37,7 @@ public class PopupManager : DontDestroySingleton<PopupManager>
 
     private void InitializePriorityStacks()
     {
-        foreach (PopupPriority priority in Enum.GetValues(typeof(PopupPriority)))
+        foreach (EPopupPriority priority in Enum.GetValues(typeof(EPopupPriority)))
         {
             _popupStacks[priority] = new List<PopupBase>();
         }
@@ -57,7 +57,7 @@ public class PopupManager : DontDestroySingleton<PopupManager>
             return;
         }
 
-        PopupPriority priority = popup.Priority;
+        EPopupPriority priority = popup.Priority;
         List<PopupBase> stack = _popupStacks[priority];
 
         int orderInPriority = stack.Count;
@@ -84,7 +84,7 @@ public class PopupManager : DontDestroySingleton<PopupManager>
             return;
         }
 
-        PopupPriority priority = popup.Priority;
+        EPopupPriority priority = popup.Priority;
         List<PopupBase> stack = _popupStacks[priority];
 
         if (!stack.Contains(popup))
@@ -134,7 +134,7 @@ public class PopupManager : DontDestroySingleton<PopupManager>
         }
     }
 
-    public void ClosePopupsBelowPriority(PopupPriority priority)
+    public void ClosePopupsBelowPriority(EPopupPriority priority)
     {
         List<PopupBase> popupsToClose = new List<PopupBase>();
 
@@ -168,16 +168,16 @@ public class PopupManager : DontDestroySingleton<PopupManager>
         return null;
     }
 
-    public bool HasPopupWithPriority(PopupPriority priority)
+    public bool HasPopupWithPriority(EPopupPriority priority)
     {
         return _popupStacks.TryGetValue(priority, out List<PopupBase> stack) && stack.Count > 0;
     }
 
     #region Registration
 
-    public void Register(PopupType type, PopupBase popup)
+    public void Register(EPopupType type, PopupBase popup)
     {
-        if (type == PopupType.None || popup == null)
+        if (type == EPopupType.None || popup == null)
         {
             return;
         }
@@ -190,9 +190,9 @@ public class PopupManager : DontDestroySingleton<PopupManager>
         _registeredPopups[type] = popup;
     }
 
-    public void Unregister(PopupType type)
+    public void Unregister(EPopupType type)
     {
-        if (type == PopupType.None)
+        if (type == EPopupType.None)
         {
             return;
         }
@@ -204,7 +204,7 @@ public class PopupManager : DontDestroySingleton<PopupManager>
 
     #region Enum-based Open/Close
 
-    public PopupBase Open(PopupType type)
+    public PopupBase Open(EPopupType type)
     {
         if (!_registeredPopups.TryGetValue(type, out PopupBase popup))
         {
@@ -216,13 +216,13 @@ public class PopupManager : DontDestroySingleton<PopupManager>
         return popup;
     }
 
-    public T Open<T>(PopupType type) where T : PopupBase
+    public T Open<T>(EPopupType type) where T : PopupBase
     {
         PopupBase popup = Open(type);
         return popup as T;
     }
 
-    public void Close(PopupType type)
+    public void Close(EPopupType type)
     {
         if (!_registeredPopups.TryGetValue(type, out PopupBase popup))
         {
@@ -232,7 +232,7 @@ public class PopupManager : DontDestroySingleton<PopupManager>
         ClosePopup(popup);
     }
 
-    public T Get<T>(PopupType type) where T : PopupBase
+    public T Get<T>(EPopupType type) where T : PopupBase
     {
         if (_registeredPopups.TryGetValue(type, out PopupBase popup))
         {
@@ -241,14 +241,14 @@ public class PopupManager : DontDestroySingleton<PopupManager>
         return null;
     }
 
-    public bool IsRegistered(PopupType type)
+    public bool IsRegistered(EPopupType type)
     {
         return _registeredPopups.ContainsKey(type);
     }
 
     #endregion
 
-    private int CalculateSortingOrder(PopupPriority priority, int orderInPriority)
+    private int CalculateSortingOrder(EPopupPriority priority, int orderInPriority)
     {
         int priorityBase = (int)priority * 100;
         return _baseSortingOrder + priorityBase + (orderInPriority * _sortingOrderStep);

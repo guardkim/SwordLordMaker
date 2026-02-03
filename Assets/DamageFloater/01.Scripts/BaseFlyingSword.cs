@@ -46,7 +46,7 @@ public abstract class BaseFlyingSword : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySFX(SfxId.SwordHit, position);
+            SoundManager.Instance.PlaySFX(ESfxId.SwordHit, position);
         }
     }
 

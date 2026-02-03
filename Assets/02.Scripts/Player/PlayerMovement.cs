@@ -67,7 +67,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void OnUpgradeChanged(string upgradeId, int newLevel)
     {
-        if (upgradeId == UpgradeId.PlayerMoveSpeed.ToKey())
+        if (upgradeId == EUpgradeId.PlayerMoveSpeed.ToKey())
         {
             ApplyUpgradeBonus();
         }

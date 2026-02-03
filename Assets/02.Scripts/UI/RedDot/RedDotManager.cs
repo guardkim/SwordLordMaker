@@ -80,13 +80,13 @@ public class RedDotManager : DontDestroySingleton<RedDotManager>
     private void RegisterConditions()
     {
         // 강화 조건 등록
-        RegisterUpgradeCondition(RedDotKey.UpgradePlayerHealth, UpgradeId.PlayerHealth.ToKey());
-        RegisterUpgradeCondition(RedDotKey.UpgradePlayerMoveSpeed, UpgradeId.PlayerMoveSpeed.ToKey());
-        RegisterUpgradeCondition(RedDotKey.UpgradeSwordAttackDamage, UpgradeId.SwordAttackDamage.ToKey());
-        RegisterUpgradeCondition(RedDotKey.UpgradeSwordCooldown, UpgradeId.SwordCooldown.ToKey());
-        RegisterUpgradeCondition(RedDotKey.UpgradeSwordMoveSpeed, UpgradeId.SwordMoveSpeed.ToKey());
-        RegisterUpgradeCondition(RedDotKey.UpgradeSwordCritChance, UpgradeId.SwordCritChance.ToKey());
-        RegisterUpgradeCondition(RedDotKey.UpgradeSwordCritDamage, UpgradeId.SwordCritDamage.ToKey());
+        RegisterUpgradeCondition(RedDotKey.UpgradePlayerHealth, EUpgradeId.PlayerHealth.ToKey());
+        RegisterUpgradeCondition(RedDotKey.UpgradePlayerMoveSpeed, EUpgradeId.PlayerMoveSpeed.ToKey());
+        RegisterUpgradeCondition(RedDotKey.UpgradeSwordAttackDamage, EUpgradeId.SwordAttackDamage.ToKey());
+        RegisterUpgradeCondition(RedDotKey.UpgradeSwordCooldown, EUpgradeId.SwordCooldown.ToKey());
+        RegisterUpgradeCondition(RedDotKey.UpgradeSwordMoveSpeed, EUpgradeId.SwordMoveSpeed.ToKey());
+        RegisterUpgradeCondition(RedDotKey.UpgradeSwordCritChance, EUpgradeId.SwordCritChance.ToKey());
+        RegisterUpgradeCondition(RedDotKey.UpgradeSwordCritDamage, EUpgradeId.SwordCritDamage.ToKey());
     }
 
     private void RegisterUpgradeCondition(RedDotKey key, string upgradeId)

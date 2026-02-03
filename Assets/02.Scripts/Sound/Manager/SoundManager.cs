@@ -126,7 +126,7 @@ public class SoundManager : DontDestroySingleton<SoundManager>
         _lastPlayTimes = new Dictionary<AudioClip, float>();
     }
 
-    public void PlaySFX(SfxId sfxId)
+    public void PlaySFX(ESfxId sfxId)
     {
         string key = sfxId.ToKey();
         AudioClip clip = _soundLibrary?.GetSfxClip(key);
@@ -144,7 +144,7 @@ public class SoundManager : DontDestroySingleton<SoundManager>
         PlaySFXInternal(clip, volume, useRandomPitch);
     }
 
-    public void PlaySFX(SfxId sfxId, Vector3 position)
+    public void PlaySFX(ESfxId sfxId, Vector3 position)
     {
         string key = sfxId.ToKey();
         AudioClip clip = _soundLibrary?.GetSfxClip(key);
@@ -276,7 +276,7 @@ public class SoundManager : DontDestroySingleton<SoundManager>
         _sfxPool.Enqueue(source);
     }
 
-    public void PlayBGM(BgmId bgmId)
+    public void PlayBGM(EBgmId bgmId)
     {
         string key = bgmId.ToKey();
         AudioClip clip = _soundLibrary?.GetBgmClip(key);

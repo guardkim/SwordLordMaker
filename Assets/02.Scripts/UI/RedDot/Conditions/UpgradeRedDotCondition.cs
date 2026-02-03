@@ -53,9 +53,9 @@ public class UpgradeRedDotCondition : IRedDotCondition
         return currentGold >= cost;
     }
 
-    private void HandleCurrencyChanged(CurrencyType type, double amount)
+    private void HandleCurrencyChanged(ECurrencyType type, double amount)
     {
-        if (type == CurrencyType.Gold)
+        if (type == ECurrencyType.Gold)
         {
             OnConditionChanged?.Invoke();
         }
