@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using Quaternion = UnityEngine.Quaternion;
+using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
 public class EnemySpawner : DontDestroySingleton<EnemySpawner>
@@ -20,6 +23,13 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
     private IEnemyStatRepository _repository;
     private IBossStatRepository _bossRepository;
     private ObjectPool<EnemyAI> _pool;
+
+    private readonly List<EnemyAI> _aliveEnemies = new();
+    public IReadOnlyList<EnemyAI> AliveEnemies => _aliveEnemies;
+
+    // 적 사망 이벤트 (외부 시스템이 구독)
+    public event Action<EnemyAI> OnEnemyDiedEvent;
+    public event Action<EnemyAI> OnBossDiedEvent;
 
     protected override void Initialize()
     {
@@ -61,10 +71,18 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
     private void OnTakeFromPool(EnemyAI enemy)
     {
         enemy.gameObject.SetActive(true);
+        _aliveEnemies.Add(enemy);
+
+        // 사망 이벤트 구독
+        enemy.OnDied += HandleEnemyDied;
     }
 
     private void OnReturnedToPool(EnemyAI enemy)
     {
+        // 사망 이벤트 해제
+        enemy.OnDied -= HandleEnemyDied;
+
+        _aliveEnemies.Remove(enemy);
         enemy.ResetForPool();
         enemy.gameObject.SetActive(false);
     }
@@ -74,6 +92,26 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         if (enemy != null)
         {
             Destroy(enemy.gameObject);
+        }
+    }
+
+    // 적 사망 처리 핸들러 (보상 지급 및 이벤트 발생)
+    private void HandleEnemyDied(EnemyAI enemy, EnemyStat stat)
+    {
+        if (stat == null) return;
+
+        // 보상 지급
+        CurrencyManager.Instance?.AddGold(stat.GoldReward);
+        PlayerStatManager.Instance?.AddExp(stat.Exp);
+
+        // 이벤트 발생 (구독자가 처리)
+        if (enemy.IsBoss)
+        {
+            OnBossDiedEvent?.Invoke(enemy);
+        }
+        else
+        {
+            OnEnemyDiedEvent?.Invoke(enemy);
         }
     }
 
@@ -125,21 +163,30 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         }
 
         // 보스는 풀에 반환하지 않고 Destroy
-        if (enemy.IsBoss)
+        if (enemy.IsBoss || _pool == null)
         {
-            enemy.ResetForPool();
-            Destroy(enemy.gameObject);
-            return;
-        }
+            // 이벤트 해제
+            enemy.OnDied -= HandleEnemyDied;
 
-        if (_pool == null)
-        {
+            _aliveEnemies.Remove(enemy);
             enemy.ResetForPool();
             Destroy(enemy.gameObject);
             return;
         }
 
         _pool.Release(enemy);
+    }
+
+
+    public void ReturnAll()
+    {
+        for (int i = _aliveEnemies.Count - 1; i >= 0; i--)
+        {
+            if (_aliveEnemies[i] != null)
+            {
+                Return(_aliveEnemies[i]);
+            }
+        }
     }
 
     public int SpawnPointCount => _spawnPoints?.Length ?? 0;
@@ -223,6 +270,11 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
 
         boss.transform.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
         boss.InitializeAsBoss(multipliedStat);
+
+        _aliveEnemies.Add(boss);
+
+        // 보스도 사망 이벤트 구독
+        boss.OnDied += HandleEnemyDied;
 
         return boss;
     }

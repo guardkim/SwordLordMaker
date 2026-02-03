@@ -9,7 +9,7 @@ public class DamageTestUI : MonoBehaviour
     public TMP_Dropdown styleDropdown; // 인스펙터에서 연결할 Dropdown
 
     // 현재 선택된 스타일을 저장하는 변수
-    private DamageStyle currentStyle;
+    private EDamageStyle currentStyle;
 
     private void Start()
     {
@@ -25,7 +25,7 @@ public class DamageTestUI : MonoBehaviour
         styleDropdown.ClearOptions();
 
         // 2. DamageStyle Enum의 모든 이름을 문자열 배열로 가져옴
-        string[] enumNames = Enum.GetNames(typeof(DamageStyle));
+        string[] enumNames = Enum.GetNames(typeof(EDamageStyle));
 
         // 3. Dropdown에 넣을 수 있게 List<string>으로 변환하여 추가
         List<string> options = new List<string>(enumNames);
@@ -42,7 +42,7 @@ public class DamageTestUI : MonoBehaviour
     private void OnStyleChanged(int index)
     {
         // Dropdown의 index(0, 1, 2...)를 DamageStyle Enum으로 형변환
-        currentStyle = (DamageStyle)index;
+        currentStyle = (EDamageStyle)index;
         
         Debug.Log($"[UI] 스타일 변경됨: {currentStyle}");
     }

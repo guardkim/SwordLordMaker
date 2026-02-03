@@ -1,4 +1,4 @@
-public enum SwordType
+public enum ESwordType
 {
     Adel,
     Hypo,

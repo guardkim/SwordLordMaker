@@ -35,15 +35,15 @@ public class CurrencyUI : MonoBehaviour
         }
     }
 
-    private void HandleCurrencyChanged(CurrencyType type, double newValue)
+    private void HandleCurrencyChanged(ECurrencyType type, double newValue)
     {
         switch (type)
         {
-            case CurrencyType.Gold:
+            case ECurrencyType.Gold:
                 _cachedGold = newValue;
                 _isGoldDirty = true;
                 break;
-            case CurrencyType.Ruby:
+            case ECurrencyType.Ruby:
                 _cachedRuby = newValue;
                 _isRubyDirty = true;
                 break;

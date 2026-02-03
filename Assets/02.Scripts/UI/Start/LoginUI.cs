@@ -28,7 +28,7 @@ public class LoginUI : MonoBehaviour
 
     private void Start()
     {
-        SoundManager.Instance.PlayBGM(BgmId.Title);
+        SoundManager.Instance.PlayBGM(EBgmId.Title);
     }
 
     private void SetupLoginButton()

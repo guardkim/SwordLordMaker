@@ -1,4 +1,4 @@
-public enum BgmId
+public enum EBgmId
 {
     None = 0,
 
@@ -17,7 +17,7 @@ public enum BgmId
 
 public static class BgmIdExtensions
 {
-    public static string ToKey(this BgmId id)
+    public static string ToKey(this EBgmId id)
     {
         return id.ToString();
     }

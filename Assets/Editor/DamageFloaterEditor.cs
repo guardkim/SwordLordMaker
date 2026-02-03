@@ -5,7 +5,7 @@ using UnityEditor;
 public class DamageFloaterEditor : Editor
 {
     private DamageFloater floater;
-    private DamageStyle previewStyle = DamageStyle.Basic;
+    private EDamageStyle previewStyle = EDamageStyle.Basic;
     
     // 에디터 애니메이션 관리 변수
     private double lastEditorTime;
@@ -64,7 +64,7 @@ public class DamageFloaterEditor : Editor
         EditorGUILayout.LabelField("----- Preview -----", EditorStyles.boldLabel);
 
         // 3. 미리보기 설정
-        previewStyle = (DamageStyle)EditorGUILayout.EnumPopup("Preview Style", previewStyle);
+        previewStyle = (EDamageStyle)EditorGUILayout.EnumPopup("Preview Style", previewStyle);
 
         // 텍스트 템플릿의 입력값 표시
         if (floater.TextTemplate != null)

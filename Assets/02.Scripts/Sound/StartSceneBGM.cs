@@ -6,7 +6,7 @@ public class StartSceneBGM : MonoBehaviour
     {
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlayBGM(BgmId.Title);
+            SoundManager.Instance.PlayBGM(EBgmId.Title);
         }
     }
 }

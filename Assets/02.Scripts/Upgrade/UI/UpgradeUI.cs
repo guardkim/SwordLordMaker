@@ -26,38 +26,38 @@ public class UpgradeUI : MonoBehaviour
         // 플레이어 강화
         if (_healthSlot != null)
         {
-            _healthSlot.Initialize(UpgradeId.PlayerHealth);
+            _healthSlot.Initialize(EUpgradeId.PlayerHealth);
         }
 
         if (_moveSpeedSlot != null)
         {
-            _moveSpeedSlot.Initialize(UpgradeId.PlayerMoveSpeed);
+            _moveSpeedSlot.Initialize(EUpgradeId.PlayerMoveSpeed);
         }
 
         // 검 강화
         if (_attackDamageSlot != null)
         {
-            _attackDamageSlot.Initialize(UpgradeId.SwordAttackDamage);
+            _attackDamageSlot.Initialize(EUpgradeId.SwordAttackDamage);
         }
 
         if (_cooldownSlot != null)
         {
-            _cooldownSlot.Initialize(UpgradeId.SwordCooldown);
+            _cooldownSlot.Initialize(EUpgradeId.SwordCooldown);
         }
 
         if (_swordMoveSpeedSlot != null)
         {
-            _swordMoveSpeedSlot.Initialize(UpgradeId.SwordMoveSpeed);
+            _swordMoveSpeedSlot.Initialize(EUpgradeId.SwordMoveSpeed);
         }
 
         if (_critDamageSlot != null)
         {
-            _critDamageSlot.Initialize(UpgradeId.SwordCritDamage);
+            _critDamageSlot.Initialize(EUpgradeId.SwordCritDamage);
         }
 
         if (_critChanceSlot != null)
         {
-            _critChanceSlot.Initialize(UpgradeId.SwordCritChance);
+            _critChanceSlot.Initialize(EUpgradeId.SwordCritChance);
         }
     }
 

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
@@ -39,11 +40,8 @@ public class EnemyAI : MonoBehaviour, IDamageable
     [SerializeField] private float _updateIntervalFar = 0.5f;
     [SerializeField] private float _farDistanceThreshold = 10f;
 
-    [Header("▼ 보스 스킬 설정")]
-    [SerializeField] private float _skillCooldown = 5f;
-    [SerializeField] private float _skillRadius = 3f;
-    [SerializeField] private float _skillChargeTime = 1f;
-    [SerializeField] private float _skillDamageMultiplier = 2f;
+    [Header("▼ 보스 스킬")]
+    [SerializeField] private EnemySkillHandler _skillHandler;
 
     private NavMeshAgent _agent;
     private State _currentState = State.Idle;
@@ -56,9 +54,12 @@ public class EnemyAI : MonoBehaviour, IDamageable
     private double _currentHealth;
     private bool _isBoss;
 
-    // 보스 스킬 상태
-    private float _lastSkillTime;
-    private bool _isUsingSkill;
+
+    // 사망 이벤트 (보상 지급은 구독자가 처리)
+    public event Action<EnemyAI, EnemyStat> OnDied;
+
+    // 스탯 접근용 프로퍼티
+    public EnemyStat Stat => _stat;
 
     public State CurrentState => _currentState;
     public float Speed => _agent != null ? _agent.velocity.magnitude : 0f;
@@ -67,7 +68,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
     public bool IsAttacking => _currentState == State.Attack;
     public bool IsHit => _currentState == State.Hit;
     public bool IsBoss => _isBoss;
-    public bool IsUsingSkill => _isUsingSkill;
+    public bool IsUsingSkill => _skillHandler != null && _skillHandler.IsUsingSkill;
 
     private void Awake()
     {
@@ -139,8 +140,11 @@ public class EnemyAI : MonoBehaviour, IDamageable
         // 보스 공격 범위 조정: 기본 공격 범위의 3배
         _attackRange = _attackRange * 3f;
 
-        // 보스 스킬 범위 조정: 기본 공격 범위의 5배
-        _skillRadius = _attackRange * 5f;
+        // 스킬 핸들러 초기화
+        if (_skillHandler != null)
+        {
+            _skillHandler.Initialize(_enemyAnimation, _attackRange);
+        }
     }
 
     // 풀로 반환될 때 호출 (상태 리셋)
@@ -153,8 +157,15 @@ public class EnemyAI : MonoBehaviour, IDamageable
         _lastUpdateTime = 0f;
         _lastAttackTime = 0f;
         _isBoss = false;
-        _lastSkillTime = 0f;
-        _isUsingSkill = false;
+
+        // 스킬 핸들러 리셋
+        if (_skillHandler != null)
+        {
+            _skillHandler.Reset();
+        }
+
+        // 이벤트 초기화 (구독자가 남아있지 않도록)
+        OnDied = null;
 
         if (_agent != null)
         {
@@ -331,7 +342,7 @@ public class EnemyAI : MonoBehaviour, IDamageable
         if (DamageFloaterManager.Instance != null)
         {
             DamageFloaterManager.Instance.ShowDamage(
-                DamageStyle.Basic, damage, GetDamageFloaterPosition(), isCrit);
+                EDamageStyle.Basic, damage, GetDamageFloaterPosition(), isCrit);
         }
 
         if (EffectManager.Instance != null)
@@ -376,33 +387,11 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
         if (SoundManager.Instance != null)
         {
-            SoundManager.Instance.PlaySFX(SfxId.MonsterDead, transform.position);
+            SoundManager.Instance.PlaySFX(ESfxId.MonsterDead, transform.position);
         }
 
-        // 골드 지급 (스탯에서 가져옴)
-        if (CurrencyManager.Instance != null && _stat != null)
-        {
-            CurrencyManager.Instance.AddGold(_stat.GoldReward);
-        }
-
-        // 경험치 지급 (스탯에서 가져옴)
-        if (_stat != null && PlayerStatManager.Instance != null)
-        {
-            PlayerStatManager.Instance.AddExp(_stat.Exp);
-        }
-
-        // StageManager에 사망 알림 (보스/일반 구분)
-        if (StageManager.Instance != null)
-        {
-            if (_isBoss)
-            {
-                StageManager.Instance.OnBossDied(this);
-            }
-            else
-            {
-                StageManager.Instance.OnEnemyDied(this);
-            }
-        }
+        // 이벤트 발생 (보상 지급은 구독자가 처리)
+        OnDied?.Invoke(this, _stat);
 
         // 사망 애니메이션
         if (_enemyAnimation != null)
@@ -431,12 +420,12 @@ public class EnemyAI : MonoBehaviour, IDamageable
 
     private void UpdateState(float distanceToTarget)
     {
-        if (_isUsingSkill) return;
+        if (_skillHandler != null && _skillHandler.IsUsingSkill) return;
 
         // 보스 스킬 체크 (공격 범위 내에서 스킬 쿨다운이 찼을 때)
-        if (_isBoss && distanceToTarget <= _attackRange && CanUseSkill())
+        if (_isBoss && distanceToTarget <= _attackRange && _skillHandler != null && _skillHandler.CanUseSkill())
         {
-            StartCoroutine(ExecuteSkillAttack());
+            _skillHandler.TryUseSkill(_stat, OnSkillStart, OnSkillEnd);
             return;
         }
 
@@ -557,64 +546,26 @@ public class EnemyAI : MonoBehaviour, IDamageable
         _target = target;
     }
 
-    // 보스 스킬 사용 가능 여부 체크
-    private bool CanUseSkill()
-    {
-        if (!_isBoss) return false;
-        if (_isUsingSkill) return false;
-        return Time.time - _lastSkillTime >= _skillCooldown;
-    }
 
-    // 스킬 공격 실행 (AoE 범위 공격)
-    private IEnumerator ExecuteSkillAttack()
+    // 스킬 시작 콜백 (EnemySkillHandler에서 호출)
+    private void OnSkillStart()
     {
-        _isUsingSkill = true;
         _currentState = State.SkillAttack;
 
-        // NavMeshAgent 정지
         if (_agent != null && _agent.isOnNavMesh)
         {
             _agent.isStopped = true;
         }
+    }
 
-        // 차징 애니메이션
-        _enemyAnimation?.TriggerSkill();
-
-        // 차징 시간 대기
-        yield return new WaitForSeconds(_skillChargeTime);
-
-        // 범위 내 플레이어에게 데미지
-        ApplyAoEDamage();
-
-        _lastSkillTime = Time.time;
-        _isUsingSkill = false;
+    // 스킬 종료 콜백 (EnemySkillHandler에서 호출)
+    private void OnSkillEnd()
+    {
         _currentState = State.Idle;
 
-        // NavMeshAgent 재개
         if (_agent != null && _agent.enabled)
         {
             _agent.isStopped = false;
         }
-    }
-
-    // AoE 범위 데미지 적용
-    private void ApplyAoEDamage()
-    {
-        Collider[] hits = Physics.OverlapSphere(transform.position, _skillRadius);
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Player"))
-            {
-                IDamageable target = hit.GetComponent<IDamageable>();
-                if (target != null)
-                {
-                    double skillDamage = _stat.AttackDamage * _skillDamageMultiplier;
-                    target.TakeDamage(skillDamage, false);
-                }
-            }
-        }
-
-        // 스킬 VFX 재생
-        EffectManager.Instance?.PlaySkillVfx(transform.position);
     }
 }

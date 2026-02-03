@@ -6,8 +6,8 @@ using UnityEngine;
 public abstract class PopupBase : MonoBehaviour
 {
     [Header("Popup Settings")]
-    [SerializeField] private PopupType _popupType = PopupType.None;
-    [SerializeField] private PopupPriority _priority = PopupPriority.Normal;
+    [SerializeField] private EPopupType _popupType = EPopupType.None;
+    [SerializeField] private EPopupPriority _priority = EPopupPriority.Normal;
     [SerializeField] private bool _closeOnBlockerClick = true;
     [SerializeField] private bool _showBlocker = true;
 
@@ -20,8 +20,8 @@ public abstract class PopupBase : MonoBehaviour
     private bool _isOpen;
     private Tween _currentTween;
 
-    public PopupType PopupType => _popupType;
-    public PopupPriority Priority => _priority;
+    public EPopupType PopupType => _popupType;
+    public EPopupPriority Priority => _priority;
     public bool CloseOnBlockerClick => _closeOnBlockerClick;
     public bool ShowBlocker => _showBlocker;
     public bool IsOpen => _isOpen;
@@ -40,7 +40,7 @@ public abstract class PopupBase : MonoBehaviour
 
     private void RegisterToManager()
     {
-        if (_popupType == PopupType.None)
+        if (_popupType == EPopupType.None)
         {
             return;
         }
@@ -114,7 +114,7 @@ public abstract class PopupBase : MonoBehaviour
 
     private void UnregisterFromManager()
     {
-        if (_popupType == PopupType.None)
+        if (_popupType == EPopupType.None)
         {
             return;
         }

@@ -8,7 +8,7 @@ public class Currency
     public double Gold => _gold;
     public double Ruby => _ruby;
 
-    public event Action<CurrencyType, double> OnChanged;
+    public event Action<ECurrencyType, double> OnChanged;
 
     // 재화 데이터 객체를 초기화합니다.
     // gold: 초기 골드 값 (일반 재화, 1분 주기 오토세이브).
@@ -19,7 +19,7 @@ public class Currency
         _ruby = ruby;
     }
 
-    public void Add(CurrencyType type, double amount)
+    public void Add(ECurrencyType type, double amount)
     {
         if (amount <= 0)
         {
@@ -28,18 +28,18 @@ public class Currency
 
         switch (type)
         {
-            case CurrencyType.Gold:
+            case ECurrencyType.Gold:
                 _gold += amount;
-                OnChanged?.Invoke(CurrencyType.Gold, _gold);
+                OnChanged?.Invoke(ECurrencyType.Gold, _gold);
                 break;
-            case CurrencyType.Ruby:
+            case ECurrencyType.Ruby:
                 _ruby += amount;
-                OnChanged?.Invoke(CurrencyType.Ruby, _ruby);
+                OnChanged?.Invoke(ECurrencyType.Ruby, _ruby);
                 break;
         }
     }
 
-    public bool TrySpend(CurrencyType type, double amount)
+    public bool TrySpend(ECurrencyType type, double amount)
     {
         if (amount <= 0)
         {
@@ -48,22 +48,22 @@ public class Currency
 
         switch (type)
         {
-            case CurrencyType.Gold:
+            case ECurrencyType.Gold:
                 if (_gold < amount)
                 {
                     return false;
                 }
                 _gold -= amount;
-                OnChanged?.Invoke(CurrencyType.Gold, _gold);
+                OnChanged?.Invoke(ECurrencyType.Gold, _gold);
                 return true;
 
-            case CurrencyType.Ruby:
+            case ECurrencyType.Ruby:
                 if (_ruby < amount)
                 {
                     return false;
                 }
                 _ruby -= amount;
-                OnChanged?.Invoke(CurrencyType.Ruby, _ruby);
+                OnChanged?.Invoke(ECurrencyType.Ruby, _ruby);
                 return true;
 
             default:
@@ -71,12 +71,12 @@ public class Currency
         }
     }
 
-    public double Get(CurrencyType type)
+    public double Get(ECurrencyType type)
     {
         return type switch
         {
-            CurrencyType.Gold => _gold,
-            CurrencyType.Ruby => _ruby,
+            ECurrencyType.Gold => _gold,
+            ECurrencyType.Ruby => _ruby,
             _ => 0
         };
     }

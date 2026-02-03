@@ -1,4 +1,4 @@
-public enum PopupType
+public enum EPopupType
 {
     None = 0,
 

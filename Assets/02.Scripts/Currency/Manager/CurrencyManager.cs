@@ -12,7 +12,7 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     private const float GoldAutoSaveInterval = 60f;
 
-    public event Action<CurrencyType, double> OnCurrencyChanged;
+    public event Action<ECurrencyType, double> OnCurrencyChanged;
 
     public double Gold => _currency?.Gold ?? 0;
     public double Ruby => _currency?.Ruby ?? 0;
@@ -65,8 +65,8 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
             _autoSaveCoroutine = StartCoroutine(AutoSaveGoldRoutine());
 
-            OnCurrencyChanged?.Invoke(CurrencyType.Gold, _currency.Gold);
-            OnCurrencyChanged?.Invoke(CurrencyType.Ruby, _currency.Ruby);
+            OnCurrencyChanged?.Invoke(ECurrencyType.Gold, _currency.Gold);
+            OnCurrencyChanged?.Invoke(ECurrencyType.Ruby, _currency.Ruby);
         }
         catch (Exception e)
         {
@@ -74,11 +74,11 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         }
     }
 
-    private void HandleCurrencyChanged(CurrencyType type, double newValue)
+    private void HandleCurrencyChanged(ECurrencyType type, double newValue)
     {
         OnCurrencyChanged?.Invoke(type, newValue);
 
-        if (type == CurrencyType.Ruby)
+        if (type == ECurrencyType.Ruby)
         {
             SaveRubyImmediate(newValue);
         }
@@ -131,27 +131,27 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     public void AddGold(double amount)
     {
-        _currency?.Add(CurrencyType.Gold, amount);
+        _currency?.Add(ECurrencyType.Gold, amount);
     }
 
     public void AddRuby(double amount)
     {
-        _currency?.Add(CurrencyType.Ruby, amount);
+        _currency?.Add(ECurrencyType.Ruby, amount);
     }
 
     public bool TrySpendGold(double amount)
     {
-        if (!_currency.TrySpend(CurrencyType.Gold, amount)) return false;
+        if (!_currency.TrySpend(ECurrencyType.Gold, amount)) return false;
         SaveGold();
         return true;
     }
 
     public bool TrySpendRuby(double amount)
     {
-        return _currency?.TrySpend(CurrencyType.Ruby, amount) ?? false;
+        return _currency?.TrySpend(ECurrencyType.Ruby, amount) ?? false;
     }
 
-    public double GetCurrency(CurrencyType type)
+    public double GetCurrency(ECurrencyType type)
     {
         return _currency?.Get(type) ?? 0;
     }

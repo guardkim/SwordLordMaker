@@ -147,12 +147,12 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
     // 플레이어 스탯 보너스 조회
     public double GetPlayerHealthBonus()
     {
-        return GetDoubleBonus(UpgradeId.PlayerHealth.ToKey());
+        return GetDoubleBonus(EUpgradeId.PlayerHealth.ToKey());
     }
 
     public float GetPlayerMoveSpeedBonus()
     {
-        return GetBonus(UpgradeId.PlayerMoveSpeed.ToKey());
+        return GetBonus(EUpgradeId.PlayerMoveSpeed.ToKey());
     }
 
     public void ApplyUpgrades(SwordStat baseStat, SwordStat targetStat)
@@ -163,10 +163,10 @@ public class UpgradeManager : DontDestroySingleton<UpgradeManager>
             return;
         }
 
-        targetStat.AttackDamage = baseStat.AttackDamage + GetDoubleBonus(UpgradeId.SwordAttackDamage.ToKey());
-        targetStat.Cooldown = Mathf.Max(0.1f, baseStat.Cooldown - GetBonus(UpgradeId.SwordCooldown.ToKey()));
-        targetStat.MoveSpeed = baseStat.MoveSpeed + GetBonus(UpgradeId.SwordMoveSpeed.ToKey());
-        targetStat.CritDamageMultiplier = baseStat.CritDamageMultiplier + GetBonus(UpgradeId.SwordCritDamage.ToKey());
-        targetStat.CritChance = Mathf.Min(1f, baseStat.CritChance + GetBonus(UpgradeId.SwordCritChance.ToKey()));
+        targetStat.AttackDamage = baseStat.AttackDamage + GetDoubleBonus(EUpgradeId.SwordAttackDamage.ToKey());
+        targetStat.Cooldown = Mathf.Max(0.1f, baseStat.Cooldown - GetBonus(EUpgradeId.SwordCooldown.ToKey()));
+        targetStat.MoveSpeed = baseStat.MoveSpeed + GetBonus(EUpgradeId.SwordMoveSpeed.ToKey());
+        targetStat.CritDamageMultiplier = baseStat.CritDamageMultiplier + GetBonus(EUpgradeId.SwordCritDamage.ToKey());
+        targetStat.CritChance = Mathf.Min(1f, baseStat.CritChance + GetBonus(EUpgradeId.SwordCritChance.ToKey()));
     }
 }

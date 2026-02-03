@@ -37815,7 +37815,7 @@ Camera:
   far clip plane: 1000
   field of view: 60
   orthographic: 1
-  orthographic size: 10
+  orthographic size: 20
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -49570,7 +49570,7 @@ MonoBehaviour:
   DamageFloaterPrefab: {fileID: 6349936038727535309, guid: 254f697e798da3043b5b5fca1d396fb2, type: 3}
   SingleFloaterOption:
     numberFormat: 0
-    damageStyle: 0
+    DamageStyle: 0
     singleNumberDuration: 1
     delayBetweenNumbers: 0.1
     lineSpacing: 0.7
@@ -49581,7 +49581,7 @@ MonoBehaviour:
     blade2Pivot: {x: 0.5, y: 0.5}
   MultiFloaterOption:
     numberFormat: 0
-    damageStyle: 0
+    DamageStyle: 0
     singleNumberDuration: 1
     delayBetweenNumbers: 0.1
     lineSpacing: 0.7
