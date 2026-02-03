@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
@@ -24,6 +25,10 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
 
     private readonly List<EnemyAI> _aliveEnemies = new();
     public IReadOnlyList<EnemyAI> AliveEnemies => _aliveEnemies;
+
+    // 적 사망 이벤트 (외부 시스템이 구독)
+    public event Action<EnemyAI> OnEnemyDiedEvent;
+    public event Action<EnemyAI> OnBossDiedEvent;
 
     protected override void Initialize()
     {
@@ -89,7 +94,7 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         }
     }
 
-    // 적 사망 처리 핸들러 (보상 지급 및 StageManager 알림)
+    // 적 사망 처리 핸들러 (보상 지급 및 이벤트 발생)
     private void HandleEnemyDied(EnemyAI enemy, EnemyStat stat)
     {
         if (stat == null) return;
@@ -98,14 +103,14 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         CurrencyManager.Instance?.AddGold(stat.GoldReward);
         PlayerStatManager.Instance?.AddExp(stat.Exp);
 
-        // StageManager에 알림
+        // 이벤트 발생 (구독자가 처리)
         if (enemy.IsBoss)
         {
-            StageManager.Instance?.OnBossDied(enemy);
+            OnBossDiedEvent?.Invoke(enemy);
         }
         else
         {
-            StageManager.Instance?.OnEnemyDied(enemy);
+            OnEnemyDiedEvent?.Invoke(enemy);
         }
     }
 
@@ -157,18 +162,7 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         }
 
         // 보스는 풀에 반환하지 않고 Destroy
-        if (enemy.IsBoss)
-        {
-            // 이벤트 해제
-            enemy.OnDied -= HandleEnemyDied;
-
-            _aliveEnemies.Remove(enemy);
-            enemy.ResetForPool();
-            Destroy(enemy.gameObject);
-            return;
-        }
-
-        if (_pool == null)
+        if (enemy.IsBoss || _pool == null)
         {
             // 이벤트 해제
             enemy.OnDied -= HandleEnemyDied;

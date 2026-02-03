@@ -11,7 +11,8 @@ public class SwordStat
         string id,
         double attackDamage,
         float cooldown,
-        float moveSpeed,float critDamageMultiplier,
+        float moveSpeed,
+        float critDamageMultiplier,
         float critChance)
     {
         Id = id;

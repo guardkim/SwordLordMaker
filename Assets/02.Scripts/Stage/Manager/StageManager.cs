@@ -45,7 +45,7 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     private void Start()
     {
-        SubscribeToGameManager();
+        SubscribeToEvents();
 
         if (_autoStartOnAwake)
         {
@@ -55,22 +55,32 @@ public class StageManager : DontDestroySingleton<StageManager>
 
     private void OnDestroy()
     {
-        UnsubscribeFromGameManager();
+        UnsubscribeFromEvents();
     }
 
-    private void SubscribeToGameManager()
+    private void SubscribeToEvents()
     {
         if (GameManager.Instance != null)
         {
             GameManager.Instance.OnRequestStageRestart += HandleStageRestartRequest;
         }
+
+        if (EnemySpawner.Instance != null)
+        {
+            EnemySpawner.Instance.OnBossDiedEvent += HandleBossDied;
+        }
     }
 
-    private void UnsubscribeFromGameManager()
+    private void UnsubscribeFromEvents()
     {
         if (GameManager.HasInstance)
         {
             GameManager.Instance.OnRequestStageRestart -= HandleStageRestartRequest;
+        }
+
+        if (EnemySpawner.HasInstance)
+        {
+            EnemySpawner.Instance.OnBossDiedEvent -= HandleBossDied;
         }
     }
 
@@ -168,14 +178,8 @@ public class StageManager : DontDestroySingleton<StageManager>
         }
     }
 
-    // 일반 Enemy 사망 처리
-    public void OnEnemyDied(EnemyAI enemy)
-    {
-        // EnemySpawner.Return() 호출 시 AliveEnemies에서 자동 제거됨
-    }
-
-    // 보스 사망 처리 -> 스테이지 클리어
-    public void OnBossDied(EnemyAI boss)
+    // 보스 사망 처리 핸들러 (EnemySpawner 이벤트 구독)
+    private void HandleBossDied(EnemyAI boss)
     {
         if (boss != _currentBoss) return;
 
