@@ -1,0 +1,63 @@
+name: Unity WebGL Build
+run-name: WebGL build by ${{ github.actor }} (${{ github.ref_name }})
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
+      - develop
+  # 필요하면 스케줄도 켜세요(UTC 기준)
+  # schedule:
+  #   - cron: "0 19 * * *" # KST 04:00
+
+concurrency:
+  group: unity-webgl-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-webgl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      PROJECT_PATH: .
+      TARGET_PLATFORM: WebGL
+      BUILD_NAME: Web-Mobile
+      BUILDS_PATH: build
+      BUILD_PROFILE: "Assets/Settings/Build Profiles/Web - Mobile - Development.asset"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Unity Library 캐시(빌드 속도 향상)
+      - name: Cache Library
+        uses: actions/cache@v5
+        with:
+          path: Library
+          key: Library-${{ runner.os }}-${{ env.TARGET_PLATFORM }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-${{ runner.os }}-${{ env.TARGET_PLATFORM }}-
+            Library-${{ runner.os }}-
+
+      - name: Build (Unity Builder)
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: ${{ env.PROJECT_PATH }}
+          targetPlatform: ${{ env.TARGET_PLATFORM }}
+          unityVersion: auto
+          buildProfile: ${{ env.BUILD_PROFILE }}
+          buildsPath: ${{ env.BUILDS_PATH }}
+          buildName: ${{ env.BUILD_NAME }}
+
+      - name: Upload Artifact (WebGL)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WebGL-${{ github.ref_name }}-${{ github.run_number }}
+          path: ${{ env.BUILDS_PATH }}
+          retention-days: 7
