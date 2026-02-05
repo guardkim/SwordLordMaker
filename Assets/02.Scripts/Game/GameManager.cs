@@ -2,22 +2,51 @@ using System;
 using System.Collections;
 using UnityEngine;
 
-public class GameManager : DontDestroySingleton<GameManager>
+public class GameManager : DontDestroySingleton<GameManager>, IGameService
 {
     private const float RESPAWN_DELAY = 5f;
     private const int RESPAWN_STAGE_ID = 1;
 
     private PlayerHealth _playerHealth;
 
+    // DI: 인터페이스를 통한 의존성
+    private IStageService _stageService;
+
+    // IGameService 이벤트 구현
     public event Action OnPlayerDeath;
     public event Action OnPlayerRevive;
     public event Action<int> OnRequestStageRestart;
 
+    protected override void Initialize()
+    {
+        // ServiceLocator에 등록
+        ServiceLocator.Register<IGameService>(this);
+    }
+
+    private void Start()
+    {
+        InitializeDependencies();
+    }
+
+    private void InitializeDependencies()
+    {
+        // ServiceLocator에서 의존성 획득
+        _stageService = ServiceLocator.Resolve<IStageService>();
+
+        // 폴백: ServiceLocator에 없으면 기존 싱글톤 사용
+        if (_stageService == null && StageManager.Instance)
+        {
+            _stageService = StageManager.Instance;
+        }
+    }
+
     private void OnDestroy()
     {
         UnsubscribeFromPlayer();
+        ServiceLocator.Unregister<IGameService>();
     }
 
+    // IGameService 구현
     public void RegisterPlayer(PlayerHealth playerHealth)
     {
         UnsubscribeFromPlayer();
@@ -28,6 +57,12 @@ public class GameManager : DontDestroySingleton<GameManager>
         {
             _playerHealth.OnDeath += HandlePlayerDeath;
         }
+    }
+
+    public void UnregisterPlayer()
+    {
+        UnsubscribeFromPlayer();
+        _playerHealth = null;
     }
 
     private void UnsubscribeFromPlayer()
@@ -42,11 +77,8 @@ public class GameManager : DontDestroySingleton<GameManager>
     {
         OnPlayerDeath?.Invoke();
 
-        // 즉시 보스 및 모든 몬스터 제거
-        if (StageManager.Instance != null)
-        {
-            StageManager.Instance.OnPlayerDied();
-        }
+        // 인터페이스를 통해 스테이지 매니저에 알림
+        _stageService?.OnPlayerDied();
 
         StartCoroutine(RespawnSequence());
     }

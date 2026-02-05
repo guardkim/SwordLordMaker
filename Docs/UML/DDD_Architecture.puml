@@ -1,0 +1,637 @@
+@startuml DDD_Architecture
+
+' 스타일 설정
+skinparam backgroundColor #FEFEFE
+skinparam classArrowColor #0056b3
+skinparam packageStyle rectangle
+skinparam noteBackgroundColor #FFF3E0
+skinparam noteBorderColor #F57F17
+
+' 제목
+title SwordLordMaker - DDD 4계층 아키텍처
+
+' ============================
+' 1. Data Layer (데이터 도메인)
+' ============================
+package "Data Layer" #E8F5E9 {
+    class Currency {
+        -double _gold
+        -double _ruby
+        +double Gold
+        +double Ruby
+        +event Action<ECurrencyType, double> OnChanged
+        +void Add(ECurrencyType, double)
+        +bool TrySpend(ECurrencyType, double)
+        +double Get(ECurrencyType)
+    }
+
+    class PlayerStat {
+        -string _name
+        -int _level
+        -double _currentExp
+        -double _maxExp
+        -double _baseMaxHealth
+        -float _baseMoveSpeed
+        +string Name
+        +int Level
+        +double CurrentExp
+        +double MaxExp
+        +double BaseMaxHealth
+        +float BaseMoveSpeed
+    }
+
+    class SwordStat {
+        -string _id
+        -double _attackDamage
+        -float _cooldown
+        -float _moveSpeed
+        -float _critDamageMultiplier
+        -float _critChance
+        +string Id
+        +double AttackDamage
+        +float Cooldown
+        +float MoveSpeed
+        +float CritDamageMultiplier
+        +float CritChance
+        +double CalculateDamage(bool)
+        +void CopyFrom(SwordStat)
+    }
+
+    class StageStat {
+        -string _stageName
+        -string _enemyStatId
+        -string _bossStatId
+        -float _hpMultiplier
+        -float _attackMultiplier
+        -float _speedMultiplier
+        -float _goldMultiplier
+        -float _expMultiplier
+        +string StageName
+        +string EnemyStatId
+        +string BossStatId
+    }
+
+    class EnemyStat {
+        -string _id
+        -double _maxHP
+        -double _attackDamage
+        -float _moveSpeed
+        -double _goldReward
+        -double _exp
+        +string Id
+        +double MaxHP
+        +double AttackDamage
+        +float MoveSpeed
+        +double GoldReward
+        +double Exp
+    }
+
+    class BossStat {
+        -string _id
+        -double _maxHP
+        -double _attackDamage
+        -float _moveSpeed
+        -double _goldReward
+        -double _exp
+        +string Id
+        +double MaxHP
+        +double AttackDamage
+        +float MoveSpeed
+        +double GoldReward
+        +double Exp
+    }
+
+    class UpgradeData {
+        -string _id
+        -string _name
+        -double _baseCost
+        -double _costMultiplier
+        -double _baseBonus
+        -double _bonusMultiplier
+        +string Id
+        +string Name
+        +double GetCost(int)
+        +double GetTotalBonus(int)
+    }
+
+    class PlayerUpgradeLevels {
+        -Dictionary<string, int> _levels
+        +int GetLevel(string)
+        +void IncrementLevel(string)
+        +bool IsEmpty()
+    }
+
+    class SoundData {
+        -string _sfxId
+        -string _bgmId
+        -AudioClip _clip
+        +string SfxId
+        +string BgmId
+        +AudioClip Clip
+    }
+
+    class OfflineRewardData {
+        -double _goldReward
+        -double _expReward
+        +double GoldReward
+        +double ExpReward
+    }
+}
+
+' ============================
+' 2. Repository Layer (데이터 영속화)
+' ============================
+package "Repository Layer" #E3F2FD {
+    interface ICurrencyRepository {
+        +Task<Currency> LoadAsync()
+        +Task SaveAsync(Currency)
+        +Task SaveGoldAsync(double)
+        +Task SaveRubyAsync(double)
+        +void ForceSaveToDisk()
+    }
+
+    interface IPlayerStatRepository {
+        +PlayerStat Load()
+        +void Save(PlayerStat)
+    }
+
+    interface ISwordStatRepository {
+        +SwordStat GetById(string)
+        +List<SwordStat> GetAll()
+    }
+
+    interface IStageRepository {
+        +StageStat GetByStageId(int)
+        +int GetMaxStageId()
+    }
+
+    interface IEnemyStatRepository {
+        +EnemyStat GetById(string)
+        +List<EnemyStat> GetAll()
+    }
+
+    interface IBossStatRepository {
+        +BossStat GetById(string)
+        +List<BossStat> GetAll()
+    }
+
+    interface IUpgradeRepository {
+        +PlayerUpgradeLevels LoadPlayerLevels()
+        +void SavePlayerLevels(PlayerUpgradeLevels)
+        +UpgradeData GetUpgradeData(string)
+    }
+
+    interface ISoundRepository {
+        +SoundData GetSfx(string)
+        +SoundData GetBgm(string)
+    }
+
+    interface IOfflineRewardRepository {
+        +OfflineRewardData GetRewardData()
+    }
+
+    class CurrencyRepository {
+        -DB_PlayerProfile _playerEntity
+        +CurrencyRepository(string)
+        +Task<Currency> LoadAsync()
+        +Task SaveAsync(Currency)
+        +Task SaveGoldAsync(double)
+        +Task SaveRubyAsync(double)
+        +void ForceSaveToDisk()
+    }
+
+    class PlayerStatRepository {
+        -DB_PlayerProfile _playerEntity
+        +PlayerStatRepository(string)
+        +PlayerStat Load()
+        +void Save(PlayerStat)
+    }
+
+    class SwordStatRepository {
+        +SwordStatRepository()
+        +SwordStat GetById(string)
+        +List<SwordStat> GetAll()
+    }
+
+    class StageRepository {
+        +StageRepository()
+        +StageStat GetByStageId(int)
+        +int GetMaxStageId()
+    }
+
+    class EnemyStatRepository {
+        +EnemyStatRepository()
+        +EnemyStat GetById(string)
+        +List<EnemyStat> GetAll()
+    }
+
+    class BossStatRepository {
+        +BossStatRepository()
+        +BossStat GetById(string)
+        +List<BossStat> GetAll()
+    }
+
+    class UpgradeRepository {
+        -DB_PlayerProfile _playerEntity
+        +UpgradeRepository(string)
+        +PlayerUpgradeLevels LoadPlayerLevels()
+        +void SavePlayerLevels(PlayerUpgradeLevels)
+        +UpgradeData GetUpgradeData(string)
+    }
+
+    class SoundRepository {
+        +SoundRepository()
+        +SoundData GetSfx(string)
+        +SoundData GetBgm(string)
+    }
+
+    class OfflineRewardRepository {
+        +OfflineRewardRepository()
+        +OfflineRewardData GetRewardData()
+    }
+}
+
+' Repository Layer 인터페이스 구현 관계
+ICurrencyRepository <|.. CurrencyRepository
+IPlayerStatRepository <|.. PlayerStatRepository
+ISwordStatRepository <|.. SwordStatRepository
+IStageRepository <|.. StageRepository
+IEnemyStatRepository <|.. EnemyStatRepository
+IBossStatRepository <|.. BossStatRepository
+IUpgradeRepository <|.. UpgradeRepository
+ISoundRepository <|.. SoundRepository
+IOfflineRewardRepository <|.. OfflineRewardRepository
+
+' ============================
+' 3. Manager Layer (비즈니스 로직)
+' ============================
+package "Manager Layer" #FFF3E0 {
+    
+    ' [누락된 클래스 추가 정의]
+    class PlayerHealth {
+        +void TakeDamage(double, bool)
+        +event Action OnDeath
+        +event Action<double, double> OnHealthChanged
+    }
+    class EnemyAI {
+        +void TakeDamage(double, bool)
+    }
+    class BaseSwordController {
+        +void Fire()
+    }
+
+    class GameManager {
+        -PlayerHealth _playerHealth
+        +event Action OnPlayerDeath
+        +event Action OnPlayerRevive
+        +event Action<int> OnRequestStageRestart
+        +void RegisterPlayer(PlayerHealth)
+        -void HandlePlayerDeath()
+        -IEnumerator RespawnSequence()
+    }
+
+    class CurrencyManager {
+        -ICurrencyRepository _repository
+        -Currency _currency
+        -Coroutine _autoSaveCoroutine
+        +event Action<ECurrencyType, double> OnCurrencyChanged
+        +double Gold
+        +double Ruby
+        +void AddGold(double)
+        +void AddRuby(double)
+        +bool TrySpendGold(double)
+        +bool TrySpendRuby(double)
+        +double GetCurrency(ECurrencyType)
+    }
+
+    class UpgradeManager {
+        -IUpgradeRepository _repository
+        -PlayerUpgradeLevels _playerLevels
+        +event Action<string, int> OnUpgraded
+        +event Action OnInitialized
+        +bool IsReady
+        +bool TryUpgrade(string)
+        +int GetLevel(string)
+        +double GetDoubleBonus(string)
+        +float GetBonus(string)
+        +double GetCost(string)
+        +void ApplyUpgrades(SwordStat, SwordStat)
+    }
+
+    class StageManager {
+        -IStageRepository _repository
+        -int _currentStageId
+        -int _maxStageId
+        -bool _isSpawning
+        -StageStat _currentStageStat
+        +int CurrentStageId
+        +string CurrentStageName
+        +StageStat CurrentStageStat
+        +event Action<int> OnStageStarted
+        +event Action<int> OnStageCleared
+        +event Action OnAllStagesCleared
+        +event Action<EnemyAI> OnBossSpawned
+        +void StartGame()
+        +void StartStage(int)
+        +void SpawnBoss()
+        +void RestartFromStage(int)
+        +void OnPlayerDied()
+    }
+
+    class EnemySpawner {
+        -IEnemyStatRepository _repository
+        -IBossStatRepository _bossRepository
+        -ObjectPool<EnemyAI> _pool
+        -List<EnemyAI> _aliveEnemies
+        -EnemyAI _currentBoss
+        -bool _bossSpawned
+        +IReadOnlyList<EnemyAI> AliveEnemies
+        +bool IsBossSpawned
+        +bool IsBossAlive
+        +EnemyAI CurrentBoss
+        +event Action<EnemyAI> OnEnemyDiedEvent
+        +event Action<EnemyAI> OnBossDiedEvent
+        +EnemyAI Spawn(string, int)
+        +EnemyAI Spawn(string, Vector3, Quaternion)
+        +EnemyAI SpawnWithMultiplier(string, StageStat)
+        +EnemyAI SpawnBoss(string, StageStat)
+        +void Return(EnemyAI)
+        +void ReturnAll()
+        +void ResetBossState()
+    }
+
+    class PlayerStatManager {
+        -IPlayerStatRepository _repository
+        -PlayerStat _baseStat
+        +double BaseMaxHealth
+        +float BaseMoveSpeed
+        +int Level
+        +double CurrentExp
+        +double MaxExp
+        +event Action<int> OnLevelUp
+        +event Action<double, double> OnExpChanged
+        +void AddExp(double)
+        +void SaveExp(int, double, double)
+    }
+
+    class PlayerSessionManager {
+        -bool _isLoggedIn
+        -string _currentPlayerName
+        +bool IsLoggedIn
+        +string CurrentPlayerName
+        +event Action OnLoginCompleted
+        +void Login(string)
+        +void Logout()
+    }
+
+    class SoundManager {
+        -ISoundRepository _repository
+        +void PlayBGM(EBgmId)
+        +void PlaySFX(ESfxId, Vector3)
+        +void StopBGM()
+    }
+
+    class EffectManager {
+        +void PlayAllHitVfx(Vector3)
+        +void PlayHitCameraShake()
+    }
+
+    class OfflineRewardManager {
+        -IOfflineRewardRepository _repository
+        +void CalculateReward()
+        +void GiveReward()
+    }
+
+    class ControllerManager {
+        -BaseSwordController _adelController
+        -BaseSwordController _hypoController
+        -BaseSwordController _pixelController
+        +TextMeshProUGUI ModeText
+        +void SetAutoFire(bool)
+        +void FireAll()
+        +void Fire(ESwordType)
+    }
+
+    class DamageFloaterManager {
+        -List<GameObject> _activeTexts
+        -List<GameObject> _textPool
+        +void ShowDamage(EDamageStyle, double, Vector3, bool)
+        -GameObject GetTextFromPool()
+        -void ReturnTextToPool(GameObject)
+    }
+}
+
+' ============================
+' 4. UI Layer (프레젠테이션)
+' ============================
+package "UI Layer" #FCE4EC {
+    class CurrencyUI {
+        -TMP_Text _goldText
+        -TMP_Text _rubyText
+        -bool _isGoldDirty
+        -bool _isRubyDirty
+        -double _cachedGold
+        -double _cachedRuby
+        +void HandleCurrencyChanged(ECurrencyType, double)
+    }
+
+    class UpgradeUI {
+        -UpgradeSlotUI[] _slots
+        +void InitializeSlots()
+        +void RefreshSlots()
+    }
+
+    class UpgradeSlotUI {
+        -TMP_Text _nameText
+        -TMP_Text _levelText
+        -TMP_Text _costText
+        -Button _upgradeButton
+        +void UpdateSlot(string, int, double)
+        +void OnUpgradeClick()
+    }
+
+    class StageUI {
+        -TMP_Text _stageNameText
+        -TMP_Text _stageNumberText
+        -Button _bossSpawnButton
+        +void UpdateStageInfo(StageStat)
+    }
+
+    class BossSpawnUI {
+        -Button _spawnButton
+        -TMP_Text _timerText
+        +void OnBossSpawnClick()
+    }
+
+    class PlayerHealthUI {
+        -Image _healthBar
+        -TMP_Text _healthText
+        +void UpdateHealthBar(double, double)
+    }
+
+    class EnemyHPBar {
+        -Image _healthBar
+        -TMP_Text _healthText
+        -Canvas _canvas
+        +void Initialize(double)
+        +void UpdateHP(double)
+        +void Reset()
+    }
+
+    class PopupManager {
+        -Stack<PopupBase> _popupStack
+        +void Show(PopupBase, EPopupPriority)
+        +void Close(PopupBase)
+        +void CloseAll()
+    }
+
+    class PopupBase {
+        -EPopupType _type
+        +EPopupType Type
+        +virtual void OnShow()
+        +virtual void OnClose()
+    }
+
+    class RedDotManager {
+        -Dictionary<RedDotKey, RedDotNode> _nodes
+        +void RegisterNode(RedDotKey, IRedDotCondition)
+        +void UpdateAllNodes()
+    }
+
+    class RedDotView {
+        -Image _dotImage
+        +void SetActive(bool)
+        +void SetCount(int)
+    }
+
+    class RedDotNode {
+        -RedDotKey _key
+        -IRedDotCondition _condition
+        -RedDotView[] _views
+        +bool ShouldShow
+    }
+
+    interface IRedDotCondition {
+        +bool Evaluate()
+    }
+
+    class FadeManager {
+        +IEnumerator FadeIn()
+        +IEnumerator FadeOut()
+        +IEnumerator FadeToBlack()
+    }
+
+    class FadeUI {
+        -Image _fadePanel
+        +void SetAlpha(float)
+    }
+}
+
+' ============================
+' 싱글톤 기반 클래스 관계
+' ============================
+abstract class DontDestroySingleton<T> {
+    -static T _instance
+    -bool _isInitialized
+    +static bool HasInstance
+    +static T Instance
+    +protected virtual void Initialize()
+}
+
+abstract class Singleton<T> {
+    -static T _instance
+    +static T Instance
+    +protected virtual void Initialize()
+}
+
+' Manager Layer 싱글톤 관계
+GameManager -up-|> DontDestroySingleton
+CurrencyManager -up-|> DontDestroySingleton
+UpgradeManager -up-|> DontDestroySingleton
+PlayerStatManager -up-|> DontDestroySingleton
+PlayerSessionManager -up-|> DontDestroySingleton
+OfflineRewardManager -up-|> DontDestroySingleton
+DamageFloaterManager -up-|> DontDestroySingleton
+
+StageManager -up-|> Singleton
+EnemySpawner -up-|> Singleton
+
+' ============================
+' 의존성 화살표 (계층 간)
+' ============================
+
+' UI Layer -> Manager Layer (이벤트 구독)
+CurrencyUI ..> CurrencyManager : OnCurrencyChanged
+UpgradeUI ..> UpgradeManager : OnUpgraded
+StageUI ..> StageManager : OnStageStarted, OnStageCleared
+PlayerHealthUI ..> PlayerHealth : OnHealthChanged
+EnemyHPBar ..> EnemyAI : UpdateHP
+
+' Manager Layer -> Repository Layer
+GameManager ..> PlayerStatManager
+CurrencyManager ..> ICurrencyRepository
+UpgradeManager ..> IUpgradeRepository
+UpgradeManager ..> ICurrencyRepository : TrySpendGold
+StageManager ..> IStageRepository
+StageManager ..> EnemySpawner
+EnemySpawner ..> IEnemyStatRepository
+EnemySpawner ..> IBossStatRepository
+EnemySpawner ..> CurrencyManager : AddGold
+EnemySpawner ..> PlayerStatManager : AddExp
+PlayerStatManager ..> IPlayerStatRepository
+SoundManager ..> ISoundRepository
+OfflineRewardManager ..> IOfflineRewardRepository
+OfflineRewardManager ..> CurrencyManager : AddGold
+
+' Manager Layer -> Manager Layer
+GameManager ..> StageManager : OnRequestStageRestart
+GameManager ..> PlayerHealth : RegisterPlayer
+StageManager ..> GameManager : OnRequestStageRestart
+StageManager ..> EnemySpawner : SpawnBoss
+ControllerManager ..> BaseSwordController
+DamageFloaterManager ..> EnemyAI : ShowDamage
+EffectManager ..> EnemyAI : PlayHitVfx
+
+' Repository Layer -> Data Layer
+ICurrencyRepository ..> Currency
+IPlayerStatRepository ..> PlayerStat
+ISwordStatRepository ..> SwordStat
+IStageRepository ..> StageStat
+IEnemyStatRepository ..> EnemyStat
+IBossStatRepository ..> BossStat
+IUpgradeRepository ..> UpgradeData
+IUpgradeRepository ..> PlayerUpgradeLevels
+ISoundRepository ..> SoundData
+IOfflineRewardRepository ..> OfflineRewardData
+
+' [수정된 부분: 패키지 이름에 큰따옴표 추가]
+note right of "Data Layer"
+  순수 데이터 클래스
+  불변성 보장 (record 또는 미사용)
+  BigInteger 사용 (전투/재화 수치)
+end note
+
+note right of "Repository Layer"
+  데이터 영속화 담당
+  BGDatabase 연동
+  Data 계층 인터페이스 정의
+end note
+
+note right of "Manager Layer"
+  비즈니스 로직 구현
+  싱글톤 패턴
+  이벤트 기반 통신
+end note
+
+note right of "UI Layer"
+  사용자 입력 처리
+  Manager 이벤트 구독
+  비즈니스 로직 금지
+end note
+
+' 의존성 방향 표시
+"UI Layer" -down-> "Manager Layer" : <<subscribe>>
+"Manager Layer" -down-> "Repository Layer" : <<uses>>
+"Repository Layer" -down-> "Data Layer" : <<loads>>
+
+@enduml

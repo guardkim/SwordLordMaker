@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Quaternion = UnityEngine.Quaternion;
 using Vector3 = UnityEngine.Vector3;
 
-public class DamageFloaterManager : DontDestroySingleton<DamageFloaterManager>
+public class DamageFloaterManager : Singleton<DamageFloaterManager>
 {
     [Header("Reference")]
     [Tooltip("DamageFloater 컴포넌트가 붙어있는 프리팹")]

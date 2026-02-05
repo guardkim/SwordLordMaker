@@ -1,19 +1,21 @@
 using System;
 
-public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
+public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>, IPlayerStatService
 {
     private const double ExpCompareEpsilon = 0.0001;
     private IPlayerStatRepository _repository;
     private PlayerStat _baseStat;
 
+    // IPlayerStatService 상태 조회 구현
     public double BaseMaxHealth => _baseStat?.BaseMaxHealth ?? 100;
     public float BaseMoveSpeed => _baseStat?.BaseMoveSpeed ?? 5f;
     public int Level => _baseStat?.Level ?? 1;
     public double CurrentExp => _baseStat?.CurrentExp ?? 0.0;
     public double MaxExp => _baseStat?.MaxExp ?? 10.0;
 
-    public event Action<int> OnLevelUp;  // (newLevel)
-    public event Action<double, double> OnExpChanged;  // (currentExp, maxExp)
+    // IPlayerStatService 이벤트 구현
+    public event Action<int> OnLevelUp;
+    public event Action<double, double> OnExpChanged;
 
     protected override void Initialize()
     {
@@ -31,6 +33,9 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
         {
             UnityEngine.Debug.Log("[PlayerStatManager] 아직 로그인 안 됨, OnLoginCompleted 대기");
         }
+
+        // ServiceLocator에 등록
+        ServiceLocator.Register<IPlayerStatService>(this);
     }
 
     private void OnDestroy()
@@ -39,6 +44,8 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
         {
             PlayerSessionManager.Instance.OnLoginCompleted -= OnLoginCompleted;
         }
+
+        ServiceLocator.Unregister<IPlayerStatService>();
     }
 
     private void OnLoginCompleted()
@@ -56,6 +63,7 @@ public class PlayerStatManager : DontDestroySingleton<PlayerStatManager>
         _baseStat = _repository.Load();
     }
 
+    // IPlayerStatService 구현
     public void AddExp(double exp)
     {
         if (_baseStat == null)

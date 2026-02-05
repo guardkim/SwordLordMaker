@@ -3,7 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class CurrencyManager : DontDestroySingleton<CurrencyManager>
+public class CurrencyManager : DontDestroySingleton<CurrencyManager>, ICurrencyService
 {
     private ICurrencyRepository _repository;
     private Currency _currency;
@@ -12,8 +12,10 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
 
     private const float GoldAutoSaveInterval = 60f;
 
+    // ICurrencyService 이벤트 구현
     public event Action<ECurrencyType, double> OnCurrencyChanged;
 
+    // ICurrencyService 상태 조회 구현
     public double Gold => _currency?.Gold ?? 0;
     public double Ruby => _currency?.Ruby ?? 0;
 
@@ -35,6 +37,9 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         {
             Debug.Log("[CurrencyManager] 아직 로그인 안 됨 → OnLoginCompleted 대기");
         }
+
+        // ServiceLocator에 등록
+        ServiceLocator.Register<ICurrencyService>(this);
     }
 
     private void OnLoginCompleted()
@@ -129,6 +134,7 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         }
     }
 
+    // ICurrencyService 구현
     public void AddGold(double amount)
     {
         _currency?.Add(ECurrencyType.Gold, amount);
@@ -211,5 +217,7 @@ public class CurrencyManager : DontDestroySingleton<CurrencyManager>
         {
             _currency.OnChanged -= HandleCurrencyChanged;
         }
+
+        ServiceLocator.Unregister<ICurrencyService>();
     }
 }

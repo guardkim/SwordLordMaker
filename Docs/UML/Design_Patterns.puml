@@ -1,0 +1,517 @@
+@startuml DesignPatterns
+
+' 스타일 설정
+skinparam backgroundColor #FEFEFE
+skinparam classArrowColor #0056b3
+skinparam packageStyle rectangle
+skinparam noteBackgroundColor #FFF3E0
+skinparam noteBorderColor #F57F17
+
+' 제목
+title SwordLordMaker - 디자인 패턴 구조
+
+' ============================
+' 1. Singleton Pattern
+' ============================
+package "Singleton Pattern" #E8F5E9 {
+    abstract class DontDestroySingleton<T> {
+        -static T _instance
+        -bool _isInitialized
+        +static bool HasInstance
+        +static T Instance
+        #protected virtual void Initialize()
+        #private void EnsureInitialized()
+    }
+
+    abstract class Singleton<T> {
+        -static T _instance
+        +static T Instance
+        #protected virtual void Initialize()
+    }
+
+    note right of DontDestroySingleton
+      씬 이동 시 유지
+      GameManager, CurrencyManager 등 사용
+    end note
+
+    note right of Singleton
+      일반 싱글톤
+      StageManager, EnemySpawner 사용
+    end note
+}
+
+' Singleton을 상속받는 Manager들
+class GameManager
+class CurrencyManager
+class UpgradeManager
+class PlayerStatManager
+class PlayerSessionManager
+class OfflineRewardManager
+class DamageFloaterManager
+class StageManager
+class EnemySpawner
+
+' 상속 관계
+GameManager -up-|> DontDestroySingleton
+CurrencyManager -up-|> DontDestroySingleton
+UpgradeManager -up-|> DontDestroySingleton
+PlayerStatManager -up-|> DontDestroySingleton
+PlayerSessionManager -up-|> DontDestroySingleton
+OfflineRewardManager -up-|> DontDestroySingleton
+DamageFloaterManager -up-|> DontDestroySingleton
+
+StageManager -up-|> Singleton
+EnemySpawner -up-|> Singleton
+
+' ============================
+' 2. Strategy Pattern (Flying Sword)
+' ============================
+package "Strategy Pattern - Flying Sword" #FFF9C4 {
+    enum ESwordType {
+        Adel
+        Hypo
+        Pixel
+    }
+
+    abstract class BaseSwordController {
+        #GameObject SwordPrefab
+        +void Fire()
+        +virtual void StopSequence()
+        #abstract void ResetSequence()
+        #IReadOnlyList<EnemyAI> FindEnemies()
+        #Transform GetRandomEnemyTarget(IReadOnlyList<EnemyAI>)
+    }
+
+    class AdelFlyingSwordController {
+        +SwordStat SwordStat
+        +void Fire()
+        +void SetAutoFire(bool)
+        +void RequestNewTarget(AdelFlyingSword)
+        +void RemoveSword(AdelFlyingSword)
+        +bool IsMyTurn(int)
+        +void NextTurn()
+    }
+
+    class HypoSwordController {
+        +SwordStat SwordStat
+        +void Fire()
+        +void StopSequence()
+    }
+
+    class PixelSwordController {
+        +SwordStat SwordStat
+        +void Fire()
+        +void StopSequence()
+    }
+
+    abstract class BaseFlyingSword {
+        #Transform TargetEnemy
+        #SwordStat _stat
+        +float MinHeight
+        +virtual void InitializeStat(SwordStat)
+        #Vector3 ClampHeight(Vector3)
+        #bool TryDealDamage(Collider)
+        #bool TryDealDamage(Collider2D)
+        #void PlayHitSound(Vector3)
+    }
+
+    class AdelFlyingSword {
+        +void Init(AdelFlyingSwordController, Transform, Vector3, float, int, SwordStat)
+        +void SetTarget(Transform)
+        +bool HasTarget()
+        +int OrderIndex
+    }
+
+    class HypoFlyingSword {
+        +void Init(HypoSwordController, Transform, SwordStat)
+        +void SetTarget(Transform)
+        +int OrderIndex
+    }
+
+    class PixelFlyingSword {
+        +void Init(PixelSwordController, Transform, SwordStat)
+        +void SetTarget(Transform)
+        +int OrderIndex
+    }
+
+    class ControllerManager {
+        -AdelFlyingSwordController _adelController
+        -HypoSwordController _hypoController
+        -PixelSwordController _pixelController
+        -float _adelCooldownTimer
+        -float _hypoCooldownTimer
+        -float _pixelCooldownTimer
+        -bool _autoFireEnabled
+        +TextMeshProUGUI ModeText
+        +void SetAutoFire(bool)
+        +void FireAll()
+        +void Fire(ESwordType)
+        #float GetCooldown(BaseSwordController)
+    }
+
+    note right of BaseSwordController
+      추상 컨트롤러
+      검 발사 관리
+    end note
+
+    note right of BaseFlyingSword
+      추상 검
+      궤도 및 데미지 로직
+    end note
+
+    note right of ControllerManager
+      컨트롤러 관리자
+      검 타입 전환 및 쿨타임 관리
+    end note
+}
+
+' Strategy Pattern 상속 관계
+BaseSwordController <|-- AdelFlyingSwordController
+BaseSwordController <|-- HypoSwordController
+BaseSwordController <|-- PixelSwordController
+
+BaseFlyingSword <|-- AdelFlyingSword
+BaseFlyingSword <|-- HypoFlyingSword
+BaseFlyingSword <|-- PixelFlyingSword
+
+' ControllerManager와 Controller들
+ControllerManager o-- AdelFlyingSwordController
+ControllerManager o-- HypoSwordController
+ControllerManager o-- PixelSwordController
+
+' Controller와 FlyingSword 관계
+AdelFlyingSwordController o-- AdelFlyingSword
+HypoSwordController o-- HypoFlyingSword
+PixelSwordController o-- PixelFlyingSword
+
+' ============================
+' 3. Observer Pattern (Event-based)
+' ============================
+package "Observer Pattern - Event System" #E3F2FD {
+    class GameManager {
+        +event Action OnPlayerDeath
+        +event Action OnPlayerRevive
+        +event Action<int> OnRequestStageRestart
+    }
+
+    class CurrencyManager {
+        +event Action<ECurrencyType, double> OnCurrencyChanged
+    }
+
+    class UpgradeManager {
+        +event Action<string, int> OnUpgraded
+        +event Action OnInitialized
+    }
+
+    class StageManager {
+        +event Action<int> OnStageStarted
+        +event Action<int> OnStageCleared
+        +event Action OnAllStagesCleared
+        +event Action<EnemyAI> OnBossSpawned
+    }
+
+    class PlayerHealth {
+        +event Action<double, double> OnHealthChanged
+        +event Action OnDeath
+    }
+
+    class EnemySpawner {
+        +event Action<EnemyAI> OnEnemyDiedEvent
+        +event Action<EnemyAI> OnBossDiedEvent
+    }
+
+    class PlayerStatManager {
+        +event Action<int> OnLevelUp
+        +event Action<double, double> OnExpChanged
+    }
+
+    note right of GameManager
+      이벤트 기반 통신
+      사망/부활/스테이지 리스타트
+    end note
+
+    ' [수정된 부분] PlayerStatManager 옆에 붙이거나 별도 노트로 처리
+    note right of PlayerStatManager
+      <b>Observer Pattern 효과</b>
+      Manager 간 통신
+      UI ↔ Manager 통신
+      느슨한 결합 달성
+    end note
+}
+
+' UI에서 이벤트 구독
+class CurrencyUI {
+    +void HandleCurrencyChanged(ECurrencyType, double)
+}
+
+class UpgradeUI {
+    +void OnUpgradeClick()
+}
+
+class UpgradeSlotUI {
+    +void UpdateSlot(string, int, double)
+}
+
+class PlayerHealthUI {
+    +void UpdateHealthBar(double, double)
+}
+
+class EnemyHPBar {
+    +void UpdateHP(double)
+}
+
+' 이벤트 구독 관계
+CurrencyUI ..> CurrencyManager : OnCurrencyChanged
+PlayerHealthUI ..> PlayerHealth : OnHealthChanged
+EnemyHPBar ..> EnemyAI : UpdateHP
+
+' Manager 간 이벤트 통신
+GameManager ..> PlayerHealth : OnDeath
+GameManager ..> StageManager : OnRequestStageRestart
+StageManager ..> EnemySpawner : OnBossDiedEvent
+
+' ============================
+' 4. Repository Pattern
+' ============================
+package "Repository Pattern" #FCE4EC {
+    interface ICurrencyRepository {
+        +Task<Currency> LoadAsync()
+        +Task SaveAsync(Currency)
+        +Task SaveGoldAsync(double)
+        +Task SaveRubyAsync(double)
+        +void ForceSaveToDisk()
+    }
+
+    interface IPlayerStatRepository {
+        +PlayerStat Load()
+        +void Save(PlayerStat)
+    }
+
+    interface ISwordStatRepository {
+        +SwordStat GetById(string)
+        +List<SwordStat> GetAll()
+    }
+
+    interface IStageRepository {
+        +StageStat GetByStageId(int)
+        +int GetMaxStageId()
+    }
+
+    interface IEnemyStatRepository {
+        +EnemyStat GetById(string)
+        +List<EnemyStat> GetAll()
+    }
+
+    interface IBossStatRepository {
+        +BossStat GetById(string)
+        +List<BossStat> GetAll()
+    }
+
+    interface IUpgradeRepository {
+        +PlayerUpgradeLevels LoadPlayerLevels()
+        +void SavePlayerLevels(PlayerUpgradeLevels)
+        +UpgradeData GetUpgradeData(string)
+    }
+
+    class CurrencyRepository {
+        -DB_PlayerProfile _playerEntity
+        +CurrencyRepository(string)
+        +Task<Currency> LoadAsync()
+        +Task SaveAsync(Currency)
+        +Task SaveGoldAsync(double)
+        +Task SaveRubyAsync(double)
+        +void ForceSaveToDisk()
+    }
+
+    class PlayerStatRepository {
+        -DB_PlayerProfile _playerEntity
+        +PlayerStatRepository(string)
+        +PlayerStat Load()
+        +void Save(PlayerStat)
+    }
+
+    class SwordStatRepository {
+        +SwordStatRepository()
+        +SwordStat GetById(string)
+        +List<SwordStat> GetAll()
+    }
+
+    class StageRepository {
+        +StageRepository()
+        +StageStat GetByStageId(int)
+        +int GetMaxStageId()
+    }
+
+    class EnemyStatRepository {
+        +EnemyStatRepository()
+        +EnemyStat GetById(string)
+        +List<EnemyStat> GetAll()
+    }
+
+    class BossStatRepository {
+        +BossStatRepository()
+        +BossStat GetById(string)
+        +List<BossStat> GetAll()
+    }
+
+    class UpgradeRepository {
+        -DB_PlayerProfile _playerEntity
+        +UpgradeRepository(string)
+        +PlayerUpgradeLevels LoadPlayerLevels()
+        +void SavePlayerLevels(PlayerUpgradeLevels)
+        +UpgradeData GetUpgradeData(string)
+    }
+
+    note right of ICurrencyRepository
+      Data 계층에 인터페이스 정의
+      Manager가 인터페이스에 의존
+    end note
+
+    note right of CurrencyRepository
+      Repository 계층 구현
+      BGDatabase와 연동
+    end note
+}
+
+' Repository 인터페이스와 구현체
+ICurrencyRepository <|.. CurrencyRepository
+IPlayerStatRepository <|.. PlayerStatRepository
+ISwordStatRepository <|.. SwordStatRepository
+IStageRepository <|.. StageRepository
+IEnemyStatRepository <|.. EnemyStatRepository
+IBossStatRepository <|.. BossStatRepository
+IUpgradeRepository <|.. UpgradeRepository
+
+' Repository가 사용하는 Data
+class Currency {
+    -double _gold
+    -double _ruby
+    +double Gold
+    +double Ruby
+    +event Action<ECurrencyType, double> OnChanged
+}
+
+class PlayerStat {
+    -string _name
+    -int _level
+    -double _currentExp
+    -double _maxExp
+    +string Name
+    +int Level
+    +double CurrentExp
+    +double MaxExp
+}
+
+class SwordStat {
+    -string _id
+    -double _attackDamage
+    -float _cooldown
+    -float _moveSpeed
+    +string Id
+    +double AttackDamage
+    +float Cooldown
+    +float MoveSpeed
+}
+
+ICurrencyRepository ..> Currency
+IPlayerStatRepository ..> PlayerStat
+ISwordStatRepository ..> SwordStat
+
+' ============================
+' 5. Object Pool Pattern
+' ============================
+package "Object Pool Pattern" #FFE0B2 {
+    class EnemySpawner {
+        -IEnemyStatRepository _repository
+        -IBossStatRepository _bossRepository
+        -ObjectPool<EnemyAI> _pool
+        -List<EnemyAI> _aliveEnemies
+        -EnemyAI _currentBoss
+        -bool _bossSpawned
+        +IReadOnlyList<EnemyAI> AliveEnemies
+        +bool IsBossSpawned
+        +bool IsBossAlive
+        +EnemyAI CurrentBoss
+        +event Action<EnemyAI> OnEnemyDiedEvent
+        +event Action<EnemyAI> OnBossDiedEvent
+        +EnemyAI Spawn(string, int)
+        +EnemyAI Spawn(string, Vector3, Quaternion)
+        +EnemyAI SpawnWithMultiplier(string, StageStat)
+        +EnemyAI SpawnBoss(string, StageStat)
+        +void Return(EnemyAI)
+        +void ReturnAll()
+        +void ResetBossState()
+        #private EnemyAI CreatePooledItem()
+        #private void OnTakeFromPool(EnemyAI)
+        #private void OnReturnedToPool(EnemyAI)
+        #private void OnDestroyPoolObject(EnemyAI)
+    }
+
+    class EnemyAI {
+        +enum State { Idle, Chase, Attack, SkillAttack, Hit, Dead }
+        -EnemyStat _stat
+        -double _currentHealth
+        -bool _isBoss
+        -NavMeshAgent _agent
+        +event Action<EnemyAI, EnemyStat> OnDied
+        +State CurrentState
+        +bool IsDead
+        +bool IsBoss
+        +void Initialize(EnemyStat)
+        +void InitializeAsBoss(EnemyStat)
+        +void ResetForPool()
+        +void TakeDamage(double, bool)
+    }
+
+    note right of EnemySpawner
+      ObjectPool<EnemyAI> 사용
+      보스는 풀에 반환하지 않음
+    end note
+
+    note right of EnemyAI
+      Object Pool 대상
+      Initialize() / ResetForPool()
+    end note
+}
+
+' Object Pool 관계
+EnemySpawner o-- EnemyAI : <<pool>>
+
+' ============================
+' 6. IDamageable 인터페이스
+' ============================
+package "IDamageable Interface" #F8BBD0 {
+    interface IDamageable {
+        +void TakeDamage(double damage, bool isCrit)
+    }
+}
+
+class PlayerHealth {
+    -double _maxHealth
+    -double _currentHealth
+    -bool _isDead
+    +double MaxHealth
+    +double CurrentHealth
+    +bool IsDead
+    +event Action<double, double> OnHealthChanged
+    +event Action OnDeath
+    +void TakeDamage(double, bool)
+    +void Revive()
+    +void Heal(double)
+    +void SetMaxHealth(double, bool)
+}
+
+class EnemyAI {
+    ' (위에서 정의됨)
+}
+
+' IDamageable 구현
+IDamageable <|.. PlayerHealth
+IDamageable <|.. EnemyAI
+
+note right of IDamageable
+  데미지를 받을 수 있는 객체
+  PlayerHealth, EnemyAI 구현
+end note
+
+@enduml
