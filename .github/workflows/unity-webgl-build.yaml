@@ -1,5 +1,5 @@
 name: Unity WebGL Mobile Build
-run-name: WebGl-Mobile build by ${{ github.actor }} (${{ github.ref_name }})
+run-name: WebGL-Mobile build by ${{ github.actor }} (${{ github.ref_name }})
 
 on:
   workflow_dispatch: {}
@@ -12,7 +12,7 @@ on:
   #   - cron: "0 19 * * *" # KST 04:00
 
 concurrency:
-  group: unity-webgl-${{ github.ref }}
+  group: unity-WebGL-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -55,12 +55,32 @@ jobs:
           buildsPath: ${{ env.BUILDS_PATH }}
           buildName: ${{ env.BUILD_NAME }}
 
-      - name: Upload Artifact (WebGl-Mobile)
+      - name: Upload Artifact (WebGL-Mobile)
         uses: actions/upload-artifact@v4
         with:
-          name: WebGl-Mobile-${{ github.ref_name }}-${{ github.run_number }}
+          name: WebGL-Mobile-${{ github.ref_name }}-${{ github.run_number }}
           path: ${{ env.BUILDS_PATH }}
           retention-days: 7
+
+      - name: Setup butler
+        uses: remarkablegames/setup-butler@v2
+        if: github.ref_name == 'main' || github.event_name == 'workflow_dispatch'
+
+      - name: Deploy to itch.io (WebGL Mobile)
+        if: github.ref_name == 'main' || github.event_name == 'workflow_dispatch'
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: guardkim
+          ITCH_GAME: swordlordmaker
+          ITCH_CHANNEL: web-mobile
+        shell: pwsh
+        run: |
+          $buildDir = "${{ env.BUILDS_PATH }}\${{ env.TARGET_PLATFORM }}\${{ env.BUILD_NAME }}"
+          echo "Deploying: $buildDir"
+          if (!(Test-Path $buildDir)) { throw "Build output not found: $buildDir" }
+
+          butler push $buildDir "$env:ITCH_USER/$env:ITCH_GAME:$env:ITCH_CHANNEL" --userversion "${{ github.ref_name }}-${{ github.run_number }}"
+
       - name: Notify Slack (always)
         if: always()
         uses: slackapi/slack-github-action@v2.1.1
