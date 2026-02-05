@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 120
 
     env:
-      PROJECT_PATH: .
+      PROJECT_PATH: SwordLordMaker
       TARGET_PLATFORM: WebGL
       BUILD_NAME: Web-Desktop
       BUILDS_PATH: build
