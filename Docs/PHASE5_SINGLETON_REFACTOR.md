@@ -124,25 +124,45 @@ public class DamageFloaterManager : Singleton<DamageFloaterManager>
 
 ## 작업 순서
 
-### Phase 5-1: Singleton에 HasInstance 추가
+### Phase 5-1: Singleton Instance 자동 생성 제거
 
 **파일:** `Assets/02.Scripts/Util/Singleton.cs`
 
+**변경 전:**
 ```csharp
-public class Singleton<T> : MonoBehaviour where T : Singleton<T>
+public static T Instance
 {
-    private static T _instance;
-
-    // 추가
-    public static bool HasInstance => _instance != null;
-
-    // ... 기존 코드
+    get
+    {
+        if (_instance == null)
+        {
+            _instance = new GameObject(nameof(T)).AddComponent<T>();  // 자동 생성
+        }
+        return _instance;
+    }
 }
 ```
 
+**변경 후:**
+```csharp
+public static T Instance => _instance;
+```
+
+- 씬에 배치된 싱글톤만 사용
+- 없으면 `null` 반환
+- 호출하는 쪽에서 `Instance != null` 체크
+
 ---
 
-### Phase 5-2: EnemySpawner 변경
+### Phase 5-2: StageManager HasInstance 제거
+
+**파일:** `Assets/02.Scripts/Stage/Manager/StageManager.cs`
+
+`EnemySpawner.HasInstance` → `EnemySpawner.Instance != null`로 변경
+
+---
+
+### Phase 5-3: EnemySpawner 변경
 
 **파일:** `Assets/02.Scripts/Enemy/Manager/EnemySpawner.cs`
 
@@ -150,7 +170,7 @@ public class Singleton<T> : MonoBehaviour where T : Singleton<T>
 
 ---
 
-### Phase 5-3: ControllerManager 변경
+### Phase 5-4: ControllerManager 변경
 
 **파일:** `Assets/DamageFloater/01.Scripts/Manager/ControllerManager.cs`
 
@@ -164,7 +184,7 @@ public class Singleton<T> : MonoBehaviour where T : Singleton<T>
 
 ---
 
-### Phase 5-4: DamageFloaterManager 변경
+### Phase 5-5: DamageFloaterManager 변경
 
 **파일:** `Assets/DamageFloater/01.Scripts/DamageFloater/DamageFloaterManager.cs`
 
@@ -177,7 +197,8 @@ public class Singleton<T> : MonoBehaviour where T : Singleton<T>
 
 | 파일 | 변경 내용 |
 |:---|:---|
-| `Singleton.cs` | `HasInstance` 프로퍼티 추가 |
+| `Singleton.cs` | `Instance` 자동 생성 제거 (`=> _instance`) |
+| `StageManager.cs` | `HasInstance` → `Instance != null` 체크로 변경 |
 | `EnemySpawner.cs` | `DontDestroySingleton` → `Singleton` |
 | `ControllerManager.cs` | `DontDestroySingleton` → `MonoBehaviour`, 플레이어 프리팹 내부로 이관 |
 | `DamageFloaterManager.cs` | `DontDestroySingleton` → `Singleton` |

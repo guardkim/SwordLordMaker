@@ -6,7 +6,7 @@ using Quaternion = UnityEngine.Quaternion;
 using Random = UnityEngine.Random;
 using Vector3 = UnityEngine.Vector3;
 
-public class EnemySpawner : DontDestroySingleton<EnemySpawner>
+public class EnemySpawner : Singleton<EnemySpawner>, IEnemySpawner
 {
     [Header("Prefab")]
     [SerializeField] private EnemyAI _enemyPrefab;
@@ -27,15 +27,39 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
     private readonly List<EnemyAI> _aliveEnemies = new();
     public IReadOnlyList<EnemyAI> AliveEnemies => _aliveEnemies;
 
-    // 적 사망 이벤트 (외부 시스템이 구독)
+    // 보스 상태
+    private EnemyAI _currentBoss;
+    private bool _bossSpawned;
+
+    // IEnemySpawner 구현 - 상태 조회
+    public int AliveEnemyCount => _aliveEnemies.Count;
+    public bool IsBossSpawned => _bossSpawned;
+    public bool IsBossAlive => _currentBoss != null && !_currentBoss.IsDead;
+    public EnemyAI CurrentBoss => _currentBoss;
+
+    // 기존 이벤트 (하위 호환)
     public event Action<EnemyAI> OnEnemyDiedEvent;
     public event Action<EnemyAI> OnBossDiedEvent;
+
+    // IEnemySpawner 이벤트 구현
+    public event Action<EnemyAI> OnEnemyDied;
+    public event Action<EnemyAI> OnBossDied;
+    public event Action<EnemyAI> OnBossSpawned;
+    public event Action<EnemyStat> OnEnemyDefeatedWithStat;
 
     protected override void Initialize()
     {
         _repository = CreateRepository();
         _bossRepository = CreateBossRepository();
         CreatePool();
+
+        // ServiceLocator에 등록
+        ServiceLocator.Register<IEnemySpawner>(this);
+    }
+
+    private void OnDestroy()
+    {
+        ServiceLocator.Unregister<IEnemySpawner>();
     }
 
     private IEnemyStatRepository CreateRepository()
@@ -95,22 +119,34 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         }
     }
 
-    // 적 사망 처리 핸들러 (보상 지급 및 이벤트 발생)
+    // 적 사망 처리 핸들러 (보상은 RewardHandler가 처리)
     private void HandleEnemyDied(EnemyAI enemy, EnemyStat stat)
     {
         if (stat == null) return;
 
-        // 보상 지급
-        CurrencyManager.Instance?.AddGold(stat.GoldReward);
-        PlayerStatManager.Instance?.AddExp(stat.Exp);
+        // 보상 처리용 이벤트 발행 (RewardHandler가 구독)
+        OnEnemyDefeatedWithStat?.Invoke(stat);
 
         // 이벤트 발생 (구독자가 처리)
         if (enemy.IsBoss)
         {
+            // 보스 상태 리셋
+            if (enemy == _currentBoss)
+            {
+                _currentBoss = null;
+                _bossSpawned = false;
+            }
+
+            // 인터페이스 이벤트
+            OnBossDied?.Invoke(enemy);
+            // 하위 호환 이벤트
             OnBossDiedEvent?.Invoke(enemy);
         }
         else
         {
+            // 인터페이스 이벤트
+            OnEnemyDied?.Invoke(enemy);
+            // 하위 호환 이벤트
             OnEnemyDiedEvent?.Invoke(enemy);
         }
     }
@@ -155,6 +191,12 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         return enemy;
     }
 
+    // IEnemySpawner 구현 - ReturnEnemy
+    public void ReturnEnemy(EnemyAI enemy)
+    {
+        Return(enemy);
+    }
+
     public void Return(EnemyAI enemy)
     {
         if (!enemy)
@@ -176,7 +218,6 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
 
         _pool.Release(enemy);
     }
-
 
     public void ReturnAll()
     {
@@ -231,9 +272,21 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         return enemy;
     }
 
+    // IEnemySpawner 구현 - SpawnEnemy
+    public EnemyAI SpawnEnemy(string statId, StageStat stageStat)
+    {
+        return SpawnWithMultiplier(statId, stageStat);
+    }
+
     // 보스 스폰 (배율 적용)
     public EnemyAI SpawnBoss(string bossStatId, StageStat stageStat)
     {
+        if (_bossSpawned)
+        {
+            Debug.LogWarning("[EnemySpawner] Boss already spawned.");
+            return null;
+        }
+
         if (string.IsNullOrEmpty(bossStatId))
         {
             Debug.LogWarning("[EnemySpawner] BossStatId가 비어있습니다.");
@@ -276,7 +329,21 @@ public class EnemySpawner : DontDestroySingleton<EnemySpawner>
         // 보스도 사망 이벤트 구독
         boss.OnDied += HandleEnemyDied;
 
+        // 보스 상태 저장
+        _currentBoss = boss;
+        _bossSpawned = true;
+
+        // 보스 스폰 이벤트 발행
+        OnBossSpawned?.Invoke(boss);
+
         return boss;
+    }
+
+    // 보스 상태 리셋 (스테이지 전환 시 호출)
+    public void ResetBossState()
+    {
+        _currentBoss = null;
+        _bossSpawned = false;
     }
 
     private EnemyStat ApplyMultiplier(EnemyStat baseStat, StageStat stageStat)

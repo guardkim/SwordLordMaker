@@ -1,12 +1,11 @@
+using System;
 using UnityEngine;
 using TMPro;
 
-public class ControllerManager : DontDestroySingleton<ControllerManager>
+public class ControllerManager : MonoBehaviour
 {
-    [Header("Controllers Assignment")]
-    [SerializeField] private AdelFlyingSwordController _adelController;
-    [SerializeField] private HypoSwordController _hypoController;
-    [SerializeField] private PixelSwordController _pixelController;
+    //[Header("Controllers Assignment")]
+    
 
     [Header("UI (Optional)")]
     public TextMeshProUGUI ModeText;
@@ -16,6 +15,10 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
 
     private bool _autoFireEnabled = true;
 
+    private AdelFlyingSwordController _adelController;
+    private HypoSwordController _hypoController;
+    private PixelSwordController _pixelController;
+    
     // 각 컨트롤러별 개별 쿨타임 타이머
     private float _adelCooldownTimer;
     private float _hypoCooldownTimer;
@@ -33,6 +36,19 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
             cooldownMultiplier = pixel.SwordStat?.Cooldown ?? 1f;
 
         return _baseCooldown * cooldownMultiplier;
+    }
+    private void Awake()
+    {
+        _adelController = GetComponentInChildren<AdelFlyingSwordController>();
+        _hypoController = GetComponentInChildren<HypoSwordController>();
+        _pixelController = GetComponentInChildren<PixelSwordController>();
+    }
+
+    private void Start()
+    {
+        
+
+        FireAll();
     }
 
     private void Update()
@@ -93,15 +109,8 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
         }
     }
 
-    protected override void Initialize()
-    {
-        // 시작 시 모두 발사
-        FireAll();
-    }
 
-    /// <summary>
-    /// 모든 검을 즉시 발사
-    /// </summary>
+    // 모든 검을 즉시 발사
     public void FireAll()
     {
         _adelController?.Fire();
@@ -113,9 +122,7 @@ public class ControllerManager : DontDestroySingleton<ControllerManager>
         _pixelCooldownTimer = 0f;
     }
 
-    /// <summary>
-    /// 특정 타입의 검만 발사
-    /// </summary>
+    // 특정 타입의 검만 발사
     public void Fire(ESwordType type)
     {
         switch (type)
