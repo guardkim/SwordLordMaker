@@ -1,4 +1,4 @@
-name: Unity PC Build (Windows)
+name: Unity WebGL Desktop Build (Windows)
 run-name: PC build by ${{ github.actor }} (${{ github.ref_name }})
 
 on:
@@ -56,9 +56,17 @@ jobs:
           buildsPath: ${{ env.BUILDS_PATH }}
           buildName: ${{ env.BUILD_NAME }}
 
-      - name: Upload Artifact (Windows)
+      - name: Upload Artifact (WebGl-Desktop)
         uses: actions/upload-artifact@v4
         with:
-          name: Windows-${{ github.ref_name }}-${{ github.run_number }}
+          name: WebGl-Desktop-${{ github.ref_name }}-${{ github.run_number }}
           path: ${{ env.BUILDS_PATH }}
           retention-days: 7
+      - name: Notify Slack (always)
+        if: always()
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "*Build*: ${{ github.repository }}\n*Status*: ${{ job.status }}\n*Run*: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
