@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 120
 
     env:
-      PROJECT_PATH: SwordLordMaker
+      PROJECT_PATH: .
       TARGET_PLATFORM: WebGL
       BUILD_NAME: Web-Desktop
       BUILDS_PATH: build
@@ -29,13 +29,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Cache Library
         uses: actions/cache@v5
         with:
-          path: ${{ env.PROJECT_PATH }}/Library
-          key: Library-${{ runner.os }}-${{ env.TARGET_PLATFORM }}-${{ hashFiles(format('{0}/Assets/**', env.PROJECT_PATH), format('{0}/Packages/**', env.PROJECT_PATH), format('{0}/ProjectSettings/**', env.PROJECT_PATH)) }}
+          path: Library
+          key: Library-${{ runner.os }}-${{ env.TARGET_PLATFORM }}-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
           restore-keys: |
             Library-${{ runner.os }}-${{ env.TARGET_PLATFORM }}-
             Library-${{ runner.os }}-
