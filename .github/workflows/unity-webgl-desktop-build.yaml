@@ -1,32 +1,58 @@
-name: Unity WebGL Desktop Build (Windows)
-run-name: WebGL Desktop build by ${{ github.actor }} (${{ github.ref_name }})
+name: Unity WebGL Desktop Build
+run-name: WebGL-Desktop build by ${{ github.actor }} (${{ github.ref_name }})
 
+# =========================================================
+# ✅ 1) 어느 브랜치에서 빌드할지 (여기만 수정)
+#    - push되는 브랜치에서 빌드가 자동 실행됨
+# =========================================================
 on:
   workflow_dispatch: {}
   push:
     branches:
       - main
       - develop
+      # - "desktop/**"
 
 concurrency:
-  group: unity-WebGL-Desktop-${{ github.ref }}
+  group: unity-webgl-desktop-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+# =========================================================
+# ✅ 2) 유저마다 다른 값 (여기만 수정)
+# =========================================================
+env:
+  # --- Unity ---
+  PROJECT_PATH: .
+  TARGET_PLATFORM: WebGL
+  BUILD_NAME: Web-Desktop
+  BUILDS_PATH: build
+  BUILD_PROFILE: "Assets/Settings/Build Profiles/Web - Desktop - Release.asset"
+
+  # --- Itch.io (OPTIONAL 섹션에서만 사용) ---
+  ITCH_USER: guardkim
+  ITCH_GAME: swordlordmaker
+  ITCH_CHANNEL: web-desktop
+
+  # --- Slack (OPTIONAL 섹션에서만 사용) ---
+  SLACK_TITLE: "Unity WebGL Desktop 빌드/배포"
 
 jobs:
   build-webgl-desktop:
     runs-on: windows-latest
     timeout-minutes: 120
 
-    env:
-      PROJECT_PATH: .
-      TARGET_PLATFORM: WebGL
-      BUILD_NAME: Web-Desktop
-      BUILDS_PATH: build
-      BUILD_PROFILE: "Assets/Settings/Build Profiles/Web - Desktop - Release.asset"
-
     steps:
+      # =========================================================
+      # ✅ CORE: Build (필수)
+      # =========================================================
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Cache Library
         uses: actions/cache@v5
@@ -40,11 +66,9 @@ jobs:
       - name: Build (Unity Builder)
         uses: game-ci/unity-builder@v4
         env:
-          # ✅ Personal License
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-
         with:
           projectPath: ${{ env.PROJECT_PATH }}
           targetPlatform: ${{ env.TARGET_PLATFORM }}
@@ -60,24 +84,191 @@ jobs:
           path: ${{ env.BUILDS_PATH }}
           retention-days: 7
 
+      # =========================================================
+      # ===== OPTIONAL: Deploy to itch.io =====
+      # - 사용 안 하면 이 섹션을 통째로 삭제하면 됨
+      # - 필요한 Secrets: BUTLER_API_KEY
+      # =========================================================
       - name: Setup butler
         uses: remarkablegames/setup-butler@v2
-        if: github.ref_name == 'main' || github.event_name == 'workflow_dispatch'
 
-      - name: Deploy to itch.io (WebGL Desktop)
-        if: github.ref_name == 'main' || github.event_name == 'workflow_dispatch'
+      - name: Deploy to itch.io (WebGL)
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
-          ITCH_USER: guardkim
-          ITCH_GAME: swordlordmaker
-          ITCH_CHANNEL: web-desktop
         shell: pwsh
         run: |
-          $buildDir = "${{ env.BUILDS_PATH }}\${{ env.TARGET_PLATFORM }}\${{ env.BUILD_NAME }}"
+          # Windows지만 / 로 경로를 통일하면 PowerShell + butler에서 안정적
+          $buildDir = "${{ env.BUILDS_PATH }}/${{ env.TARGET_PLATFORM }}/${{ env.BUILD_NAME }}"
+          $spec = "$($env:ITCH_USER)/$($env:ITCH_GAME):$($env:ITCH_CHANNEL)"
+          $version = "${{ github.ref_name }}-${{ github.run_number }}"
+
           echo "Deploying: $buildDir"
+          echo "Spec: $spec"
+          echo "Version: $version"
+
           if (!(Test-Path $buildDir)) { throw "Build output not found: $buildDir" }
 
-          butler push $buildDir "$env:ITCH_USER/$env:ITCH_GAME:$env:ITCH_CHANNEL" --userversion "${{ github.ref_name }}-${{ github.run_number }}"
+          butler push "$buildDir" "$spec" --userversion "$version"
+
+      # =========================================================
+      # ===== OPTIONAL: Slack Notify (with commit list) =====
+      # - 사용 안 하면 이 섹션을 통째로 삭제하면 됨
+      # - 필요한 Secrets: SLACK_WEBHOOK_URL
+      #
+      # (설명)
+      # - "마지막 성공 빌드 커밋" ~ "이번 빌드 커밋" 사이 커밋을 전부 모아서 Slack에 표시
+      # =========================================================
+      - name: Get previous successful build SHA
+        id: prev_success
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const workflowName = context.workflow;
+            const branch = context.ref.replace('refs/heads/', '');
+            const currentRunId = context.runId;
+
+            const workflows = await github.rest.actions.listRepoWorkflows({ owner, repo, per_page: 100 });
+            const wf = workflows.data.workflows.find(w => w.name === workflowName);
+
+            if (!wf) {
+              core.setOutput('sha', '');
+              return;
+            }
+
+            const runs = await github.rest.actions.listWorkflowRuns({
+              owner,
+              repo,
+              workflow_id: wf.id,
+              branch,
+              status: 'completed',
+              per_page: 50
+            });
+
+            const prev = runs.data.workflow_runs.find(r => r.id !== currentRunId && r.conclusion === 'success');
+            core.setOutput('sha', prev ? prev.head_sha : '');
+
+      - name: Collect commit changes (since last successful build)
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          AFTER="${GITHUB_SHA}"
+          PREV_SUCCESS="${{ steps.prev_success.outputs.sha }}"
+
+          if [[ -n "${PREV_SUCCESS}" && "${PREV_SUCCESS}" != "${AFTER}" ]]; then
+            RANGE="${PREV_SUCCESS}..${AFTER}"
+            echo "지난 성공 빌드 이후 변경 내역" > changes_title.txt
+          else
+            BEFORE="${{ github.event.before }}"
+            if [[ -z "${BEFORE}" || "${BEFORE}" == "0000000000000000000000000000000000000000" ]]; then
+              if git rev-parse "${AFTER}~1" >/dev/null 2>&1; then
+                BEFORE="$(git rev-parse "${AFTER}~1")"
+              else
+                BEFORE="${AFTER}"
+              fi
+            fi
+            RANGE="${BEFORE}..${AFTER}"
+            echo "최근 변경 내역" > changes_title.txt
+          fi
+
+          git log --reverse --pretty=format:'• %s (%h) - %an' "${RANGE}" > commit_log.txt || true
+          if [[ ! -s commit_log.txt ]]; then
+            echo "• 변경 내역 없음" > commit_log.txt
+          fi
+
+          wc -l commit_log.txt | awk '{print $1}' > commit_count.txt
+
+      - name: Build Slack payload (json)
+        if: always()
+        shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib
+
+          status = os.environ.get("JOB_STATUS", "unknown")
+          if status == "success":
+            emoji, result = "✅", "성공"
+          elif status == "failure":
+            emoji, result = "❌", "실패"
+          else:
+            emoji, result = "⚠️", "중단/취소"
+
+          repo = os.environ.get("GITHUB_REPOSITORY", "")
+          branch = os.environ.get("GITHUB_REF_NAME", "")
+          run_number = os.environ.get("GITHUB_RUN_NUMBER", "")
+          actor = os.environ.get("GITHUB_ACTOR", "")
+          server_url = os.environ.get("GITHUB_SERVER_URL", "")
+          run_id = os.environ.get("GITHUB_RUN_ID", "")
+          run_url = f"{server_url}/{repo}/actions/runs/{run_id}" if server_url and repo and run_id else ""
+
+          title = os.environ.get("SLACK_TITLE", "Unity 빌드")
+
+          itch_user = os.environ.get("ITCH_USER", "")
+          itch_game = os.environ.get("ITCH_GAME", "")
+          itch_channel = os.environ.get("ITCH_CHANNEL", "")
+          deploy_spec = f"{itch_user}/{itch_game}:{itch_channel}" if itch_user and itch_game and itch_channel else ""
+          version = f"{branch}-{run_number}" if branch and run_number else ""
+
+          def read_text(path, default=""):
+            p = pathlib.Path(path)
+            return p.read_text(encoding="utf-8", errors="replace").strip() if p.exists() else default
+
+          changes_title = read_text("changes_title.txt", "변경 내역")
+          log_text = read_text("commit_log.txt", "• 변경 내역 없음")
+          commit_count = read_text("commit_count.txt", "0")
+
+          MAX_CHARS = 2800
+          lines = log_text.splitlines()
+
+          chunks, cur = [], ""
+          for line in lines:
+            add = line + "\n"
+            if len(cur) + len(add) > MAX_CHARS:
+              chunks.append(cur.rstrip())
+              cur = add
+            else:
+              cur += add
+          if cur.strip():
+            chunks.append(cur.rstrip())
+
+          MAX_CHANGE_BLOCKS = 44
+          too_many = len(chunks) > MAX_CHANGE_BLOCKS
+          shown = chunks[:MAX_CHANGE_BLOCKS] if too_many else chunks
+
+          fields = [
+            {"type": "mrkdwn", "text": f"*저장소*\n`{repo}`"},
+            {"type": "mrkdwn", "text": f"*브랜치*\n`{branch}`"},
+            {"type": "mrkdwn", "text": f"*실행 번호*\n#{run_number}"},
+            {"type": "mrkdwn", "text": f"*실행자*\n`{actor}`"},
+          ]
+          if deploy_spec:
+            fields.append({"type": "mrkdwn", "text": f"*배포 대상*\n`{deploy_spec}`"})
+          if version:
+            fields.append({"type": "mrkdwn", "text": f"*버전*\n`{version}`"})
+
+          blocks = [
+            {"type": "header", "text": {"type": "plain_text", "text": f"{emoji} {title} {result}", "emoji": True}},
+            {"type": "section", "fields": fields},
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"*실행 링크*\n<{run_url}|GitHub Actions 열기>"}},
+            {"type": "divider"},
+            {"type": "section", "text": {"type": "mrkdwn", "text": f"*{changes_title}* (총 {commit_count}개)\n(표시는 오래된 → 최신 순)"}},
+          ]
+
+          for c in shown:
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": c}})
+
+          if too_many:
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "⚠️ 변경 내역이 너무 많아서 일부만 표시했어요. (Slack 제한)"} })
+
+          with open("slack-payload.json", "w", encoding="utf-8") as f:
+            json.dump({"blocks": blocks}, f, ensure_ascii=False)
+          PY
 
       - name: Notify Slack (always)
         if: always()
@@ -85,5 +276,4 @@ jobs:
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
-          payload: |
-            text: "*Build*: ${{ github.repository }}\n*Status*: ${{ job.status }}\n*Run*: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          payload-file-path: slack-payload.json
