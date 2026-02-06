@@ -1,9 +1,10 @@
 name: Unity WebGL Mobile Build
 run-name: WebGL-Mobile build by ${{ github.actor }} (${{ github.ref_name }})
 
-# =========================
-# ✅ 사용자 설정 구간 (여기만 바꾸면 됨)
-# =========================
+# =========================================================
+# ✅ 1) 어느 브랜치에서 빌드할지 (여기만 수정)
+#    - push되는 브랜치에서 빌드가 자동 실행됨
+# =========================================================
 on:
   workflow_dispatch: {}
   push:
@@ -20,24 +21,24 @@ permissions:
   contents: read
   actions: read
 
-# 사용자 설정 변수들
+# =========================================================
+# ✅ 2) 유저마다 다른 값 (여기만 수정)
+# =========================================================
 env:
-  # --- Unity Build ---
+  # --- Unity ---
   PROJECT_PATH: .
   TARGET_PLATFORM: WebGL
   BUILD_NAME: Web-Mobile
   BUILDS_PATH: build
   BUILD_PROFILE: "Assets/Settings/Build Profiles/Web - Mobile - Development.asset"
 
-  # --- itch.io Deploy ---
+  # --- Itch.io (OPTIONAL 섹션에서만 사용) ---
   ITCH_USER: guardkim
   ITCH_GAME: swordlordmaker
   ITCH_CHANNEL: web-mobile
-  ITCH_USER_VERSION: "${{ github.ref_name }}-${{ github.run_number }}"
 
-  # --- Slack Message ---
+  # --- Slack (OPTIONAL 섹션에서만 사용) ---
   SLACK_TITLE: "Unity WebGL Mobile 빌드/배포"
-  SLACK_DEPLOY_SPEC: "guardkim/swordlordmaker:web-mobile"
 
 jobs:
   build-webgl-mobile:
@@ -45,12 +46,14 @@ jobs:
     timeout-minutes: 90
 
     steps:
+      # =========================================================
+      # ✅ CORE: Build (필수)
+      # =========================================================
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      # (중요) Unity Docker 이미지 풀 때 디스크 부족 자주 발생 -> 미리 공간 확보
       - name: Free disk space (before Unity Docker pull)
         shell: bash
         run: |
@@ -59,7 +62,6 @@ jobs:
           sudo docker system prune -af || true
           df -h
 
-      # Unity Library 캐시(빌드 속도 향상)
       - name: Cache Library
         uses: actions/cache@v5
         with:
@@ -90,28 +92,39 @@ jobs:
           path: ${{ env.BUILDS_PATH }}
           retention-days: 7
 
-      # 배포는 main 또는 수동 실행일 때만 (원하면 조건 수정)
+      # =========================================================
+      # ===== OPTIONAL: Deploy to itch.io =====
+      # - 사용 안 하면 이 섹션을 통째로 삭제하면 됨
+      # - 필요한 Secrets: BUTLER_API_KEY
+      # =========================================================
       - name: Setup butler
         uses: remarkablegames/setup-butler@v2
-        if: github.ref_name == 'main' || github.event_name == 'workflow_dispatch'
 
-      - name: Deploy to itch.io (WebGL Mobile)
-        if: github.ref_name == 'main' || github.event_name == 'workflow_dispatch'
+      - name: Deploy to itch.io (WebGL)
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
         shell: pwsh
         run: |
           $buildDir = "${{ env.BUILDS_PATH }}/${{ env.TARGET_PLATFORM }}/${{ env.BUILD_NAME }}"
           $spec = "$($env:ITCH_USER)/$($env:ITCH_GAME):$($env:ITCH_CHANNEL)"
+          $version = "${{ github.ref_name }}-${{ github.run_number }}"
 
           echo "Deploying: $buildDir"
           echo "Spec: $spec"
+          echo "Version: $version"
 
           if (!(Test-Path $buildDir)) { throw "Build output not found: $buildDir" }
 
-          butler push "$buildDir" "$spec" --userversion "${{ env.ITCH_USER_VERSION }}"
+          butler push "$buildDir" "$spec" --userversion "$version"
 
-      # ✅ 이전 "성공한" 빌드(run)의 head_sha 가져오기
+      # =========================================================
+      # ===== OPTIONAL: Slack Notify (with commit list) =====
+      # - 사용 안 하면 이 섹션을 통째로 삭제하면 됨
+      # - 필요한 Secrets: SLACK_WEBHOOK_URL
+      #
+      # (설명)
+      # - "마지막 성공 빌드 커밋" ~ "이번 빌드 커밋" 사이 커밋을 전부 모아서 Slack에 표시
+      # =========================================================
       - name: Get previous successful build SHA
         id: prev_success
         if: always()
@@ -120,7 +133,7 @@ jobs:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const workflowName = context.workflow; // 현재 워크플로 'name'
+            const workflowName = context.workflow;
             const branch = context.ref.replace('refs/heads/', '');
             const currentRunId = context.runId;
 
@@ -128,7 +141,6 @@ jobs:
             const wf = workflows.data.workflows.find(w => w.name === workflowName);
 
             if (!wf) {
-              core.warning(`Workflow not found by name: ${workflowName}`);
               core.setOutput('sha', '');
               return;
             }
@@ -145,7 +157,6 @@ jobs:
             const prev = runs.data.workflow_runs.find(r => r.id !== currentRunId && r.conclusion === 'success');
             core.setOutput('sha', prev ? prev.head_sha : '');
 
-      # ✅ 커밋 변경내역: "이전 성공 빌드 커밋" -> "현재 커밋" 사이를 전부 추출
       - name: Collect commit changes (since last successful build)
         if: always()
         shell: bash
@@ -159,7 +170,6 @@ jobs:
             RANGE="${PREV_SUCCESS}..${AFTER}"
             echo "지난 성공 빌드 이후 변경 내역" > changes_title.txt
           else
-            # fallback: 이전 성공 빌드가 없으면 이번 push 범위(또는 직전 커밋)로
             BEFORE="${{ github.event.before }}"
             if [[ -z "${BEFORE}" || "${BEFORE}" == "0000000000000000000000000000000000000000" ]]; then
               if git rev-parse "${AFTER}~1" >/dev/null 2>&1; then
@@ -172,16 +182,13 @@ jobs:
             echo "최근 변경 내역" > changes_title.txt
           fi
 
-          # 오래된 -> 최신 순으로 보여주기(--reverse)
           git log --reverse --pretty=format:'• %s (%h) - %an' "${RANGE}" > commit_log.txt || true
-
           if [[ ! -s commit_log.txt ]]; then
             echo "• 변경 내역 없음" > commit_log.txt
           fi
 
           wc -l commit_log.txt | awk '{print $1}' > commit_count.txt
 
-      # Slack payload를 Python으로 JSON 생성 (커밋이 많아도 블록 여러 개로 분할)
       - name: Build Slack payload (json)
         if: always()
         shell: bash
@@ -208,8 +215,13 @@ jobs:
           run_url = f"{server_url}/{repo}/actions/runs/{run_id}" if server_url and repo and run_id else ""
 
           title = os.environ.get("SLACK_TITLE", "Unity 빌드")
-          deploy_spec = os.environ.get("SLACK_DEPLOY_SPEC", "")
-          version = os.environ.get("ITCH_USER_VERSION", "")
+
+          # Itch spec은 Slack에서만 "표시용"으로 조합
+          itch_user = os.environ.get("ITCH_USER", "")
+          itch_game = os.environ.get("ITCH_GAME", "")
+          itch_channel = os.environ.get("ITCH_CHANNEL", "")
+          deploy_spec = f"{itch_user}/{itch_game}:{itch_channel}" if itch_user and itch_game and itch_channel else ""
+          version = f"{branch}-{run_number}" if branch and run_number else ""
 
           def read_text(path, default=""):
             p = pathlib.Path(path)
@@ -219,14 +231,13 @@ jobs:
           log_text = read_text("commit_log.txt", "• 변경 내역 없음")
           commit_count = read_text("commit_count.txt", "0")
 
-          # Slack mrkdwn section text limit ~3000 chars -> 안전하게 2800으로 분할
+          # Slack section text limit -> 분할
           MAX_CHARS = 2800
           lines = log_text.splitlines()
 
-          chunks = []
-          cur = ""
+          chunks, cur = [], ""
           for line in lines:
-            add = (line + "\n")
+            add = line + "\n"
             if len(cur) + len(add) > MAX_CHARS:
               chunks.append(cur.rstrip())
               cur = add
@@ -235,13 +246,10 @@ jobs:
           if cur.strip():
             chunks.append(cur.rstrip())
 
-          # Slack blocks max 50. 고정 블록 4개 사용 -> 변경내역 블록 최대 45개만 허용 + 마지막 안내 1개
-          MAX_CHANGE_BLOCKS = 45
+          # blocks max 50
+          MAX_CHANGE_BLOCKS = 44
           too_many = len(chunks) > MAX_CHANGE_BLOCKS
-          if too_many:
-            shown = chunks[:MAX_CHANGE_BLOCKS]
-          else:
-            shown = chunks
+          shown = chunks[:MAX_CHANGE_BLOCKS] if too_many else chunks
 
           fields = [
             {"type": "mrkdwn", "text": f"*저장소*\n`{repo}`"},
@@ -266,13 +274,10 @@ jobs:
             blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": c}})
 
           if too_many:
-            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": f"⚠️ 변경 내역이 너무 많아서 일부만 표시했어요. (Slack 제한 때문에 생략됨)"} })
-
-          payload = {"blocks": blocks}
+            blocks.append({"type": "section", "text": {"type": "mrkdwn", "text": "⚠️ 변경 내역이 너무 많아서 일부만 표시했어요. (Slack 제한)"} })
 
           with open("slack-payload.json", "w", encoding="utf-8") as f:
-            json.dump(payload, f, ensure_ascii=False)
-
+            json.dump({"blocks": blocks}, f, ensure_ascii=False)
           PY
 
       - name: Notify Slack (always)
