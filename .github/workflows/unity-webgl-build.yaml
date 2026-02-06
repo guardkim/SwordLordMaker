@@ -30,6 +30,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       # Unity Library 캐시(빌드 속도 향상)
       - name: Cache Library
         uses: actions/cache@v5
@@ -85,6 +87,33 @@ jobs:
 
           butler push "$buildDir" "$spec" --userversion "${{ github.ref_name }}-${{ github.run_number }}"
 
+
+      - name: Collect commit changes
+        id: changes
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          AFTER="${GITHUB_SHA}"
+          BEFORE="${{ github.event.before }}"
+
+          # workflow_dispatch 등에서 before가 없을 수 있어서 fallback
+          if [[ -z "${BEFORE}" || "${BEFORE}" == "0000000000000000000000000000000000000000" ]]; then
+            if git rev-parse "${AFTER}~1" >/dev/null 2>&1; then
+              BEFORE="$(git rev-parse "${AFTER}~1")"
+            else
+              BEFORE="${AFTER}"
+            fi
+          fi
+
+          RANGE="${BEFORE}..${AFTER}"
+          echo "range=${RANGE}" >> "$GITHUB_OUTPUT"
+
+          LOG="$(git log --pretty=format:'• %s (`%h`) - %an' "${RANGE}" | head -n 10 || true)"
+          if [[ -z "${LOG}" ]]; then LOG="• 변경 내역 없음"; fi
+          printf "log<<EOF\n%s\nEOF\n" "${LOG}" >> "$GITHUB_OUTPUT"
+
       - name: Notify Slack (always)
         if: always()
         uses: slackapi/slack-github-action@v2.1.1
@@ -92,5 +121,16 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload: |
-            text: "*Build*: ${{ github.repository }}\n*Status*: ${{ job.status }}\n*Run*: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            text: |
+              ${{ job.status == 'success' && '✅' || '❌' }} *Unity WebGL Mobile 빌드/배포 ${{ job.status == 'success' && '성공' || '실패' }}*
+              • 저장소: `${{ github.repository }}`
+              • 브랜치: `${{ github.ref_name }}`
+              • 실행 번호: #${{ github.run_number }}
+              • 배포 대상: `guardkim/swordlordmaker:web-mobile`
+              • 커밋 범위: `${{ steps.changes.outputs.range }}`
+              • 실행 링크: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|GitHub Actions 열기>
+
+              *변경 내역(최대 10개)*
+              ${{ steps.changes.outputs.log }}
+
 
