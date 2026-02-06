@@ -7,16 +7,13 @@ on:
     branches:
       - main
       - develop
-  # 필요하면 스케줄도 켜세요(UTC 기준)
-  # schedule:
-  #   - cron: "0 19 * * *" # KST 04:00
 
 concurrency:
-  group: unity-pc-${{ github.ref }}
+  group: unity-WebGL-Desktop-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-pc:
+  build-webgl-desktop:
     runs-on: windows-latest
     timeout-minutes: 120
 
