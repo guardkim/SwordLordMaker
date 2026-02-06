@@ -75,11 +75,15 @@ jobs:
           ITCH_CHANNEL: web-mobile
         shell: pwsh
         run: |
-          $buildDir = "${{ env.BUILDS_PATH }}\${{ env.TARGET_PLATFORM }}\${{ env.BUILD_NAME }}"
+          $buildDir = "${{ env.BUILDS_PATH }}/${{ env.TARGET_PLATFORM }}/${{ env.BUILD_NAME }}"
+          $spec = "$($env:ITCH_USER)/$($env:ITCH_GAME):$($env:ITCH_CHANNEL)"
+
           echo "Deploying: $buildDir"
+          echo "Spec: $spec"
+
           if (!(Test-Path $buildDir)) { throw "Build output not found: $buildDir" }
 
-          butler push $buildDir "$env:ITCH_USER/$env:ITCH_GAME:$env:ITCH_CHANNEL" --userversion "${{ github.ref_name }}-${{ github.run_number }}"
+          butler push "$buildDir" "$spec" --userversion "${{ github.ref_name }}-${{ github.run_number }}"
 
       - name: Notify Slack (always)
         if: always()
