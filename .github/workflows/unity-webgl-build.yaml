@@ -7,9 +7,6 @@ on:
     branches:
       - main
       - develop
-  # 필요하면 스케줄도 켜세요(UTC 기준)
-  # schedule:
-  #   - cron: "0 19 * * *" # KST 04:00
 
 concurrency:
   group: unity-WebGL-${{ github.ref }}
@@ -32,6 +29,16 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
+      # (중요) Unity Docker 이미지 풀 때 디스크 부족 자주 발생 -> 미리 공간 확보
+      - name: Free disk space (before Unity Docker pull)
+        shell: bash
+        run: |
+          set -e
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android || true
+          sudo docker system prune -af || true
+          df -h
+
       # Unity Library 캐시(빌드 속도 향상)
       - name: Cache Library
         uses: actions/cache@v5
@@ -42,21 +49,12 @@ jobs:
             Library-${{ runner.os }}-${{ env.TARGET_PLATFORM }}-
             Library-${{ runner.os }}-
 
-      - name: Free disk space (before Unity Docker pull)
-        shell: bash
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
-          sudo docker system prune -af || true
-          df -h
-
-
       - name: Build (Unity Builder)
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-
         with:
           projectPath: ${{ env.PROJECT_PATH }}
           targetPlatform: ${{ env.TARGET_PLATFORM }}
@@ -95,9 +93,8 @@ jobs:
 
           butler push "$buildDir" "$spec" --userversion "${{ github.ref_name }}-${{ github.run_number }}"
 
-
+      # 커밋 변경내역 파일로 저장 (멀티라인/특수문자 안전)
       - name: Collect commit changes
-        id: changes
         if: always()
         shell: bash
         run: |
@@ -116,53 +113,80 @@ jobs:
           fi
 
           RANGE="${BEFORE}..${AFTER}"
-          echo "range=${RANGE}" >> "$GITHUB_OUTPUT"
+          echo "${RANGE}" > commit_range.txt
 
-          LOG="$(git log --pretty=format:'• %s (`%h`) - %an' "${RANGE}" | head -n 10 || true)"
-          if [[ -z "${LOG}" ]]; then LOG="• 변경 내역 없음"; fi
-          printf "log<<EOF\n%s\nEOF\n" "${LOG}" >> "$GITHUB_OUTPUT"
+          # backtick 등 문제 피하려고 포맷에서 ` 사용 안 함
+          git log --pretty=format:'• %s (%h) - %an' "${RANGE}" | head -n 10 > commit_log.txt || true
+          if [[ ! -s commit_log.txt ]]; then
+            echo "• 변경 내역 없음" > commit_log.txt
+          fi
 
+      # Slack payload를 Python으로 JSON 생성 (파싱 깨짐 방지)
       - name: Build Slack payload (json)
         if: always()
         shell: bash
+        env:
+          JOB_STATUS: ${{ job.status }}
+          DEPLOY_SPEC: guardkim/swordlordmaker:web-mobile
         run: |
-          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib
 
-          STATUS="${{ job.status }}"
-          if [[ "$STATUS" == "success" ]]; then
-            EMOJI="✅"; RESULT="성공"
-          else
-            EMOJI="❌"; RESULT="실패"
-          fi
+          status = os.environ.get("JOB_STATUS", "unknown")
+          if status == "success":
+            emoji, result = "✅", "성공"
+          elif status == "failure":
+            emoji, result = "❌", "실패"
+          else:
+            emoji, result = "⚠️", "중단/취소"
 
-          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          DEPLOY_SPEC="guardkim/swordlordmaker:web-mobile"
+          repo = os.environ.get("GITHUB_REPOSITORY", "")
+          branch = os.environ.get("GITHUB_REF_NAME", "")
+          run_number = os.environ.get("GITHUB_RUN_NUMBER", "")
+          actor = os.environ.get("GITHUB_ACTOR", "")
+          server_url = os.environ.get("GITHUB_SERVER_URL", "")
+          run_id = os.environ.get("GITHUB_RUN_ID", "")
+          run_url = f"{server_url}/{repo}/actions/runs/{run_id}" if server_url and repo and run_id else ""
+          deploy_spec = os.environ.get("DEPLOY_SPEC", "")
 
-          jq -n \
-            --arg title "${EMOJI} Unity WebGL Mobile 빌드/배포 ${RESULT}" \
-            --arg repo "${{ github.repository }}" \
-            --arg branch "${{ github.ref_name }}" \
-            --arg runnum "${{ github.run_number }}" \
-            --arg deploy "${DEPLOY_SPEC}" \
-            --arg range "${{ steps.changes.outputs.range }}" \
-            --arg runurl "${RUN_URL}" \
-            --arg changes "${{ steps.changes.outputs.log }}" \
-            '{
-              blocks: [
-                {type:"header", text:{type:"plain_text", text:$title, emoji:true}},
-                {type:"section", fields:[
-                  {type:"mrkdwn", text:"*저장소*\n`"+$repo+"`"},
-                  {type:"mrkdwn", text:"*브랜치*\n`"+$branch+"`"},
-                  {type:"mrkdwn", text:"*실행 번호*\n#"+$runnum},
-                  {type:"mrkdwn", text:"*배포 대상*\n`"+$deploy+"`"},
-                  {type:"mrkdwn", text:"*커밋 범위*\n`"+$range+"`"},
-                  {type:"mrkdwn", text:"*실행 링크*\n<"+$runurl+"|GitHub Actions 열기>"}
-                ]},
-                {type:"divider"},
-                {type:"section", text:{type:"mrkdwn", text:"*변경 내역(최대 10개)*\n"+$changes}}
-              ]
-            }' > slack-payload.json
+          version = f"{branch}-{run_number}" if branch and run_number else ""
 
+          commit_range = ""
+          log_text = ""
+
+          p_range = pathlib.Path("commit_range.txt")
+          p_log = pathlib.Path("commit_log.txt")
+
+          if p_range.exists():
+            commit_range = p_range.read_text(encoding="utf-8", errors="replace").strip()
+          if p_log.exists():
+            log_text = p_log.read_text(encoding="utf-8", errors="replace").strip()
+
+          if not log_text:
+            log_text = "• 변경 내역 없음"
+
+          payload = {
+            "blocks": [
+              {"type": "header", "text": {"type": "plain_text", "text": f"{emoji} Unity WebGL Mobile 빌드/배포 {result}", "emoji": True}},
+              {"type": "section", "fields": [
+                {"type": "mrkdwn", "text": f"*저장소*\n`{repo}`"},
+                {"type": "mrkdwn", "text": f"*브랜치*\n`{branch}`"},
+                {"type": "mrkdwn", "text": f"*실행 번호*\n#{run_number}"},
+                {"type": "mrkdwn", "text": f"*실행자*\n`{actor}`"},
+                {"type": "mrkdwn", "text": f"*배포 대상*\n`{deploy_spec}`"},
+                {"type": "mrkdwn", "text": f"*버전*\n`{version}`"},
+              ]},
+              {"type": "section", "text": {"type": "mrkdwn", "text": f"*커밋 범위*\n`{commit_range}`\n*실행 링크*\n<{run_url}|GitHub Actions 열기>"}},
+              {"type": "divider"},
+              {"type": "section", "text": {"type": "mrkdwn", "text": f"*변경 내역(최대 10개)*\n{log_text}"}},
+            ]
+          }
+
+          with open("slack-payload.json", "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False)
+
+          print("Wrote slack-payload.json")
+          PY
 
       - name: Notify Slack (always)
         if: always()
@@ -171,6 +195,3 @@ jobs:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
           payload-file-path: slack-payload.json
-
-
-
